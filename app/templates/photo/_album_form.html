@@ -1,6 +1,9 @@
 {# Create/edit an album. The form targets itself so a rejected save comes back
    with every typed value intact; on success the server retargets the surface
-   that has to change — the index board, or the album's own header. #}
+   that has to change — the index board, or the album's own header.
+
+   `form['values']` is subscripted, never `form.values`: attribute lookup on a
+   dict finds the built-in `values()` method first and renders nothing at all. #}
 <form
   class="album-form"
   id="{{ form.dom_id }}"
@@ -17,7 +20,7 @@
   <div class="field">
     <label class="field__label" for="{{ form.dom_id }}-title">{{ t("photo.title_label") }}</label>
     <input class="field__input" id="{{ form.dom_id }}-title" name="title" type="text"
-           value="{{ form.values.title }}" placeholder="{{ t('photo.title_placeholder') }}"
+           value="{{ form['values']['title'] }}" placeholder="{{ t('photo.title_placeholder') }}"
            maxlength="200" required autofocus />
   </div>
 
@@ -25,7 +28,7 @@
     <label class="field__label" for="{{ form.dom_id }}-caption">{{ t("photo.caption_label") }}</label>
     <textarea class="field__input" id="{{ form.dom_id }}-caption" name="caption" rows="2"
               maxlength="600"
-              placeholder="{{ t('photo.caption_placeholder') }}">{{ form.values.caption }}</textarea>
+              placeholder="{{ t('photo.caption_placeholder') }}">{{ form['values']['caption'] }}</textarea>
   </div>
 
   {% if album %}

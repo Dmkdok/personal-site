@@ -60,6 +60,17 @@ def files_of(photo: Photo) -> list:
     return paths
 
 
+def row_gone(db, model, pk: int) -> bool:
+    """Ask the database whether a row survives, bypassing the identity map.
+
+    `db.get(Model, pk)` cannot answer this: the session still holds the deleted
+    instance, and refreshing it raises ObjectDeletedError instead of returning
+    None. For the same reason the caller must capture the id before deleting.
+    """
+    db.rollback()
+    return db.scalar(select(model).where(model.id == pk)) is None
+
+
 def photos_in(db, album_id: int) -> list[Photo]:
     return list(db.scalars(select(Photo).where(Photo.album_id == album_id)))
 
@@ -270,13 +281,13 @@ def test_a_visitor_cannot_upload(client, album):
 def test_deleting_a_photo_removes_its_files_from_disk(admin_client, db, album):
     response = upload(admin_client, album.id, make_jpeg(1000, 750), "shot.jpg", "image/jpeg")
     photo = settled(db, response.json()["id"])
+    photo_id = photo.id
     paths = files_of(photo)
     assert all(path.is_file() for path in paths)
 
-    assert admin_client.delete(f"/photo/admin/photos/{photo.id}").status_code == 200
+    assert admin_client.delete(f"/photo/admin/photos/{photo_id}").status_code == 200
 
-    db.rollback()
-    assert db.get(Photo, photo.id) is None
+    assert row_gone(db, Photo, photo_id)
     assert not any(path.exists() for path in paths), "orphan files left on the volume"
 
 
@@ -284,18 +295,19 @@ def test_deleting_an_album_removes_every_photo_file(admin_client, db):
     created = admin_client.post("/photo/admin/albums", data={"title": "На удаление"})
     slug = created.headers["HX-Redirect"].removeprefix("/photo/")
     made = db.scalar(select(Album).where(Album.slug == slug))
+    album_id = made.id
 
-    response = upload(admin_client, made.id, make_jpeg(900, 600), "shot.jpg", "image/jpeg")
+    response = upload(admin_client, album_id, make_jpeg(900, 600), "shot.jpg", "image/jpeg")
     photo = settled(db, response.json()["id"])
+    photo_id = photo.id
     paths = files_of(photo)
 
-    deleted = admin_client.delete(f"/photo/admin/albums/{made.id}")
+    deleted = admin_client.delete(f"/photo/admin/albums/{album_id}")
     assert deleted.status_code == 200
     assert deleted.headers["HX-Redirect"] == "/photo"
 
-    db.rollback()
-    assert db.get(Album, made.id) is None
-    assert db.get(Photo, photo.id) is None
+    assert row_gone(db, Album, album_id)
+    assert row_gone(db, Photo, photo_id)
     assert not any(path.exists() for path in paths)
 
 

@@ -28,6 +28,9 @@
       data-order-url="/photo/admin/order"
     >
       {% for album in albums %}
+        {# `loop` is not forwarded into an include; the card needs these by name. #}
+        {% set is_first = loop.first %}
+        {% set is_last = loop.last %}
         {% include "photo/_album_card.html" %}
       {% endfor %}
     </div>

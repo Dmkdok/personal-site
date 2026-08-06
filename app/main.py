@@ -73,9 +73,12 @@ async def _csrf_guard(request: Request, call_next):
     Enforced centrally rather than per route: a new endpoint is protected by
     default instead of by remembering to add a dependency.
     """
-    if request.method not in SAFE_METHODS and request.url.path not in CSRF_EXEMPT_PATHS:
-        if not csrf_ok(request, request.headers.get(CSRF_HEADER)):
-            return JSONResponse({"detail": "Недействительный CSRF-токен"}, status_code=403)
+    if (
+        request.method not in SAFE_METHODS
+        and request.url.path not in CSRF_EXEMPT_PATHS
+        and not csrf_ok(request, request.headers.get(CSRF_HEADER))
+    ):
+        return JSONResponse({"detail": "Недействительный CSRF-токен"}, status_code=403)
     return await call_next(request)
 
 

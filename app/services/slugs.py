@@ -1,8 +1,8 @@
 """URL slugs from Russian titles, guaranteed unique."""
 
+from slugify import slugify
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from slugify import slugify
 
 
 def make_slug(title: str, fallback: str = "zapis") -> str:

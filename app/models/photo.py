@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from app.models.album import Album
 
 
-class PhotoStatus(str, enum.Enum):
+class PhotoStatus(enum.StrEnum):
     PENDING = "pending"
     PROCESSING = "processing"
     READY = "ready"
@@ -40,7 +40,12 @@ class Photo(Base):
     sort_order: Mapped[int] = mapped_column(nullable=False, default=0, index=True)
 
     status: Mapped[PhotoStatus] = mapped_column(
-        Enum(PhotoStatus, native_enum=False, length=16, values_callable=lambda e: [m.value for m in e]),
+        Enum(
+            PhotoStatus,
+            native_enum=False,
+            length=16,
+            values_callable=lambda e: [m.value for m in e],
+        ),
         nullable=False,
         default=PhotoStatus.PENDING,
         index=True,

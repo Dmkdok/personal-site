@@ -90,7 +90,13 @@ def app_module(_schema):
 def db(_schema) -> Iterator[Session]:
     from app.db import SessionLocal
 
-    session = SessionLocal()
+    # `expire_on_commit=True` only here, not in the app. Tests assert on rows the
+    # application changed through its own session, and the idiom for that is
+    # `db.rollback()` before re-reading. With the app default (`False`) a fixture's
+    # own `commit()` leaves its objects unexpired, and `rollback()` is a pass-through
+    # when no transaction is open — so `db.get(...)` would hand back the stale
+    # identity-mapped row and the assertion would test nothing.
+    session = SessionLocal(expire_on_commit=True)
     try:
         yield session
     finally:
@@ -107,23 +113,32 @@ def client(app_module) -> Iterator["TestClient"]:  # noqa: F821
 
 
 @pytest.fixture
-def admin_client(client) -> "TestClient":  # noqa: F821
-    """A client with an authenticated admin session and a usable CSRF token."""
-    page = client.get("/login")
-    csrf = page.text.split('name="csrf_token" value="')[1].split('"')[0]
-    response = client.post(
-        "/login",
-        data={
-            "username": os.environ["ADMIN_USERNAME"],
-            "password": os.environ["ADMIN_PASSWORD"],
-            "csrf_token": csrf,
-            "next": "/",
-        },
-        follow_redirects=False,
-    )
-    assert response.status_code == 303, response.text
-    client.headers["X-CSRF-Token"] = _csrf_from_page(client.get("/").text)
-    return client
+def admin_client(app_module) -> Iterator["TestClient"]:  # noqa: F821
+    """An independent client with an authenticated admin session and a CSRF token.
+
+    Deliberately its own `TestClient` rather than the `client` fixture logged in.
+    Sharing one cookie jar made `client` an admin too, which quietly turned every
+    "a visitor must not see this" assertion in a test that takes both fixtures
+    into a test of the admin view.
+    """
+    from starlette.testclient import TestClient
+
+    with TestClient(app_module) as test_client:
+        page = test_client.get("/login")
+        csrf = page.text.split('name="csrf_token" value="')[1].split('"')[0]
+        response = test_client.post(
+            "/login",
+            data={
+                "username": os.environ["ADMIN_USERNAME"],
+                "password": os.environ["ADMIN_PASSWORD"],
+                "csrf_token": csrf,
+                "next": "/",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303, response.text
+        test_client.headers["X-CSRF-Token"] = _csrf_from_page(test_client.get("/").text)
+        yield test_client
 
 
 def _csrf_from_page(html: str) -> str:

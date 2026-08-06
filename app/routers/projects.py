@@ -88,7 +88,9 @@ def _board(
     Every mutation returns this, so ordering and the first/last markers on the
     move buttons can never drift out of step with the database.
     """
-    return render(request, "dev/_board.html", _context(db, admin, form), admin=admin, headers=headers)
+    return render(
+        request, "dev/_board.html", _context(db, admin, form), admin=admin, headers=headers
+    )
 
 
 def _retarget_board() -> dict[str, str]:

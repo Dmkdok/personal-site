@@ -84,7 +84,7 @@
     "lightbox_label": "Просмотр фотографии",
     "lightbox_prev": "Предыдущая фотография",
     "lightbox_next": "Следующая фотография",
-    "lightbox_close": "Закрыть просмотр",
+    "lightbox_close": "Закрыть галерею",
     "lightbox_position": "{index} из {total}"
   }
 }

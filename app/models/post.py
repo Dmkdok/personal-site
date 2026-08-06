@@ -14,7 +14,7 @@ _POST_SEARCH = (
 )
 
 
-class PostStatus(str, enum.Enum):
+class PostStatus(enum.StrEnum):
     DRAFT = "draft"
     PUBLISHED = "published"
 
@@ -33,7 +33,12 @@ class Post(Base, TimestampMixin):
     cover_path: Mapped[str | None] = mapped_column(String(300))
 
     status: Mapped[PostStatus] = mapped_column(
-        Enum(PostStatus, native_enum=False, length=16, values_callable=lambda e: [m.value for m in e]),
+        Enum(
+            PostStatus,
+            native_enum=False,
+            length=16,
+            values_callable=lambda e: [m.value for m in e],
+        ),
         nullable=False,
         default=PostStatus.DRAFT,
         index=True,

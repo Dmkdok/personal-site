@@ -1,4 +1,5 @@
-{# One album on the index. `album` comes from the enclosing loop. #}
+{# One album on the index. `album`, `is_first` and `is_last` come from the
+   enclosing loop in `_board.html` — Jinja does not forward `loop` to includes. #}
 {% set cover = album.cover_photo %}
 <article class="card album-card" id="album-{{ album.id }}" data-sort-id="{{ album.id }}">
   <a class="card__media{% if not (cover and cover.thumb_path) %} card__media--empty{% endif %}"
@@ -46,7 +47,7 @@
               hx-vals='{"direction": "up", "view": "index"}'
               hx-target="#album-board"
               hx-swap="outerHTML"
-              {% if loop.first %}disabled{% endif %}>
+              {% if is_first %}disabled{% endif %}>
         <span aria-hidden="true">↑</span>
         <span class="visually-hidden">{{ t("photo.move_up") }}</span>
       </button>
@@ -56,7 +57,7 @@
               hx-vals='{"direction": "down", "view": "index"}'
               hx-target="#album-board"
               hx-swap="outerHTML"
-              {% if loop.last %}disabled{% endif %}>
+              {% if is_last %}disabled{% endif %}>
         <span aria-hidden="true">↓</span>
         <span class="visually-hidden">{{ t("photo.move_down") }}</span>
       </button>

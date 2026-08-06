@@ -310,11 +310,15 @@ def _form_response(
 
     Deliberately a 200: htmx does not swap error responses, and swapping the
     form back in is exactly how the typed content survives a rejected save.
+
+    `form` is spread last on purpose — the surrounding context carries its own
+    `form` key (empty on the normal path), and letting it win would blank the
+    very form this function exists to re-render.
     """
     return render(
         request,
         "photo/_album_form.html",
-        {"form": form, **context},
+        {**context, "form": form},
         admin=admin,
         headers=toast_headers(form["error"], "error"),
     )
