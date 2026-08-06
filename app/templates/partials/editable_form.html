@@ -1,0 +1,30 @@
+{# Edit mode for a site-copy block. Replaces the read-only block in place. #}
+<form
+  class="editable editable--editing"
+  id="content-{{ key }}"
+  hx-post="/admin/content/{{ key }}"
+  hx-target="#content-{{ key }}"
+  hx-swap="outerHTML"
+>
+  <label class="visually-hidden" for="value-{{ key }}">Текст блока</label>
+  <textarea
+    class="field__input field__input--area"
+    id="value-{{ key }}"
+    name="value_md"
+    rows="6"
+    autofocus
+  >{{ value_md }}</textarea>
+
+  <p class="editable__hint">Поддерживается Markdown: **жирный**, *курсив*, [ссылка](https://…)</p>
+
+  <div class="editable__actions">
+    <button class="button button--primary" type="submit">Сохранить</button>
+    <button
+      class="button button--quiet"
+      type="button"
+      hx-get="/admin/content/{{ key }}"
+      hx-target="#content-{{ key }}"
+      hx-swap="outerHTML"
+    >Отмена</button>
+  </div>
+</form>

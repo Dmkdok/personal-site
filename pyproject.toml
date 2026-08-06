@@ -1,0 +1,52 @@
+[project]
+name = "portfolio"
+version = "0.1.0"
+description = "Personal portfolio site: development, photography, blog — edited in place."
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.141.0",
+    "uvicorn[standard]>=0.35.0",
+    "jinja2>=3.1.4",
+    "python-multipart>=0.0.20",
+    "itsdangerous>=2.2.0",
+    "sqlalchemy>=2.0.36,<2.1",
+    "psycopg[binary]>=3.2.3",
+    "alembic>=1.18.0",
+    "pydantic-settings>=2.7.0",
+    "argon2-cffi>=23.1.0",
+    "pillow>=12.0.0",
+    "markdown-it-py>=3.0.0",
+    "mdit-py-plugins>=0.4.2",
+    "linkify-it-py>=2.0.3",
+    "nh3>=0.3.0",
+    "python-slugify>=8.0.4",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4",
+    "pytest-playwright>=0.6.2",
+    "httpx>=0.28.1",
+    "ruff>=0.9.0",
+    "httpx2>=2.9.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4", "SIM", "TID", "RUF"]
+ignore = ["B008"]  # FastAPI dependency defaults in signatures are idiomatic
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

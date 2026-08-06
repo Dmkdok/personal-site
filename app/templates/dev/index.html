@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("dev.title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ t("dev.lede") }}{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/dev.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-header__title">{{ t("dev.title") }}</h1>
+      <p class="page-header__lede">{{ t("dev.lede") }}</p>
+    </header>
+
+    {% include "dev/_board.html" %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {% if is_admin %}
+    <script src="{{ static_url('js/vendor/sortable.min.js') }}" defer></script>
+    <script src="{{ static_url('js/dev-sortable.js') }}" defer></script>
+  {% endif %}
+{% endblock %}

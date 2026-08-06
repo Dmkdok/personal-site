@@ -1,0 +1,219 @@
+/* Development section: projects as horizontal rows, not a tile grid.
+   A shortlist of a handful of items reads better as a list with room for a
+   stack and links than as cards fighting for equal weight. */
+
+@layer components {
+  .board-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-s);
+    margin-block-end: var(--space-l);
+  }
+
+  .board-actions__hint {
+    color: var(--text-faint);
+    font-size: var(--step--1);
+  }
+
+  .project-list {
+    list-style: none;
+    padding: 0;
+    border-block-start: 1px solid var(--line);
+  }
+
+  .project {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: var(--space-m) var(--space-l);
+    padding-block: var(--space-l);
+    border-block-end: 1px solid var(--line);
+  }
+
+  .project:has(> .project__body:only-child) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .project__media {
+    display: block;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-radius: var(--radius-m);
+    background-color: var(--surface-sunken);
+  }
+
+  .project__media img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+    transition: transform var(--dur-slow) var(--ease);
+  }
+
+  .project:hover .project__media img {
+    transform: scale(1.03);
+  }
+
+  .project__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+  }
+
+  .project__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2xs);
+    font-size: var(--step-3);
+    line-height: 1.15;
+  }
+
+  .project__title a {
+    text-decoration: none;
+  }
+
+  .project__title a:hover {
+    color: var(--accent-ink);
+  }
+
+  .project__summary {
+    color: var(--text-muted);
+    max-inline-size: var(--measure);
+  }
+
+  .project__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    margin-block-start: var(--space-2xs);
+  }
+
+  .project__admin {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs);
+    margin-block-start: var(--space-xs);
+    padding-block-start: var(--space-xs);
+    border-block-start: 1px dashed var(--line);
+    inline-size: 100%;
+  }
+
+  /* --- Tech stack --------------------------------------------------------- */
+  /* A dot-separated run of words. Laid out as text rather than as a flex row:
+     flex would treat each entry as its own line box and break the run apart. */
+  .stack {
+    display: block;
+    list-style: none;
+    padding: 0;
+    margin-block-start: var(--space-3xs);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1.7;
+    color: var(--text-faint);
+  }
+
+  .stack__item {
+    display: inline;
+  }
+
+  .stack__item + .stack__item::before {
+    content: " · ";
+    color: var(--line-strong);
+  }
+
+  /* --- Draft marker ------------------------------------------------------- */
+  .badge {
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-pill);
+    color: var(--accent-ink);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* --- Form --------------------------------------------------------------- */
+  .project-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    padding: var(--space-l);
+    margin-block-end: var(--space-l);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-l);
+    background-color: var(--surface);
+  }
+
+  .project-form__heading {
+    font-size: var(--step-2);
+  }
+
+  .project-form__error {
+    padding: var(--space-xs) var(--space-s);
+    border-radius: var(--radius-m);
+    background-color: var(--danger-wash);
+    color: var(--danger-ink);
+    font-size: var(--step--1);
+  }
+
+  .project-form__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--space-m);
+  }
+
+  .project-form__cover {
+    inline-size: min(100%, 18rem);
+    border-radius: var(--radius-m);
+  }
+
+  .project-form__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  .field__checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    font-size: var(--step--1);
+    color: var(--text-muted);
+  }
+
+  /* --- Detail page -------------------------------------------------------- */
+  .detail__cover {
+    inline-size: 100%;
+    margin-block-end: var(--space-l);
+    border-radius: var(--radius-m);
+  }
+
+  /* --- Drag state --------------------------------------------------------- */
+  .project--ghost {
+    opacity: 0.4;
+  }
+
+  .project--chosen {
+    background-color: color-mix(in srgb, var(--accent) 8%, transparent);
+  }
+
+  @media (max-width: 720px) {
+    .project {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .project__media {
+      max-inline-size: 20rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project:hover .project__media img {
+      transform: none;
+    }
+  }
+}

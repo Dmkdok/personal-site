@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("errors.500_title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ t("errors.500_note") }}{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <div class="error-page">
+      <p class="error-page__code">500</p>
+      <h1 class="error-page__title">{{ t("errors.500_title") }}</h1>
+      <p class="error-page__note">{{ t("errors.500_note") }}</p>
+      <a class="button button--primary" href="/">{{ t("errors.home_link") }}</a>
+    </div>
+  </div>
+{% endblock %}

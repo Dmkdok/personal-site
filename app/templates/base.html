@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="{{ lang }}"{% if theme_attr %} data-theme="{{ theme_attr }}"{% endif %}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    {# htmx would otherwise inject a <style> element, which our CSP forbids.
+       The indicator rules live in components.css instead. #}
+    <meta name="htmx-config" content='{"includeIndicatorStyles": false}' />
+
+    {# Applied before first paint so the correct theme never flashes. #}
+    <script nonce="{{ request.state.csp_nonce }}">
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t === "dark" || t === "light") document.documentElement.dataset.theme = t;
+        } catch (e) {}
+      })();
+    </script>
+
+    <title>{% block title %}{{ t("site.name") }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{{ t("site.tagline") }}{% endblock %}" />
+    <link rel="canonical" href="{% block canonical %}{{ site_url }}{{ request.url.path }}{% endblock %}" />
+
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
+    <meta property="og:site_name" content="{{ t('site.name') }}" />
+    <meta property="og:title" content="{{ self.title() }}" />
+    <meta property="og:description" content="{{ self.meta_description() }}" />
+    <meta property="og:url" content="{{ self.canonical() }}" />
+    {% block og_image %}{% endblock %}
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preload" href="{{ static_url('fonts/onest-cyrillic.woff2') }}" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="{{ static_url('css/base.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('css/tokens.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('css/layout.css') }}" />
+    <link rel="stylesheet" href="{{ static_url('css/components.css') }}" />
+    {% if is_admin %}
+      <link rel="stylesheet" href="{{ static_url('css/admin.css') }}" />
+    {% endif %}
+    {% block head_extra %}{% endblock %}
+  </head>
+
+  <body
+    {% if body_class %}class="{{ body_class }}"{% endif %}
+    hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'
+  >
+    <a class="skip-link" href="#main">{{ t("site.skip") }}</a>
+
+    <div class="page">
+      {% include "partials/nav.html" %}
+
+      <main class="page__main" id="main" tabindex="-1">
+        {% block content %}{% endblock %}
+      </main>
+
+      {% include "partials/footer.html" %}
+    </div>
+
+    {% if is_admin %}
+      {% include "partials/admin_bar.html" %}
+    {% endif %}
+
+    <div class="toast-host" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+    <script src="{{ static_url('js/vendor/htmx.min.js') }}" defer></script>
+    <script src="{{ static_url('js/theme.js') }}" defer></script>
+    <script src="{{ static_url('js/nav.js') }}" defer></script>
+    <script src="{{ static_url('js/ui.js') }}" defer></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

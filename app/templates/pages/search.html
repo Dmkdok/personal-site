@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {% if query %}{{ t("search.results_for", query=query) }}{% else %}{{ t("search.title") }}{% endif %} — {{ t("site.name") }}
+{% endblock %}
+{% block meta_description %}{{ t("search.prompt_note") }}{% endblock %}
+
+{% block head_extra %}
+  <meta name="robots" content="noindex, follow" />
+  <link rel="stylesheet" href="{{ static_url('css/search.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-header__title">
+        {% if query %}{{ t("search.results_for", query=query) }}{% else %}{{ t("search.title") }}{% endif %}
+      </h1>
+    </header>
+
+    {% if results is none %}
+      {% with title = t("search.prompt_title"), note = t("search.prompt_note") %}
+        {% include "partials/empty_state.html" %}
+      {% endwith %}
+    {% elif results.is_empty %}
+      {% with title = t("search.empty_title"), note = t("search.empty_note", query=query) %}
+        {% include "partials/empty_state.html" %}
+      {% endwith %}
+    {% else %}
+      {% set groups = [
+        (t("search.group_posts"), results.posts),
+        (t("search.group_projects"), results.projects),
+        (t("search.group_albums"), results.albums),
+      ] %}
+      {% for label, hits in groups %}
+        {% if hits %}
+          <section class="results">
+            <h2 class="label results__label">{{ label }}</h2>
+            <ul class="results__list" role="list">
+              {% for hit in hits %}
+                <li>
+                  <a class="result" href="{{ hit.url }}">
+                    <span class="result__title">{{ hit.title }}</span>
+                    {% if hit.note %}
+                      <span class="result__note">{{ hit.note|truncate(160, true, "…") }}</span>
+                    {% endif %}
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  </div>
+{% endblock %}

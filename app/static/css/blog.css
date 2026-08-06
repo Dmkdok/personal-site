@@ -1,0 +1,366 @@
+/* Blog: article cards, the article page and the writing surface.
+   Long-form typography is shared and lives in prose.css — nothing here
+   restyles the body of an article. */
+
+@layer components {
+  /* ==========================================================================
+     Index — cards reuse .card; only the date line and the draft marker are new.
+     Still no tags, no reading time, no counters. That absence is the brief.
+     ========================================================================= */
+  .post-card__title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2xs);
+  }
+
+  .post-card__date {
+    margin-block-start: auto;
+    padding-block-start: var(--space-3xs);
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: 0;
+  }
+
+  .post-flag {
+    align-self: flex-start;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-pill);
+    color: var(--accent-ink);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .post-flag--live {
+    border-color: var(--success-ink);
+    color: var(--success-ink);
+  }
+
+  .blog-new {
+    margin-block-end: var(--space-l);
+  }
+
+  .blog-new--open {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    max-inline-size: 32rem;
+    padding: var(--space-l);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-l);
+    background-color: var(--surface);
+  }
+
+  .blog-new__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  .drafts__title {
+    font-size: var(--step-2);
+  }
+
+  .drafts__note {
+    color: var(--text-muted);
+    font-size: var(--step--1);
+    max-inline-size: 46ch;
+  }
+
+  /* ==========================================================================
+     Article page
+     ========================================================================= */
+  .article__head {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-s);
+    margin-block-end: var(--space-l);
+  }
+
+  .article__title {
+    font-size: var(--step-5);
+    letter-spacing: var(--tracking-display);
+    line-height: var(--leading-tight);
+    text-wrap: balance;
+  }
+
+  .article__date {
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+
+  .article__cover {
+    inline-size: 100%;
+    block-size: auto;
+    margin-block-end: var(--space-xl);
+    border-radius: var(--radius-m);
+  }
+
+  .article__admin {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    margin-block-start: var(--space-2xl);
+    padding-block-start: var(--space-m);
+    border-block-start: 1px dashed var(--line);
+  }
+
+  .draft-banner {
+    inline-size: 100%;
+    padding: var(--space-2xs) var(--space-s);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-m);
+    background-color: var(--accent-wash);
+    color: var(--accent-ink);
+    font-size: var(--step--1);
+  }
+
+  /* ==========================================================================
+     Editor — source on the left, the published rendering on the right, and the
+     publication panel kept out of the article form so an autosave never has to
+     carry a file with it.
+     ========================================================================= */
+  .editor {
+    inline-size: min(100% - (var(--gutter) * 2), 88rem);
+    margin-inline: auto;
+  }
+
+  .editor__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    margin-block-end: var(--space-l);
+  }
+
+  .editor__heading {
+    font-size: var(--step-3);
+  }
+
+  .editor__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-l);
+    align-items: start;
+  }
+
+  .editor__main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    min-inline-size: 0;
+  }
+
+  .editor__title {
+    font-size: var(--step-2);
+    font-weight: 600;
+  }
+
+  .editor__panes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-m);
+  }
+
+  .editor__pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+  }
+
+  .editor__textarea {
+    inline-size: 100%;
+    padding: var(--space-s);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-m);
+    background-color: var(--surface-raised);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1.7;
+    resize: vertical;
+    min-block-size: 22rem;
+    transition: border-color var(--dur-fast) var(--ease);
+  }
+
+  .editor__textarea:focus-visible {
+    border-color: var(--accent);
+    outline-offset: 1px;
+  }
+
+  .editor__textarea.is-dropping {
+    border-style: dashed;
+    border-color: var(--accent);
+    background-color: var(--accent-wash);
+  }
+
+  .editor__preview {
+    padding: var(--space-s) var(--space-m) var(--space-m);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background-color: var(--surface);
+    /* Wide content inside the preview scrolls in its own box, like the page. */
+    overflow-x: auto;
+  }
+
+  /* The preview shares .prose with the published page, but sits in a narrower
+     column: the measure comes from the column, not from a second type scale. */
+  .editor__preview .prose {
+    max-inline-size: 100%;
+    font-size: var(--step-0);
+  }
+
+  .editor__placeholder {
+    display: none;
+    color: var(--text-faint);
+    font-size: var(--step--1);
+    max-inline-size: 42ch;
+  }
+
+  .editor__preview:has(> .prose:empty) .editor__placeholder {
+    display: block;
+  }
+
+  .editor__details {
+    padding: var(--space-s) var(--space-m);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background-color: var(--surface);
+  }
+
+  .editor__details[open] {
+    padding-block-end: var(--space-m);
+  }
+
+  .editor__details[open] .editor__summary {
+    margin-block-end: var(--space-m);
+  }
+
+  .editor__summary {
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .editor__details .field + .field {
+    margin-block-start: var(--space-m);
+  }
+
+  /* --- Formatting toolbar -------------------------------------------------
+     The glyph on each button is the Markdown it writes; the accessible name is
+     the word for it. One tab stop, arrow keys inside — see editor.js. */
+  .md-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3xs);
+    padding: var(--space-3xs);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background-color: var(--surface-sunken);
+  }
+
+  .md-toolbar__button {
+    display: grid;
+    place-items: center;
+    min-inline-size: 2.75rem;
+    min-block-size: 2.75rem;
+    padding-inline: var(--space-2xs);
+    border-radius: var(--radius-s);
+    color: var(--text-muted);
+    transition: color var(--dur-fast) var(--ease),
+      background-color var(--dur-fast) var(--ease);
+  }
+
+  .md-toolbar__button:hover {
+    color: var(--text);
+    background-color: var(--surface-raised);
+  }
+
+  .md-toolbar__glyph {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1;
+  }
+
+  /* --- Publication panel --------------------------------------------------- */
+  .editor__side {
+    min-inline-size: 0;
+  }
+
+  .editor-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-s);
+    padding: var(--space-m);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background-color: var(--surface);
+  }
+
+  .editor-meta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  .editor-meta__block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2xs);
+    inline-size: 100%;
+    padding-block-start: var(--space-s);
+    border-block-start: 1px dashed var(--line);
+  }
+
+  .editor-meta__cover {
+    inline-size: 100%;
+    block-size: auto;
+    border-radius: var(--radius-m);
+  }
+
+  .editor-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2xs) var(--space-s);
+    min-block-size: 1.4em;
+    font-size: var(--step--1);
+  }
+
+  .editor-status__text {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .editor-status__link {
+    color: var(--accent-ink);
+  }
+
+  @media (min-width: 60rem) {
+    .editor__layout {
+      grid-template-columns: minmax(0, 1fr) 19rem;
+    }
+
+    .editor__panes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .editor-meta {
+      position: sticky;
+      inset-block-start: clamp(5.5rem, 4.5rem + 4vw, 8rem);
+    }
+  }
+}

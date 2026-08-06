@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("blog.title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ t("blog.lede") }}{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/blog.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-header__title">{{ t("blog.title") }}</h1>
+      <p class="page-header__lede">{{ t("blog.lede") }}</p>
+    </header>
+
+    {% if is_admin %}
+      {% include "blog/_new_button.html" %}
+    {% endif %}
+
+    {% if posts %}
+      <div class="card-grid">
+        {% for post in posts %}
+          {% include "blog/_post_card.html" %}
+        {% endfor %}
+      </div>
+    {% elif not drafts %}
+      {% with title = t("blog.empty_title"),
+              note = t("blog.empty_note_admin") if is_admin else t("blog.empty_note") %}
+        {% include "partials/empty_state.html" %}
+      {% endwith %}
+    {% endif %}
+
+    {# Drafts never reach a visitor: the router only fills this list for the owner. #}
+    {% if drafts %}
+      <section class="section" aria-labelledby="drafts-heading">
+        <div class="section__head">
+          <h2 class="drafts__title" id="drafts-heading">{{ t("blog.drafts_title") }}</h2>
+          <p class="drafts__note">{{ t("blog.drafts_note") }}</p>
+        </div>
+        <div class="card-grid">
+          {% for post in drafts %}
+            {% with is_draft = true, card_level = 3 %}
+              {% include "blog/_post_card.html" %}
+            {% endwith %}
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  </div>
+{% endblock %}

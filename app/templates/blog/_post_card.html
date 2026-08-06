@@ -1,0 +1,35 @@
+{# One article card. Cover, title, excerpt, date — and deliberately nothing
+   else: no tags, no reading time, no counters (F8, brief non-goals).
+   `post` comes from the enclosing loop; `is_draft` marks the owner-only list,
+   `card_level` keeps the heading outline right in whichever section it sits. #}
+{% set cover = cover_sources(post.cover_path) %}
+{% set level = card_level|default(2) %}
+<a class="card post-card" href="/blog/{{ post.slug }}">
+  {% if cover %}
+    <span class="card__media">
+      <img
+        src="{{ cover.src }}"
+        {% if cover.srcset %}srcset="{{ cover.srcset }}"{% endif %}
+        sizes="(min-width: 60rem) 19rem, 92vw"
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+    </span>
+  {% endif %}
+
+  <h{{ level }} class="card__title post-card__title">
+    {{ post.title }}
+    {% if is_draft %}<span class="post-flag">{{ t("blog.draft_flag") }}</span>{% endif %}
+  </h{{ level }}>
+
+  {% if post.excerpt %}
+    <p class="card__note">{{ post.excerpt }}</p>
+  {% endif %}
+
+  {% if post.published_at %}
+    <p class="post-card__date">
+      <time datetime="{{ iso_date(post.published_at) }}">{{ ru_date(post.published_at) }}</time>
+    </p>
+  {% endif %}
+</a>

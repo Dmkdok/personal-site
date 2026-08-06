@@ -1,0 +1,56 @@
+/**
+ * Shared UI behaviour: save feedback and htmx error handling.
+ *
+ * Every admin action reports its outcome — a save that silently does nothing is
+ * the failure mode that loses work.
+ */
+(function () {
+  "use strict";
+
+  var host = document.getElementById("toasts");
+
+  function toast(message, kind) {
+    if (!host) return;
+    var el = document.createElement("p");
+    el.className = "toast" + (kind ? " toast--" + kind : "");
+    el.textContent = message;
+    host.appendChild(el);
+    window.setTimeout(function () {
+      el.remove();
+    }, 4000);
+  }
+
+  window.portfolioToast = toast;
+
+  // The server signals a message with the HX-Toast response header.
+  document.body.addEventListener("htmx:afterOnLoad", function (event) {
+    var xhr = event.detail.xhr;
+    if (!xhr) return;
+    var message = xhr.getResponseHeader("HX-Toast");
+    if (!message) return;
+    // Header values are latin-1 only, so the server percent-encodes the text.
+    try {
+      message = decodeURIComponent(message);
+    } catch (e) {
+      /* fall back to the raw value */
+    }
+    toast(message, xhr.getResponseHeader("HX-Toast-Kind") || "success");
+  });
+
+  document.body.addEventListener("htmx:responseError", function (event) {
+    var status = event.detail.xhr.status;
+    if (status === 401) {
+      toast("Сессия истекла. Откройте /login в новой вкладке, войдите и повторите.", "error");
+      return;
+    }
+    if (status === 403) {
+      toast("Страница устарела. Обновите её и повторите.", "error");
+      return;
+    }
+    toast("Не удалось сохранить (ошибка " + status + "). Текст не потерян.", "error");
+  });
+
+  document.body.addEventListener("htmx:sendError", function () {
+    toast("Нет связи с сервером. Проверьте соединение и повторите.", "error");
+  });
+})();

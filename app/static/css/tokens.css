@@ -1,0 +1,114 @@
+/* ============================================================================
+   Design tokens — the only place colour, type and spacing are defined.
+   Direction: cold high-altitude ground, one warm light source (alpenglow).
+
+   Both themes are declared once with light-dark(). `color-scheme` decides
+   which side resolves, so the theme switch is a single property change.
+   ========================================================================= */
+
+@layer tokens {
+  :root {
+    /* Default: follow the operating system until the visitor chooses. */
+    color-scheme: light dark;
+
+    /* --- Type ------------------------------------------------------------ */
+    --font-sans: "Onest", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+
+    /* Fluid scale, 360px → 1440px viewport */
+    --step--1: clamp(0.82rem, 0.79rem + 0.13vw, 0.89rem);
+    --step-0: clamp(1rem, 0.96rem + 0.19vw, 1.11rem);
+    --step-1: clamp(1.2rem, 1.13rem + 0.32vw, 1.39rem);
+    --step-2: clamp(1.44rem, 1.32rem + 0.52vw, 1.74rem);
+    --step-3: clamp(1.73rem, 1.54rem + 0.81vw, 2.18rem);
+    --step-4: clamp(2.07rem, 1.79rem + 1.24vw, 2.72rem);
+    --step-5: clamp(2.49rem, 2.06rem + 1.86vw, 3.4rem);
+    --step-6: clamp(2.99rem, 2.36rem + 2.74vw, 4.25rem);
+    --step-7: clamp(3.58rem, 2.68rem + 3.94vw, 5.32rem);
+
+    --tracking-display: -0.035em;
+    --tracking-tight: -0.018em;
+    --tracking-label: 0.09em;
+
+    --leading-display: 0.98;
+    --leading-tight: 1.18;
+    --leading-body: 1.65;
+
+    --measure: 68ch;
+
+    /* --- Space ----------------------------------------------------------- */
+    --space-3xs: 0.25rem;
+    --space-2xs: 0.5rem;
+    --space-xs: 0.75rem;
+    --space-s: 1rem;
+    --space-m: 1.5rem;
+    --space-l: 2.25rem;
+    --space-xl: 3.5rem;
+    --space-2xl: 5.5rem;
+    --space-3xl: 8rem;
+
+    --gutter: clamp(1.25rem, 0.83rem + 1.85vw, 2.5rem);
+    --page-max: 76rem;
+    --prose-max: 42rem;
+
+    /* --- Shape ----------------------------------------------------------- */
+    --radius-s: 6px;
+    --radius-m: 12px;
+    --radius-l: 20px;
+    --radius-pill: 999px;
+
+    /* --- Motion ---------------------------------------------------------- */
+    --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --dur-fast: 130ms;
+    --dur: 220ms;
+    --dur-slow: 380ms;
+
+    --z-nav: 100;
+    --z-overlay: 500;
+
+    /* --- Colour ----------------------------------------------------------
+       light = snowfield: cool paper, never warm cream.
+       dark  = graphite:  grey, deliberately well clear of black.
+       ------------------------------------------------------------------- */
+    --bg: light-dark(#eef0f3, #1c1f23);
+    --bg-deep: light-dark(#e4e7ec, #16191c);
+    --surface: light-dark(#f8f9fb, #24282d);
+    --surface-raised: light-dark(#ffffff, #2c3137);
+    --surface-sunken: light-dark(#e7eaee, #191c20);
+
+    --text: light-dark(#14171a, #e9ebee);
+    --text-muted: light-dark(#525c68, #a8b1bb);
+    --text-faint: light-dark(#767f8b, #8a939e);
+
+    --line: light-dark(#d6dbe1, #343a42);
+    --line-strong: light-dark(#bcc4cd, #454c56);
+
+    /* Alpenglow. Fills stay saturated; ink is retuned per theme so that
+       link and focus colours clear AA on their own background. */
+    --accent: light-dark(#c0762a, #e0954a);
+    --accent-ink: light-dark(#8f560f, #eaa460);
+    --accent-wash: light-dark(#f2e6d6, #2f2620);
+    --on-accent: light-dark(#ffffff, #1c1f23);
+
+    --danger-ink: light-dark(#a3261d, #e8837a);
+    --danger-wash: light-dark(#f7e3e1, #2f201f);
+    --success-ink: light-dark(#1f6a45, #63c199);
+
+    --shadow-near: light-dark(rgb(20 23 26 / 6%), rgb(0 0 0 / 40%));
+    --shadow-far: light-dark(rgb(20 23 26 / 8%), rgb(0 0 0 / 45%));
+    --shadow-nav: 0 1px 2px var(--shadow-near), 0 8px 28px var(--shadow-far);
+    --shadow-raised: 0 1px 2px var(--shadow-near), 0 14px 36px var(--shadow-far);
+
+    --nav-tint: light-dark(rgb(255 255 255 / 78%), rgb(44 49 55 / 82%));
+    --backdrop: light-dark(rgb(228 231 236 / 88%), rgb(18 20 23 / 92%));
+  }
+
+  /* An explicit choice pins the scheme; every light-dark() follows. */
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+  }
+}

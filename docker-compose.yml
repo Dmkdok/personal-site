@@ -1,0 +1,91 @@
+# Project name is deliberately specific: a bare `portfolio` collides with other
+# Compose projects of the same name on this machine and would recreate their
+# containers.
+name: dmkdok-portfolio
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-portfolio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
+      POSTGRES_DB: ${POSTGRES_DB:-portfolio}
+    volumes:
+      # Named volume, not a bind mount: bind-mounting the Postgres data
+      # directory on Docker Desktop for Windows breaks on permissions.
+      # Durability comes from `backup`, which dumps into ./data/backups.
+      #
+      # Mount point is /var/lib/postgresql, NOT /var/lib/postgresql/data:
+      # since Postgres 18 the official image stores data in a
+      # major-version-specific subdirectory and refuses to start when the
+      # older path is mounted directly.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-portfolio} -d ${POSTGRES_DB:-portfolio}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    ports:
+      # Loopback only — for psql from the host during development.
+      - "127.0.0.1:5432:5432"
+
+  web:
+    build:
+      context: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: >-
+        postgresql+psycopg://${POSTGRES_USER:-portfolio}:${POSTGRES_PASSWORD:-portfolio}@db:5432/${POSTGRES_DB:-portfolio}
+      MEDIA_ROOT: /data/media
+    volumes:
+      # Photographs live on the host disk. `docker compose down -v` cannot
+      # touch them.
+      - ./data/media:/data/media
+      # Development convenience: edit templates/CSS/Python and reload.
+      - ./app:/app/app:ro
+      - ./migrations:/app/migrations:ro
+    ports:
+      - "8000:8000"
+    command:
+      ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz', timeout=3).status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  # Test runner. Not started by `up`; run it with:
+  #   docker compose run --rm --build tests
+  # Lives here rather than on the host because the Windows host hangs inside
+  # Starlette's TestClient, and this is the environment the VPS runs anyway.
+  tests:
+    profiles: ["test"]
+    build:
+      context: .
+      args:
+        INSTALL_DEV: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: >-
+        postgresql+psycopg://${POSTGRES_USER:-portfolio}:${POSTGRES_PASSWORD:-portfolio}@db:5432/${POSTGRES_DB:-portfolio}
+      MEDIA_ROOT: /data/test-media
+    volumes:
+      - ./app:/app/app:ro
+      - ./migrations:/app/migrations:ro
+      - ./tests:/app/tests:ro
+      - ./pyproject.toml:/app/pyproject.toml:ro
+    command: ["python", "-m", "pytest", "-q"]
+
+volumes:
+  pgdata:

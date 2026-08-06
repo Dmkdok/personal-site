@@ -1,0 +1,65 @@
+{# One album on the index. `album` comes from the enclosing loop. #}
+{% set cover = album.cover_photo %}
+<article class="card album-card" id="album-{{ album.id }}" data-sort-id="{{ album.id }}">
+  <a class="card__media{% if not (cover and cover.thumb_path) %} card__media--empty{% endif %}"
+     href="/photo/{{ album.slug }}" tabindex="-1" aria-hidden="true">
+    {% if cover and cover.thumb_path %}
+      <img
+        src="{{ media_url(cover.thumb_path) }}"
+        srcset="{{ srcset(cover) }}"
+        sizes="(max-width: 700px) 92vw, 20rem"
+        width="{{ cover.width }}"
+        height="{{ cover.height }}"
+        alt=""
+        loading="lazy"
+        decoding="async"
+      />
+    {% else %}
+      {{ t("photo.no_cover") }}
+    {% endif %}
+  </a>
+
+  <div class="album-card__body">
+    <h2 class="card__title">
+      <a class="album-card__link" href="/photo/{{ album.slug }}">{{ album.title }}</a>
+      {% if is_admin and not album.is_published %}
+        <span class="photo-badge">{{ t("photo.draft") }}</span>
+      {% endif %}
+    </h2>
+    {% if album.caption %}
+      <p class="card__note">{{ album.caption }}</p>
+    {% endif %}
+  </div>
+
+  {% if is_admin %}
+    <div class="album-card__admin" role="group" aria-label="{{ t('photo.album_position_label') }}">
+      <span class="photo-handle" data-drag-handle aria-hidden="true">
+        <svg viewBox="0 0 16 16" fill="currentColor" focusable="false">
+          <circle cx="6" cy="3" r="1.3" /><circle cx="10" cy="3" r="1.3" />
+          <circle cx="6" cy="8" r="1.3" /><circle cx="10" cy="8" r="1.3" />
+          <circle cx="6" cy="13" r="1.3" /><circle cx="10" cy="13" r="1.3" />
+        </svg>
+      </span>
+
+      <button class="button button--quiet photo-icon-button" type="button"
+              hx-post="/photo/admin/albums/{{ album.id }}/move"
+              hx-vals='{"direction": "up", "view": "index"}'
+              hx-target="#album-board"
+              hx-swap="outerHTML"
+              {% if loop.first %}disabled{% endif %}>
+        <span aria-hidden="true">↑</span>
+        <span class="visually-hidden">{{ t("photo.move_up") }}</span>
+      </button>
+
+      <button class="button button--quiet photo-icon-button" type="button"
+              hx-post="/photo/admin/albums/{{ album.id }}/move"
+              hx-vals='{"direction": "down", "view": "index"}'
+              hx-target="#album-board"
+              hx-swap="outerHTML"
+              {% if loop.last %}disabled{% endif %}>
+        <span aria-hidden="true">↓</span>
+        <span class="visually-hidden">{{ t("photo.move_down") }}</span>
+      </button>
+    </div>
+  {% endif %}
+</article>

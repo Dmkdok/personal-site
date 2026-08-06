@@ -1,0 +1,37 @@
+{# The whole editable surface. Every mutation returns this element, so the
+   order and the first/last state of the move buttons can never drift. #}
+<div id="project-board">
+  {% if is_admin and not form %}
+    <div class="board-actions">
+      <button
+        class="button button--primary"
+        type="button"
+        hx-get="/dev/admin/new"
+        hx-target="#project-board"
+        hx-swap="outerHTML"
+      >{{ t("dev.add") }}</button>
+      {% if projects|length > 1 %}
+        <p class="board-actions__hint">{{ t("dev.drag_hint") }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if form and form.dom_id == "project-form" %}
+    {% include "dev/_project_form.html" %}
+  {% endif %}
+
+  {% if projects %}
+    <ul class="project-list" id="project-list" role="list">
+      {% for project in projects %}
+        {# `loop` is not visible inside an include, so the position is passed on. #}
+        {% with is_first = loop.first, is_last = loop.last %}
+          {% include "dev/_project_card.html" %}
+        {% endwith %}
+      {% endfor %}
+    </ul>
+  {% elif not form %}
+    {% with title = t("dev.empty_title"), note = t("dev.empty_note") %}
+      {% include "partials/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
+</div>

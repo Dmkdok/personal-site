@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Вход — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}Вход для администратора сайта.{% endblock %}
+
+{% block head_extra %}
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="{{ static_url('css/admin.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="container container--prose">
+    <div class="login">
+      <p class="label">Служебный вход</p>
+      <h1 class="login__title">Вход</h1>
+
+      {% if error %}
+        <p class="login__error" role="alert">{{ error }}</p>
+      {% endif %}
+
+      <form class="login__form" method="post" action="/login">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <input type="hidden" name="next" value="{{ next }}" />
+
+        <div class="field">
+          <label class="field__label" for="username">Логин</label>
+          <input
+            class="field__input"
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="username"
+            value="{{ username|default('', true) }}"
+            required
+            autofocus
+          />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="password">Пароль</label>
+          <input
+            class="field__input"
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        <button class="button button--primary" type="submit">Войти</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,26 @@
+# Caddy obtains and renews the TLS certificate on its own; nothing to configure
+# beyond SITE_DOMAIN in .env and an A record pointing at this server.
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# Photographs are served under content-addressed names, so they can be
+	# cached hard. Everything else is dynamic.
+	@media path /media/*
+	header @media Cache-Control "public, max-age=31536000, immutable"
+
+	@static path /static/*
+	header @static Cache-Control "public, max-age=604800"
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+
+	# Matches MAX_UPLOAD_MB with headroom for the multipart envelope.
+	request_body {
+		max_size 30MB
+	}
+
+	reverse_proxy web:8000
+}

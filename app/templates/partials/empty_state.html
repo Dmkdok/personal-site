@@ -1,0 +1,10 @@
+{# Shared empty state. For the admin it is an invitation, for a visitor a fact. #}
+<div class="empty">
+  <p class="empty__title">{{ title }}</p>
+  <p class="empty__note">{{ note }}</p>
+  {% if action_label and is_admin %}
+    <button class="button button--primary" type="button" {{ action_attrs|default('', true)|safe }}>
+      {{ action_label }}
+    </button>
+  {% endif %}
+</div>

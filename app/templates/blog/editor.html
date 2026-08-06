@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} — {{ t("blog.editor_title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ t("blog.editor_title") }}{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/blog.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('css/prose.css') }}" />
+  <meta name="robots" content="noindex, nofollow" />
+{% endblock %}
+
+{% block content %}
+  <div
+    class="editor"
+    data-msg-uploading="{{ t('blog.image_uploading') }}"
+    data-msg-done="{{ t('blog.image_done') }}"
+    data-msg-failed="{{ t('blog.image_failed') }}"
+  >
+    <header class="editor__head">
+      <p class="label"><a href="/blog">{{ t("blog.editor_back") }}</a></p>
+      <h1 class="editor__heading">{{ t("blog.editor_title") }}</h1>
+    </header>
+
+    <div class="editor__layout">
+      {# Autosave: any keystroke, 2.5 s after the typing stops. The reply is the
+         save-state text only, so nothing under the cursor is ever swapped. #}
+      <form
+        class="editor__main"
+        id="post-form"
+        hx-post="/blog/admin/posts/{{ post.id }}"
+        hx-trigger="submit, input delay:2500ms"
+        hx-target="#save-state"
+        hx-swap="innerHTML"
+      >
+        <div class="field">
+          <label class="field__label" for="post-title">{{ t("blog.title_label") }}</label>
+          <input
+            class="field__input editor__title"
+            id="post-title"
+            name="title"
+            type="text"
+            maxlength="250"
+            value="{{ post.title }}"
+            placeholder="{{ t('blog.title_placeholder') }}"
+          />
+        </div>
+
+        <div class="editor__panes">
+          <section class="editor__pane" aria-labelledby="pane-source">
+            <h2 class="label" id="pane-source">{{ t("blog.pane_source") }}</h2>
+
+            {# The glyph on each button is the Markdown it inserts; the button's
+               accessible name is the Russian word for it. #}
+            <div
+              class="md-toolbar"
+              role="toolbar"
+              aria-label="{{ t('blog.toolbar_label') }}"
+              aria-controls="post-body"
+              data-ph-text="{{ t('blog.md.ph_text') }}"
+              data-ph-heading="{{ t('blog.md.ph_heading') }}"
+              data-ph-quote="{{ t('blog.md.ph_quote') }}"
+              data-ph-item="{{ t('blog.md.ph_item') }}"
+              data-ph-code="{{ t('blog.md.ph_code') }}"
+              data-ph-url="{{ t('blog.md.ph_url') }}"
+            >
+              <button class="md-toolbar__button" type="button" data-md="bold" title="{{ t('blog.md.bold') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">**</span>
+                <span class="visually-hidden">{{ t("blog.md.bold") }}</span>
+              </button>
+              <button class="md-toolbar__button" type="button" data-md="italic" title="{{ t('blog.md.italic') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">_</span>
+                <span class="visually-hidden">{{ t("blog.md.italic") }}</span>
+              </button>
+              <button class="md-toolbar__button" type="button" data-md="heading" title="{{ t('blog.md.heading') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">##</span>
+                <span class="visually-hidden">{{ t("blog.md.heading") }}</span>
+              </button>
+              <button class="md-toolbar__button" type="button" data-md="link" title="{{ t('blog.md.link') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">[]</span>
+                <span class="visually-hidden">{{ t("blog.md.link") }}</span>
+              </button>
+              <button class="md-toolbar__button" type="button" data-md="quote" title="{{ t('blog.md.quote') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">&gt;</span>
+                <span class="visually-hidden">{{ t("blog.md.quote") }}</span>
+              </button>
+              <button class="md-toolbar__button" type="button" data-md="list" title="{{ t('blog.md.list') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">-</span>
+                <span class="visually-hidden">{{ t("blog.md.list") }}</span>
+              </button>
+              <button class="md-toolbar__button" type="button" data-md="code" title="{{ t('blog.md.code') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">`</span>
+                <span class="visually-hidden">{{ t("blog.md.code") }}</span>
+              </button>
+              <button class="md-toolbar__button" type="button" data-md="image" title="{{ t('blog.md.image') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">![]</span>
+                <span class="visually-hidden">{{ t("blog.md.image") }}</span>
+              </button>
+            </div>
+
+            <label class="visually-hidden" for="post-body">{{ t("blog.body_label") }}</label>
+            {# Preview goes through /blog/admin/preview — the same render call the
+               published page was written with, so they cannot drift (F28). #}
+            <textarea
+              class="editor__textarea"
+              id="post-body"
+              name="body_md"
+              rows="22"
+              spellcheck="true"
+              placeholder="{{ t('blog.body_placeholder') }}"
+              aria-describedby="editor-drop-hint"
+              hx-post="/blog/admin/preview"
+              hx-trigger="input changed delay:400ms"
+              hx-target="#preview-body"
+              hx-swap="innerHTML"
+            >{{ post.body_md }}</textarea>
+            <p class="field__hint" id="editor-drop-hint">{{ t("blog.drop_hint") }}</p>
+          </section>
+
+          <section class="editor__pane editor__preview" aria-labelledby="pane-preview">
+            <h2 class="label" id="pane-preview">{{ t("blog.pane_preview") }}</h2>
+            <div class="prose" id="preview-body">{{ post.body_html|safe }}</div>
+            <p class="editor__placeholder">{{ t("blog.preview_empty") }}</p>
+          </section>
+        </div>
+
+        <details class="editor__details">
+          <summary class="editor__summary">{{ t("blog.settings") }}</summary>
+
+          <div class="field">
+            <label class="field__label" for="post-excerpt">{{ t("blog.excerpt_label") }}</label>
+            <textarea
+              class="field__input"
+              id="post-excerpt"
+              name="excerpt"
+              rows="2"
+              aria-describedby="post-excerpt-hint"
+            >{{ post.excerpt }}</textarea>
+            <p class="field__hint" id="post-excerpt-hint">{{ t("blog.excerpt_hint") }}</p>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="post-slug">{{ t("blog.slug_label") }}</label>
+            <input
+              class="field__input"
+              id="post-slug"
+              name="slug"
+              type="text"
+              value="{{ post.slug }}"
+              aria-describedby="post-slug-hint"
+            />
+            <p class="field__hint" id="post-slug-hint">{{ t("blog.slug_hint") }}</p>
+          </div>
+        </details>
+      </form>
+
+      <div class="editor__side">
+        {% include "blog/_editor_meta.html" %}
+      </div>
+    </div>
+
+    {# Outside #post-form: an unnamed file input inside it would be serialised
+       with every autosave. editor.js opens it from the toolbar. #}
+    <input
+      class="visually-hidden"
+      id="blog-image-input"
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      multiple
+      tabindex="-1"
+      aria-hidden="true"
+    />
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ static_url('js/editor.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,10 @@
+{# Rendered only for a signed-in admin. Anonymous HTML contains none of this. #}
+<div class="admin-bar" role="region" aria-label="Режим редактирования">
+  <span class="admin-bar__dot" aria-hidden="true"></span>
+  <span class="admin-bar__text">Режим редактирования</span>
+  <span class="admin-bar__spacer"></span>
+  <form method="post" action="/logout">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+    <button class="button button--quiet" type="submit">Выйти</button>
+  </form>
+</div>

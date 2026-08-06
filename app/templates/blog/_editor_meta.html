@@ -1,0 +1,114 @@
+{# Publication panel: state, save feedback, publish controls, cover, delete.
+   Returned whole by publish / unpublish / cover upload / cover removal, so it
+   always mirrors the row that was just written.
+
+   It sits outside #post-form on purpose — a file input inside the article form
+   would be re-serialised on every autosave — so the buttons that need the
+   typed text pull it in with hx-include. #}
+{% set cover = cover_sources(post.cover_path) %}
+{% set published = post.status.value == "published" %}
+<aside class="editor-meta" id="editor-meta" aria-labelledby="editor-meta-heading">
+  <h2 class="label" id="editor-meta-heading">{{ t("blog.panel_title") }}</h2>
+
+  <p class="post-flag {{ 'post-flag--live' if published else '' }}">
+    {{ t("blog.status_published") if published else t("blog.status_draft") }}
+  </p>
+
+  <div
+    class="editor-status"
+    id="save-state"
+    role="status"
+    aria-live="polite"
+    data-dirty="{{ t('blog.not_saved') }}"
+    data-saving="{{ t('blog.saving') }}"
+  >
+    {% include "blog/_save_state.html" %}
+  </div>
+
+  <div class="editor-meta__actions">
+    <button
+      class="button"
+      type="button"
+      data-role="save"
+      hx-post="/blog/admin/posts/{{ post.id }}"
+      hx-include="#post-form"
+      hx-target="#save-state"
+      hx-swap="innerHTML"
+    >{{ t("blog.save") }}</button>
+
+    {% if published %}
+      <button
+        class="button button--quiet"
+        type="button"
+        hx-post="/blog/admin/posts/{{ post.id }}/unpublish"
+        hx-include="#post-form"
+        hx-target="#editor-meta"
+        hx-swap="outerHTML"
+        {% if focus_action %}autofocus{% endif %}
+      >{{ t("blog.unpublish") }}</button>
+    {% else %}
+      <button
+        class="button button--primary"
+        type="button"
+        hx-post="/blog/admin/posts/{{ post.id }}/publish"
+        hx-include="#post-form"
+        hx-target="#editor-meta"
+        hx-swap="outerHTML"
+        {% if focus_action %}autofocus{% endif %}
+      >{{ t("blog.publish") }}</button>
+    {% endif %}
+  </div>
+
+  <section class="editor-meta__block" aria-labelledby="cover-heading">
+    <h3 class="label" id="cover-heading">{{ t("blog.cover_label") }}</h3>
+
+    {% if cover %}
+      <img class="editor-meta__cover" src="{{ cover.src }}" alt="{{ t('blog.cover_alt') }}" />
+    {% else %}
+      <p class="field__hint">{{ t("blog.cover_none") }}</p>
+    {% endif %}
+
+    {# Its own form: the file has to go up as multipart, and it must never ride
+       along with an article autosave. #}
+    <form
+      class="field"
+      hx-post="/blog/admin/posts/{{ post.id }}/cover"
+      hx-encoding="multipart/form-data"
+      hx-target="#editor-meta"
+      hx-swap="outerHTML"
+      hx-trigger="change"
+    >
+      <label class="field__label" for="cover-file">
+        {{ t("blog.cover_replace") if cover else t("blog.cover_add") }}
+      </label>
+      <input
+        class="field__input"
+        id="cover-file"
+        name="file"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        aria-describedby="cover-hint"
+      />
+      <p class="field__hint" id="cover-hint">{{ t("blog.cover_hint") }}</p>
+    </form>
+
+    {% if cover %}
+      <button
+        class="button button--quiet"
+        type="button"
+        hx-post="/blog/admin/posts/{{ post.id }}/cover/remove"
+        hx-target="#editor-meta"
+        hx-swap="outerHTML"
+      >{{ t("blog.cover_remove") }}</button>
+    {% endif %}
+  </section>
+
+  <div class="editor-meta__block">
+    <button
+      class="button button--quiet button--danger"
+      type="button"
+      hx-post="/blog/admin/posts/{{ post.id }}/delete"
+      hx-confirm="{{ t('blog.delete_confirm') }}"
+    >{{ t("blog.delete") }}</button>
+  </div>
+</aside>

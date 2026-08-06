@@ -1,0 +1,97 @@
+{# One project. `project` comes from the enclosing loop. #}
+<li class="project" id="project-{{ project.id }}" data-project-id="{{ project.id }}">
+  {% set detail_url = "/dev/" ~ project.slug if project.body_html else none %}
+  {% set target_url = detail_url or project.repo_url %}
+
+  {% if project.cover_path %}
+    <a class="project__media" href="{{ target_url or '#' }}"
+       {% if not detail_url and project.repo_url %}target="_blank" rel="noopener noreferrer"{% endif %}
+       tabindex="-1" aria-hidden="true">
+      <img src="{{ media_url(project.cover_path) }}" alt="" loading="lazy" decoding="async" />
+    </a>
+  {% endif %}
+
+  <div class="project__body">
+    <h2 class="project__title">
+      {% if target_url %}
+        <a href="{{ target_url }}"
+           {% if not detail_url %}target="_blank" rel="noopener noreferrer"{% endif %}>{{ project.title }}</a>
+      {% else %}
+        {{ project.title }}
+      {% endif %}
+      {% if is_admin and not project.is_published %}
+        <span class="badge">{{ t("dev.draft_badge") }}</span>
+      {% endif %}
+    </h2>
+
+    {% if project.summary %}
+      <p class="project__summary">{{ project.summary }}</p>
+    {% endif %}
+
+    {% if project.tech_stack %}
+      <ul class="stack" role="list">
+        {% for item in project.tech_stack %}
+          <li class="stack__item">{{ item }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <p class="project__links">
+      {% if project.repo_url %}
+        <a class="link-chip" href="{{ project.repo_url }}" target="_blank" rel="noopener noreferrer">
+          {{ t("dev.open_repo") }}
+        </a>
+      {% endif %}
+      {% if project.demo_url %}
+        <a class="link-chip" href="{{ project.demo_url }}" target="_blank" rel="noopener noreferrer">
+          {{ t("dev.open_demo") }}
+        </a>
+      {% endif %}
+      {% if detail_url %}
+        <a class="link-chip" href="{{ detail_url }}">{{ t("dev.read_more") }}</a>
+      {% endif %}
+    </p>
+
+    {% if is_admin %}
+      <div class="project__admin">
+        <button class="button button--quiet" type="button"
+                hx-get="/dev/admin/projects/{{ project.id }}/edit"
+                hx-target="#project-{{ project.id }}"
+                hx-swap="outerHTML">{{ t("dev.edit") }}</button>
+
+        <button class="button button--quiet" type="button"
+                hx-post="/dev/admin/projects/{{ project.id }}/publish"
+                hx-target="#project-board"
+                hx-swap="outerHTML">
+          {{ t("dev.unpublish") if project.is_published else t("dev.publish") }}
+        </button>
+
+        <button class="button button--quiet" type="button"
+                hx-post="/dev/admin/projects/{{ project.id }}/move"
+                hx-vals='{"direction": "up"}'
+                hx-target="#project-board"
+                hx-swap="outerHTML"
+                {% if is_first %}disabled{% endif %}>
+          <span aria-hidden="true">↑</span>
+          <span class="visually-hidden">{{ t("dev.move_up") }}</span>
+        </button>
+
+        <button class="button button--quiet" type="button"
+                hx-post="/dev/admin/projects/{{ project.id }}/move"
+                hx-vals='{"direction": "down"}'
+                hx-target="#project-board"
+                hx-swap="outerHTML"
+                {% if is_last %}disabled{% endif %}>
+          <span aria-hidden="true">↓</span>
+          <span class="visually-hidden">{{ t("dev.move_down") }}</span>
+        </button>
+
+        <button class="button button--quiet button--danger" type="button"
+                hx-delete="/dev/admin/projects/{{ project.id }}"
+                hx-confirm="{{ t('dev.confirm_delete') }}"
+                hx-target="#project-board"
+                hx-swap="outerHTML">{{ t("dev.delete") }}</button>
+      </div>
+    {% endif %}
+  </div>
+</li>

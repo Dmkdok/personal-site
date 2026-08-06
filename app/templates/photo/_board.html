@@ -1,0 +1,42 @@
+{# The album index's editable surface. Every mutation returns this element, so
+   the order and the first/last state of the move buttons cannot drift. #}
+<div id="album-board">
+  {% if is_admin and not form %}
+    <div class="photo-actions">
+      <button
+        class="button button--primary"
+        type="button"
+        hx-get="/photo/admin/new"
+        hx-target="#album-board"
+        hx-swap="outerHTML"
+      >{{ t("photo.new_album") }}</button>
+      {% if albums|length > 1 %}
+        <p class="photo-actions__hint">{{ t("photo.albums_reorder_hint") }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if form %}
+    {% include "photo/_album_form.html" %}
+  {% endif %}
+
+  {% if albums %}
+    <div
+      class="card-grid album-list"
+      id="album-list"
+      data-sortable="album"
+      data-order-url="/photo/admin/order"
+    >
+      {% for album in albums %}
+        {% include "photo/_album_card.html" %}
+      {% endfor %}
+    </div>
+  {% elif not form %}
+    {% with title = t("photo.empty_title"),
+            note = t("photo.empty_admin_note") if is_admin else t("photo.empty_note"),
+            action_label = t("photo.new_album") if is_admin else none,
+            action_attrs = 'hx-get="/photo/admin/new" hx-target="#album-board" hx-swap="outerHTML"' %}
+      {% include "partials/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
+</div>

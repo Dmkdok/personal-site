@@ -1,0 +1,45 @@
+{# The album's title block plus the owner's controls. Every album mutation
+   returns this element, so the published state and the title stay in step. #}
+<header class="album-head" id="album-head">
+  {% if form %}
+    {% include "photo/_album_form.html" %}
+  {% else %}
+    <h1 class="page-header__title album-head__title">
+      {{ album.title }}
+      {% if is_admin and not album.is_published %}
+        <span class="photo-badge">{{ t("photo.draft") }}</span>
+      {% endif %}
+    </h1>
+
+    {% if album.caption %}
+      <p class="page-header__lede">{{ album.caption }}</p>
+    {% endif %}
+
+    {% if is_admin %}
+      {% if not album.is_published %}
+        <p class="album-head__note">{{ t("photo.draft_note") }}</p>
+      {% endif %}
+
+      <div class="photo-actions" role="group" aria-label="{{ t('photo.album_actions_label') }}">
+        <button class="button button--quiet" type="button"
+                hx-get="/photo/admin/albums/{{ album.id }}/edit"
+                hx-target="#album-head"
+                hx-swap="outerHTML">{{ t("photo.edit_album") }}</button>
+
+        <button class="button {{ 'button--quiet' if album.is_published else 'button--primary' }}"
+                type="button"
+                hx-post="/photo/admin/albums/{{ album.id }}/publish"
+                hx-target="#album-head"
+                hx-swap="outerHTML">
+          {{ t("photo.unpublish") if album.is_published else t("photo.publish") }}
+        </button>
+
+        <button class="button button--quiet button--danger" type="button"
+                hx-delete="/photo/admin/albums/{{ album.id }}"
+                hx-confirm="{{ t('photo.delete_album_confirm') }}"
+                hx-target="#album-head"
+                hx-swap="none">{{ t("photo.delete_album") }}</button>
+      </div>
+    {% endif %}
+  {% endif %}
+</header>

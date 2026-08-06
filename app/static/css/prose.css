@@ -1,0 +1,148 @@
+/* Long-form body copy: blog articles and project descriptions.
+   Shared so both read identically. Wide content scrolls inside its own
+   container — the page itself must never scroll sideways. */
+
+@layer components {
+  .prose {
+    max-inline-size: var(--measure);
+    font-size: var(--step-1);
+    line-height: 1.7;
+    color: var(--text);
+  }
+
+  .prose > * + * {
+    margin-block-start: var(--space-m);
+  }
+
+  .prose h2,
+  .prose h3,
+  .prose h4 {
+    margin-block-start: var(--space-xl);
+    letter-spacing: var(--tracking-display);
+    text-wrap: balance;
+  }
+
+  .prose h2 {
+    font-size: var(--step-3);
+  }
+  .prose h3 {
+    font-size: var(--step-2);
+  }
+  .prose h4 {
+    font-size: var(--step-1);
+    font-weight: 600;
+  }
+
+  .prose h2 + *,
+  .prose h3 + *,
+  .prose h4 + * {
+    margin-block-start: var(--space-s);
+  }
+
+  .prose a {
+    color: var(--accent-ink);
+    text-decoration-color: color-mix(in srgb, var(--accent-ink) 40%, transparent);
+  }
+
+  .prose a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .prose strong {
+    font-weight: 600;
+  }
+
+  .prose ul,
+  .prose ol {
+    padding-inline-start: 1.4em;
+  }
+
+  .prose li + li {
+    margin-block-start: var(--space-2xs);
+  }
+
+  .prose li::marker {
+    color: var(--text-faint);
+  }
+
+  .prose blockquote {
+    padding-inline-start: var(--space-m);
+    border-inline-start: 2px solid var(--accent);
+    color: var(--text-muted);
+    font-style: normal;
+  }
+
+  .prose code {
+    padding: 0.12em 0.36em;
+    border-radius: var(--radius-s);
+    background-color: var(--surface-sunken);
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+  }
+
+  /* Code blocks and tables get their own scroller so the page never does. */
+  .prose pre {
+    max-inline-size: 100%;
+    overflow-x: auto;
+    padding: var(--space-s) var(--space-m);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background-color: var(--surface-sunken);
+    font-size: var(--step--1);
+    line-height: 1.55;
+  }
+
+  .prose pre code {
+    padding: 0;
+    background: none;
+    font-size: inherit;
+  }
+
+  .prose img {
+    inline-size: 100%;
+    block-size: auto;
+    border-radius: var(--radius-m);
+  }
+
+  .prose figure {
+    margin-inline: 0;
+  }
+
+  .prose figcaption {
+    margin-block-start: var(--space-2xs);
+    color: var(--text-muted);
+    font-size: var(--step--1);
+  }
+
+  .prose hr {
+    margin-block: var(--space-xl);
+    border-block-start: 1px solid var(--line);
+  }
+
+  /* The table itself is wrapped by the browser inside this scroller. */
+  .prose table {
+    display: block;
+    max-inline-size: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    font-size: var(--step--1);
+  }
+
+  .prose th,
+  .prose td {
+    padding: var(--space-2xs) var(--space-s);
+    border-block-end: 1px solid var(--line);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .prose th {
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .prose > :first-child {
+    margin-block-start: 0;
+  }
+}

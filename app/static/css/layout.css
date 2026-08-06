@@ -1,0 +1,105 @@
+/* Page shell: skip link, container widths, vertical rhythm, footer. */
+
+@layer layout {
+  .skip-link {
+    position: absolute;
+    inset-block-start: var(--space-2xs);
+    inset-inline-start: var(--space-2xs);
+    z-index: calc(var(--z-nav) + 10);
+    padding: var(--space-2xs) var(--space-s);
+    background-color: var(--surface-raised);
+    color: var(--text);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    transform: translateY(-160%);
+    transition: transform var(--dur) var(--ease);
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+  }
+
+  .page {
+    display: flex;
+    flex-direction: column;
+    min-block-size: 100svh;
+  }
+
+  /* Clears the floating navigation capsule. */
+  .page__main {
+    flex: 1;
+    padding-block-start: clamp(6rem, 5rem + 4vw, 8.5rem);
+    padding-block-end: var(--space-3xl);
+  }
+
+  .container {
+    inline-size: min(100% - (var(--gutter) * 2), var(--page-max));
+    margin-inline: auto;
+  }
+
+  .container--prose {
+    inline-size: min(100% - (var(--gutter) * 2), var(--prose-max));
+    margin-inline: auto;
+  }
+
+  .stack > * + * {
+    margin-block-start: var(--flow, var(--space-s));
+  }
+
+  .section {
+    margin-block-start: var(--space-2xl);
+  }
+
+  .section__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-s);
+    margin-block-end: var(--space-l);
+    padding-block-end: var(--space-s);
+    border-block-end: 1px solid var(--line);
+  }
+
+  .page-header {
+    margin-block-end: var(--space-xl);
+  }
+
+  .page-header__title {
+    font-size: var(--step-5);
+  }
+
+  .page-header__lede {
+    margin-block-start: var(--space-s);
+    max-inline-size: var(--measure);
+    color: var(--text-muted);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  .site-footer {
+    margin-block-start: auto;
+    padding-block: var(--space-l);
+    border-block-start: 1px solid var(--line);
+    color: var(--text-muted);
+    font-size: var(--step--1);
+  }
+
+  .site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-s);
+  }
+
+  .site-footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-m);
+    list-style: none;
+    padding: 0;
+  }
+}

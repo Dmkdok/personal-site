@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ album.title }} — {{ t("photo.title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}
+  {% if og_image %}
+    <meta property="og:image" content="{{ site_url }}{{ og_image }}" />
+  {% endif %}
+{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/photo.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <p class="album-back">
+      <a class="link-chip" href="/photo">
+        <span aria-hidden="true">←</span> {{ t("photo.back_to_albums") }}
+      </a>
+    </p>
+
+    {% include "photo/_album_head.html" %}
+
+    {% if is_admin %}
+      {% include "photo/_uploader.html" %}
+    {% endif %}
+
+    {% include "photo/_grid.html" %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ static_url('js/lightbox.js') }}" defer></script>
+  {% if is_admin %}
+    <script src="{{ static_url('js/vendor/sortable.min.js') }}" defer></script>
+    <script src="{{ static_url('js/photo-sortable.js') }}" defer></script>
+    <script src="{{ static_url('js/uploader.js') }}" defer></script>
+  {% endif %}
+{% endblock %}

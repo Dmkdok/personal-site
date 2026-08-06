@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.title }} — {{ t("dev.title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}
+  {% if project.cover_path %}
+    <meta property="og:image" content="{{ site_url }}{{ media_url(project.cover_path) }}" />
+  {% endif %}
+{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/dev.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('css/prose.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <article class="container container--prose">
+    <header class="page-header">
+      <p class="label"><a href="/dev">{{ t("dev.title") }}</a></p>
+      <h1 class="page-header__title">{{ project.title }}</h1>
+      {% if project.summary %}
+        <p class="page-header__lede">{{ project.summary }}</p>
+      {% endif %}
+
+      {% if project.tech_stack %}
+        <ul class="stack" role="list">
+          {% for item in project.tech_stack %}
+            <li class="stack__item">{{ item }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <p class="project__links">
+        {% if project.repo_url %}
+          <a class="link-chip" href="{{ project.repo_url }}" target="_blank" rel="noopener noreferrer">
+            {{ t("dev.open_repo") }}
+          </a>
+        {% endif %}
+        {% if project.demo_url %}
+          <a class="link-chip" href="{{ project.demo_url }}" target="_blank" rel="noopener noreferrer">
+            {{ t("dev.open_demo") }}
+          </a>
+        {% endif %}
+      </p>
+    </header>
+
+    {% if project.cover_path %}
+      <img class="detail__cover" src="{{ media_url(project.cover_path) }}"
+           alt="{{ t('dev.cover_alt', title=project.title) }}" loading="lazy" decoding="async" />
+    {% endif %}
+
+    <div class="prose">{{ project.body_html|safe }}</div>
+  </article>
+{% endblock %}

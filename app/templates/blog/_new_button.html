@@ -1,0 +1,11 @@
+{# The resting state of the «Новая статья» affordance.
+   Swaps places with blog/_new_form.html, so both carry the same id. #}
+<div class="blog-new" id="blog-new">
+  <button
+    class="button button--primary"
+    type="button"
+    hx-get="/blog/admin/new"
+    hx-target="#blog-new"
+    hx-swap="outerHTML"
+  >{{ t("blog.new") }}</button>
+</div>

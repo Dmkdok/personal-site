@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} — {{ t("blog.title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ post.excerpt or t("blog.lede") }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}
+  {% set cover = cover_sources(post.cover_path) %}
+  {% if cover %}
+    <meta property="og:image" content="{{ site_url }}{{ cover.src }}" />
+  {% endif %}
+{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/blog.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('css/prose.css') }}" />
+  {% if post.status.value != "published" %}
+    <meta name="robots" content="noindex" />
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% set cover = cover_sources(post.cover_path) %}
+  <article class="container container--prose article">
+    <header class="article__head">
+      <p class="label"><a href="/blog">{{ t("blog.all_posts") }}</a></p>
+
+      {% if post.status.value != "published" %}
+        <p class="draft-banner">{{ t("blog.draft_banner") }}</p>
+      {% endif %}
+
+      <h1 class="article__title">{{ post.title }}</h1>
+
+      {% if post.published_at %}
+        <p class="article__date">
+          <time datetime="{{ iso_date(post.published_at) }}">{{ ru_date(post.published_at) }}</time>
+        </p>
+      {% endif %}
+    </header>
+
+    {% if cover %}
+      <img
+        class="article__cover"
+        src="{{ cover.src }}"
+        {% if cover.srcset %}srcset="{{ cover.srcset }}"{% endif %}
+        sizes="(min-width: 46rem) 42rem, 92vw"
+        alt="{{ t('blog.cover_alt') }}"
+        decoding="async"
+      />
+    {% endif %}
+
+    {# Sanitised at write time by app.services.markdown — the same call the
+       editor's preview goes through, so the two cannot diverge (F31). #}
+    <div class="prose">{{ post.body_html|safe }}</div>
+
+    {% if is_admin %}
+      <div class="article__admin">
+        <a class="button" href="/blog/{{ post.slug }}/edit">{{ t("blog.edit") }}</a>
+        <button
+          class="button button--quiet button--danger"
+          type="button"
+          hx-post="/blog/admin/posts/{{ post.id }}/delete"
+          hx-confirm="{{ t('blog.delete_confirm') }}"
+        >{{ t("blog.delete") }}</button>
+      </div>
+    {% endif %}
+  </article>
+{% endblock %}

@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Host-mounted data: photographs, backups. Never in git.
+data/
+
+# Playwright
+test-results/
+playwright-report/
+.playwright/
+
+# Editors / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp

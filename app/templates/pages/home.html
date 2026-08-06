@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("home.title") }}{% endblock %}
+{% block meta_description %}{{ t("home.meta_description") }}{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/home.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <section class="hero">
+      <p class="label hero__eyebrow">Санкт-Петербург · Python · горы</p>
+
+      <h1 class="hero__statement">
+        {% for line in hero_lines %}
+          <span class="hero__line">{{ line }}</span>
+        {% endfor %}
+      </h1>
+
+      <div class="hero__intro">
+        {% with key = intro_key, html = intro_html %}
+          {% include "partials/editable.html" %}
+        {% endwith %}
+      </div>
+
+      <div class="hero__contacts">
+        <p class="label">{{ t("home.contacts_title") }}</p>
+        <ul class="link-row" role="list">
+          <li>
+            <a class="link-chip" href="https://t.me/dmkdok_blog" target="_blank" rel="me noopener noreferrer">Telegram</a>
+          </li>
+          <li>
+            <a class="link-chip" href="https://github.com/Dmkdok" target="_blank" rel="me noopener noreferrer">GitHub</a>
+          </li>
+          <li>
+            <a class="link-chip" href="https://vk.ru/dmkdok" target="_blank" rel="me noopener noreferrer">VK</a>
+          </li>
+          <li>
+            <a class="link-chip" href="https://www.youtube.com/@dmkdok" target="_blank" rel="me noopener noreferrer">YouTube</a>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <nav class="entries section" aria-label="{{ t('nav.menu') }}">
+      {% set entries = [
+        ("/photo", t("nav.photo"), t("home.entries.photo_note")),
+        ("/dev", t("nav.dev"), t("home.entries.dev_note")),
+        ("/blog", t("nav.blog"), t("home.entries.blog_note")),
+      ] %}
+      {% for href, title, note in entries %}
+        <a class="entry" href="{{ href }}">
+          <span class="entry__body">
+            <span class="entry__title">{{ title }}</span>
+            <span class="entry__note">{{ note }}</span>
+          </span>
+          <svg class="entry__arrow" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14m-6-7 7 7-7 7" />
+          </svg>
+        </a>
+      {% endfor %}
+    </nav>
+  </div>
+{% endblock %}

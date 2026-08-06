@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t("photo.title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ t("photo.lede") }}{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/photo.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-header__title">{{ t("photo.title") }}</h1>
+      <p class="page-header__lede">{{ t("photo.lede") }}</p>
+    </header>
+
+    {% include "photo/_board.html" %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {% if is_admin %}
+    <script src="{{ static_url('js/vendor/sortable.min.js') }}" defer></script>
+    <script src="{{ static_url('js/photo-sortable.js') }}" defer></script>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,44 @@
+{# The photo grid. For the owner it doubles as the pipeline's status board: it
+   polls itself every 2s while anything is still pending, and the moment the
+   answer contains nothing in flight the `every 2s` trigger stops being
+   emitted, so the polling stops with it. #}
+<div
+  class="photo-grid-wrap"
+  id="photo-grid"
+  {% if is_admin %}
+    hx-get="/photo/admin/albums/{{ album.id }}/grid"
+    hx-swap="outerHTML"
+    hx-trigger="photos-added from:body{% if pending %}, every 2s{% endif %}"
+    data-order-url="/photo/admin/albums/{{ album.id }}/photo-order"
+  {% endif %}
+>
+  {% if photos %}
+    {% if is_admin and photos|length > 1 %}
+      <p class="photo-actions__hint">{{ t("photo.reorder_hint") }}</p>
+    {% endif %}
+
+    <ul
+      class="photo-grid"
+      id="photo-list"
+      role="list"
+      aria-label="{{ t('photo.grid_label') }}"
+      {% if is_admin %}data-sortable="photo"{% endif %}
+      data-lightbox-label="{{ t('photo.lightbox_label') }}"
+      data-lightbox-prev="{{ t('photo.lightbox_prev') }}"
+      data-lightbox-next="{{ t('photo.lightbox_next') }}"
+      data-lightbox-close="{{ t('photo.lightbox_close') }}"
+      data-lightbox-position="{{ t('photo.lightbox_position') }}"
+    >
+      {% for photo in photos %}
+        {% set is_first = loop.first %}
+        {% set is_last = loop.last %}
+        {% include "photo/_photo_tile.html" %}
+      {% endfor %}
+    </ul>
+  {% else %}
+    {% with title = t("photo.grid_empty_title"),
+            note = t("photo.grid_empty_admin_note") if is_admin else t("photo.grid_empty_note") %}
+      {% include "partials/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
+</div>

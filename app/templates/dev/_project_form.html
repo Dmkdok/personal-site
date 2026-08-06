@@ -1,0 +1,83 @@
+{# Create/edit form. Targets itself so a rejected save comes back with every
+   typed value intact; on success the server retargets to the whole board. #}
+<form
+  class="project-form"
+  id="{{ form.dom_id }}"
+  hx-post="{{ form.action }}"
+  hx-encoding="multipart/form-data"
+  hx-target="#{{ form.dom_id }}"
+  hx-swap="outerHTML"
+>
+  {# `form.values` would resolve to the dict's own `values()` method, not the
+     key — so the submitted values are always read with a subscript. #}
+  {% set values = form["values"] %}
+
+  <h2 class="project-form__heading">{{ form.heading }}</h2>
+
+  {% if form.error %}
+    <p class="project-form__error" role="alert">{{ form.error }}</p>
+  {% endif %}
+
+  <div class="field">
+    <label class="field__label" for="{{ form.dom_id }}-title">{{ t("dev.field_title") }}</label>
+    <input class="field__input" id="{{ form.dom_id }}-title" name="title" type="text"
+           value="{{ values.title }}" required autofocus />
+  </div>
+
+  <div class="field">
+    <label class="field__label" for="{{ form.dom_id }}-summary">{{ t("dev.field_summary") }}</label>
+    <textarea class="field__input" id="{{ form.dom_id }}-summary" name="summary" rows="2"
+              aria-describedby="{{ form.dom_id }}-summary-hint">{{ values.summary }}</textarea>
+    <p class="field__hint" id="{{ form.dom_id }}-summary-hint">{{ t("dev.field_summary_hint") }}</p>
+  </div>
+
+  <div class="field">
+    <label class="field__label" for="{{ form.dom_id }}-body">{{ t("dev.field_body") }}</label>
+    <textarea class="field__input field__input--area" id="{{ form.dom_id }}-body" name="body_md"
+              rows="6" aria-describedby="{{ form.dom_id }}-body-hint">{{ values.body_md }}</textarea>
+    <p class="field__hint" id="{{ form.dom_id }}-body-hint">{{ t("dev.field_body_hint") }}</p>
+  </div>
+
+  <div class="project-form__row">
+    <div class="field">
+      <label class="field__label" for="{{ form.dom_id }}-repo">{{ t("dev.field_repo") }}</label>
+      <input class="field__input" id="{{ form.dom_id }}-repo" name="repo_url" type="url"
+             inputmode="url" placeholder="https://github.com/…" value="{{ values.repo_url }}" />
+    </div>
+    <div class="field">
+      <label class="field__label" for="{{ form.dom_id }}-demo">{{ t("dev.field_demo") }}</label>
+      <input class="field__input" id="{{ form.dom_id }}-demo" name="demo_url" type="url"
+             inputmode="url" placeholder="https://…" value="{{ values.demo_url }}" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="field__label" for="{{ form.dom_id }}-stack">{{ t("dev.field_stack") }}</label>
+    <input class="field__input" id="{{ form.dom_id }}-stack" name="tech_stack" type="text"
+           value="{{ values.tech_stack }}" aria-describedby="{{ form.dom_id }}-stack-hint" />
+    <p class="field__hint" id="{{ form.dom_id }}-stack-hint">{{ t("dev.field_stack_hint") }}</p>
+  </div>
+
+  <div class="field">
+    <label class="field__label" for="{{ form.dom_id }}-cover">
+      {{ t("dev.field_cover_replace") if values.cover_path else t("dev.field_cover") }}
+    </label>
+    {% if values.cover_path %}
+      <img class="project-form__cover" src="{{ media_url(values.cover_path) }}" alt="" />
+      <label class="field__checkbox">
+        <input type="checkbox" name="remove_cover" value="1" />
+        {{ t("dev.field_cover_remove") }}
+      </label>
+    {% endif %}
+    <input class="field__input" id="{{ form.dom_id }}-cover" name="cover" type="file"
+           accept="image/jpeg,image/png,image/webp" />
+  </div>
+
+  <div class="project-form__actions">
+    <button class="button button--primary" type="submit">{{ form.submit }}</button>
+    <button class="button button--quiet" type="button"
+            hx-get="/dev/admin/board"
+            hx-target="#project-board"
+            hx-swap="outerHTML">{{ t("dev.cancel") }}</button>
+  </div>
+</form>

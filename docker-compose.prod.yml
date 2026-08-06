@@ -1,0 +1,41 @@
+# Production overlay. Use together with the base file:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# Differences from local: Caddy terminates TLS, the app and database are not
+# published on the host, the code is baked into the image instead of mounted,
+# and ENV=production makes session cookies Secure.
+
+services:
+  db:
+    ports: !override []
+
+  web:
+    ports: !override []
+    environment:
+      ENV: production
+    volumes: !override
+      - ./data/media:/data/media
+    command:
+      ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers",
+       "--forwarded-allow-ips", "*"]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in .env, e.g. dmkdok.ru}
+
+volumes:
+  caddy_data:
+  caddy_config:

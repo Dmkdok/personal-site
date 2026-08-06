@@ -1,0 +1,219 @@
+/* Editing surfaces. Present only when signed in — never shipped to visitors. */
+
+@layer components {
+  /* --- Login -------------------------------------------------------------- */
+  .login {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding-block: var(--space-2xl);
+  }
+
+  .login__title {
+    font-size: var(--step-4);
+  }
+
+  .login__error {
+    padding: var(--space-xs) var(--space-s);
+    border-radius: var(--radius-m);
+    background-color: var(--danger-wash);
+    color: var(--danger-ink);
+    font-size: var(--step--1);
+  }
+
+  .login__form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-m);
+    margin-block-start: var(--space-s);
+    inline-size: 100%;
+    max-inline-size: 22rem;
+  }
+
+  /* --- Form primitives ---------------------------------------------------- */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    inline-size: 100%;
+  }
+
+  .field__label {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .field__input {
+    inline-size: 100%;
+    padding: 0.6rem 0.85rem;
+    background-color: var(--surface-raised);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-m);
+    color: var(--text);
+    font-size: var(--step-0);
+    transition: border-color var(--dur-fast) var(--ease);
+  }
+
+  .field__input:focus-visible {
+    border-color: var(--accent);
+    outline-offset: 1px;
+  }
+
+  .field__input--area {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1.6;
+    resize: vertical;
+    min-block-size: 8rem;
+  }
+
+  .field__hint {
+    color: var(--text-faint);
+    font-size: var(--step--1);
+  }
+
+  /* --- Admin bar ---------------------------------------------------------- */
+  .admin-bar {
+    position: fixed;
+    inset-block-end: var(--space-s);
+    inset-inline-start: 50%;
+    translate: -50% 0;
+    z-index: var(--z-nav);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding: 0.35rem 0.4rem 0.35rem 0.9rem;
+    background-color: var(--nav-tint);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-nav);
+    backdrop-filter: blur(14px) saturate(1.4);
+    font-size: var(--step--1);
+    max-inline-size: calc(100% - var(--gutter) * 2);
+  }
+
+  .admin-bar__dot {
+    inline-size: 7px;
+    block-size: 7px;
+    border-radius: 50%;
+    background-color: var(--accent);
+    flex: none;
+  }
+
+  .admin-bar__text {
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .admin-bar__spacer {
+    inline-size: var(--space-2xs);
+  }
+
+  /* --- Editable copy blocks ----------------------------------------------- */
+  .editable {
+    position: relative;
+  }
+
+  .editable__edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-block-start: var(--space-2xs);
+    padding: 0.3rem 0.7rem;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-pill);
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    opacity: 0;
+    transition: opacity var(--dur) var(--ease), color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease);
+  }
+
+  .editable__edit svg {
+    inline-size: 13px;
+    block-size: 13px;
+  }
+
+  .editable:hover .editable__edit,
+  .editable__edit:focus-visible {
+    opacity: 1;
+  }
+
+  .editable__edit:hover {
+    color: var(--accent-ink);
+    border-color: var(--accent);
+  }
+
+  .editable--editing {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    padding: var(--space-s);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-m);
+    background-color: var(--surface);
+  }
+
+  .editable__hint {
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+
+  .editable__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  /* Touch devices have no hover: keep the affordance permanently visible. */
+  @media (hover: none) {
+    .editable__edit {
+      opacity: 1;
+    }
+  }
+
+  /* --- Toast -------------------------------------------------------------- */
+  .toast-host {
+    position: fixed;
+    inset-block-end: calc(var(--space-s) + 3.5rem);
+    inset-inline-start: 50%;
+    translate: -50% 0;
+    z-index: calc(var(--z-nav) + 1);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    pointer-events: none;
+  }
+
+  .toast {
+    padding: 0.5rem 0.95rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--surface-raised);
+    border: 1px solid var(--line-strong);
+    box-shadow: var(--shadow-raised);
+    font-size: var(--step--1);
+    animation: toast-in var(--dur) var(--ease);
+  }
+
+  .toast--error {
+    color: var(--danger-ink);
+    border-color: var(--danger-ink);
+  }
+
+  .toast--success {
+    color: var(--success-ink);
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+}
