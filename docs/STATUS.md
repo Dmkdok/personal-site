@@ -7,10 +7,9 @@ paused_at: 2026-08-06 (end of session — see "Resume here")
 
 ## Resume here
 
-**Everything below is uncommitted.** The repository has exactly one commit (`4bfc65b`, initial);
-16 tracked files are modified and `docs/qa/` + `e2e/` are untracked. Nothing has been lost, but a
-`git checkout`/`clean` at this point would destroy a full session of work. First action on resume:
-commit the tree (see the last note of 2026-08-06) — or decide deliberately not to.
+Working tree is **clean**, on branch `session/2026-08-06-m3-fixes-and-e2e` (three commits ahead of
+`main`, not merged and not pushed — there is no remote). Merging into `main` is an open decision for
+the owner; nothing depends on it.
 
 Where the work stands: M0–M6 done, `tests/` green at 137/137. M7 is in progress — **T070 and T072
 are met and ticked; T071 (accessibility) is the only red thing in the project**, with three failing
@@ -104,4 +103,4 @@ T001's DoD, but `make lint` runs it).
 - **2026-08-06 — M7 started. T070 done and ticked: `e2e/` now holds 26 Playwright tests over the six launch flows plus a11y and performance, driven from the host against `make up` (the `tests` container mounts only `tests/`, so e2e cannot run inside it).** Shared fixtures and page helpers are in `e2e/conftest.py` and `e2e/helpers.py`; the flow tests are green.
 - 2026-08-06 — T072 done and ticked. `docs/qa/perf-50.json`: on a 50-photo album at 1440×900, CLS 0.00023 (budget 0.02), LCP 168 ms (budget 2500), heaviest thumbnail 96.3 KB (budget 120). All 50 images carry `loading="lazy"`, intrinsic dimensions, `srcset` and alt text; 39 load on first paint and the rest on scroll. The single recorded shift is the nav capsule, three orders of magnitude under budget.
 - **2026-08-06 — T071 (accessibility) is RED and is the only red thing left in the project.** Three e2e failures, each with a JSON report under `docs/qa/`: 13 light-theme contrast samples below 4.5:1 (dark theme clean), the ordering half of the focus sweep (indicator visibility itself is clean — 0 of 69 stops lack one), and 54 controls below SPEC F12's 44 px, none of which actually breach WCAG 2.5.8's 24 px. The last one needs an owner decision rather than a fix: raise the controls or relax F12 to the WCAG floor with a recorded waiver. Details and the suggested token-level fix are in "Resume here" at the top of this file.
-- **2026-08-06 — Session paused for the night with the whole tree uncommitted.** The repo still has only `4bfc65b`. Modified: `app/{background,main}.py`, `app/models/{photo,post}.py`, `app/routers/{photos,projects}.py`, `app/services/slugs.py`, three `app/templates/photo/` partials, `app/i18n/ru/photo.json`, `pyproject.toml`, `tests/conftest.py`, `tests/api/test_photo.py`, and both docs. Untracked: `docs/qa/`, `e2e/`. `__pycache__/` and `.pytest_cache/` are already ignored, so `git add e2e docs/qa` is safe. Suggested first move on resume, on a branch rather than `main`: commit M3's fixes, the M7 e2e suite and the QA evidence as separate commits, so the a11y work starts from a clean tree.
+- **2026-08-06 — Session paused for the night. The tree had been entirely uncommitted (one commit in the whole repo); it is now committed on branch `session/2026-08-06-m3-fixes-and-e2e` as three commits off `4bfc65b`: `76e3f60` M3's four defect fixes, `66c8f41` the e2e suite, `c425fae` the QA evidence and these docs.** Not merged into `main`, not pushed — the repo has no remote. Merge or rebase is the owner's call on resume.
