@@ -34,22 +34,27 @@ Agent column marks who executes after the approval gate: **parent** (shared/inte
 
 Owns `app/routers/photos.py`, `app/services/images.py`, `app/templates/photo/**`, `app/static/js/{lightbox,uploader}.js`, `app/static/css/photo.css`, `tests/**/test_photo*`. Must not touch `main.py`, `models/**`, `migrations/**`, `tokens.css` or shared partials.
 
-> **State (2026-08-06): code complete, verification RED.** Every file for T030–T036 exists and
-> `tests/api/test_photo.py` + `tests/unit/test_photo_pipeline.py` are written, but 17 of them fail,
-> so no task below can be ticked yet. Root cause: `app/background.py` holds `_executor` as a
-> module-level `ThreadPoolExecutor` and `app/main.py` `lifespan` calls `background.shutdown()` on
-> exit; under pytest the first `TestClient` teardown kills the executor for the whole process, so
-> every later upload raises `RuntimeError: cannot schedule new futures after shutdown`.
-> Fix the fixture/executor lifecycle first, then re-run and tick. One failure looks unrelated —
-> `test_albums_can_be_reordered` raises a jinja2 template error — check it separately.
+> **State (2026-08-06): done, 137/137 green.** The 17 failures were four separate
+> defects, not the single one the previous session recorded:
+> (a) `app/background.py` held `_executor` as a module-level `ThreadPoolExecutor`, so the
+> first `TestClient` teardown ran `background.shutdown()` and killed it process-wide — the
+> pool is now built lazily and `shutdown()` drops it, so a later `submit()` gets a fresh one;
+> (b) `_form_response` spread the surrounding context *after* `{"form": form}`, and that
+> context carries its own empty `form` key, so every rejected save re-rendered a `None` form;
+> (c) `photo/_album_card.html` read `loop.first` / `loop.last` inside an `{% include %}`, and
+> `photo/_album_form.html` read `form.values.title` — both traps are already written down in
+> `docs/CONVENTIONS.md`;
+> (d) `admin_client` in `tests/conftest.py` returned the *same* client as `client` after
+> logging it in, so the three tests that take both fixtures were asserting the visitor rules
+> against an admin session. It is now a separate client with its own cookie jar.
 
-- [ ] **T030** — album CRUD inline on `/photo` and on the album page, slug generation, publish toggle — deps: T025 — DoD: F21, F26 met; unpublished albums 404 for anonymous visitors.
-- [ ] **T031** — upload endpoint: extension + MIME + magic-byte + decode validation, 25 MB cap, 50 files per batch, UUID filenames, path containment assertion — deps: T026 — DoD: F24 met; each rejection case covered by a test; nothing is ever written outside `MEDIA_ROOT`.
-- [ ] **T032** — Pillow pipeline: 640/1600/2560 px WebP derivatives, aspect ratio preserved, EXIF orientation applied, no upscaling, original kept untouched — deps: T031 — DoD: F23 met by unit tests over portrait, landscape, small and rotated inputs.
-- [ ] **T033** — background processing with per-photo status, plus the startup sweep that re-processes or fails stuck photos — deps: T032, T026 — DoD: F22, F27 met; a batch of 50 does not block the request; a mid-processing restart leaves no photo stuck in `processing`.
-- [ ] **T034** — album grid with `srcset`, lazy loading and intrinsic dimensions; admin drag-reorder, cover selection, alt text editing, deletion that also removes files — deps: T033 — DoD: F4, F25 met; deleting a photo leaves no orphan file on the volume.
-- [ ] **T035** — lightbox: dimmed and softened backdrop, arrow/keyboard navigation, `Esc` and backdrop close, focus trap, focus restored to the originating thumbnail, body scroll lock, `prefers-reduced-motion` respected — deps: T034 — DoD: F5 met, verified by keyboard only.
-- [ ] **T036** — photo module tests — deps: T035 — DoD: pipeline unit tests, upload API tests and authorisation tests all green.
+- [x] **T030** — album CRUD inline on `/photo` and on the album page, slug generation, publish toggle — deps: T025 — DoD: F21, F26 met; unpublished albums 404 for anonymous visitors.
+- [x] **T031** — upload endpoint: extension + MIME + magic-byte + decode validation, 25 MB cap, 50 files per batch, UUID filenames, path containment assertion — deps: T026 — DoD: F24 met; each rejection case covered by a test; nothing is ever written outside `MEDIA_ROOT`.
+- [x] **T032** — Pillow pipeline: 640/1600/2560 px WebP derivatives, aspect ratio preserved, EXIF orientation applied, no upscaling, original kept untouched — deps: T031 — DoD: F23 met by unit tests over portrait, landscape, small and rotated inputs.
+- [x] **T033** — background processing with per-photo status, plus the startup sweep that re-processes or fails stuck photos — deps: T032, T026 — DoD: F22, F27 met; a batch of 50 does not block the request; a mid-processing restart leaves no photo stuck in `processing`.
+- [x] **T034** — album grid with `srcset`, lazy loading and intrinsic dimensions; admin drag-reorder, cover selection, alt text editing, deletion that also removes files — deps: T033 — DoD: F4, F25 met; deleting a photo leaves no orphan file on the volume.
+- [x] **T035** — lightbox: dimmed and softened backdrop, arrow/keyboard navigation, `Esc` and backdrop close, focus trap, focus restored to the originating thumbnail, body scroll lock, `prefers-reduced-motion` respected — deps: T034 — DoD: F5 met, verified by keyboard only.
+- [x] **T036** — photo module tests — deps: T035 — DoD: pipeline unit tests, upload API tests and authorisation tests all green.
 
 ## M4 — Blog *(parallel, agent `blog`)*
 
@@ -79,9 +84,15 @@ Owns `app/routers/projects.py`, `app/templates/dev/**`, `app/static/css/dev.css`
 
 ## M7 — Harden *(serial, tester then reviewer)*
 
-- [ ] **T070** — Playwright e2e for the six launch flows: login, album upload, article publish, lightbox by keyboard, theme persistence, search — paths: `e2e/**` — deps: T062 — DoD: all six green against a container started by `make up`.
-- [ ] **T071** — accessibility pass: keyboard-only sweep, AA contrast in both themes, `prefers-reduced-motion`, alt text, focus visibility — paths: cross-cutting — deps: T070 — DoD: no AA contrast failure; every flow completable without a mouse.
-- [ ] **T072** — performance check on a 50-photo album: CLS, thumbnail weight, lazy loading, LCP — paths: cross-cutting — deps: T070 — DoD: no layout shift on grid load; thumbnails ≤ ~120 KB; LCP under 2.5 s locally.
+> **State (2026-08-06, end of session): T070 and T072 met, T071 RED.** `pytest e2e/` on the host is
+> 23/26 — the three failures are all in `e2e/test_a11y.py` and all belong to T071. e2e runs from the
+> host against `make up`, **not** inside the `tests` container, which mounts only `tests/`.
+> Evidence for each failure is committed as JSON under `docs/qa/`; the fix plan is in the
+> "Resume here" section of `docs/STATUS.md`.
+
+- [x] **T070** — Playwright e2e for the six launch flows: login, album upload, article publish, lightbox by keyboard, theme persistence, search — paths: `e2e/**` — deps: T062 — DoD: all six green against a container started by `make up`.
+- [ ] **T071** — accessibility pass: keyboard-only sweep, AA contrast in both themes, `prefers-reduced-motion`, alt text, focus visibility — paths: cross-cutting — deps: T070 — DoD: no AA contrast failure; every flow completable without a mouse. **Open: 13 light-theme contrast samples under 4.5:1 (`docs/qa/contrast-light.json`, dark theme clean); focus *ordering* fails while indicator visibility is clean at 69/69 (`docs/qa/focus-sweep.json`); 54 controls under SPEC F12's 44 px but 0 under WCAG 2.5.8's 24 px (`docs/qa/target-size-360px.json`) — needs an owner call, fix or waiver.**
+- [x] **T072** — performance check on a 50-photo album: CLS, thumbnail weight, lazy loading, LCP — paths: cross-cutting — deps: T070 — DoD: no layout shift on grid load; thumbnails ≤ ~120 KB; LCP under 2.5 s locally. *(CLS 0.00023, heaviest thumbnail 96.3 KB, LCP 168 ms — `docs/qa/perf-50.json`.)*
 - [x] **T073** — backup command: `pg_dump` plus a media archive into `./data/backups` — paths: `Makefile`, `scripts/backup.sh` — deps: T004 — DoD: a restore from the produced artefacts is documented and tried once.
 - [x] **T074** — production override and `Caddyfile`: automatic HTTPS, database port not published, `Secure` cookies under `ENV=production` — paths: `docker-compose.prod.yml`, `Caddyfile` — deps: T002 — DoD: config validates; not deployed in this run.
 - [ ] **T075** — `docs/HANDOFF.md` and final `docs/STATUS.md` — paths: `docs/**` — deps: T071, T072, T073 — DoD: running, editing, backing up and VPS deployment all documented; the launch checklist in `SPEC.md` fully ticked or its gaps explicitly listed.

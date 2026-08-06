@@ -1,0 +1,102 @@
+{
+  "photos": 50,
+  "viewport": "1440x900",
+  "cls_on_load": 0.00023,
+  "cls_after_scrolling_to_the_end": 0.00023,
+  "shifts": [
+    {
+      "value": 0.000230419921875,
+      "sources": [
+        "DIV.nav__capsule"
+      ]
+    }
+  ],
+  "lcp_ms": 168,
+  "lcp_element": "IMG.",
+  "images": {
+    "total": 50,
+    "lazy": 50,
+    "withDimensions": 50,
+    "withSrcset": 50,
+    "withAlt": 50,
+    "loaded": 39
+  },
+  "images_after_scroll": {
+    "loaded": 50,
+    "mediaRequests": 50
+  },
+  "media_requests_on_load": 39,
+  "heaviest_media_kb": {
+    "url": "224076b7819e459389196ec817c612b9_640.webp",
+    "transferKB": 96.2,
+    "encodedKB": 95.9,
+    "ms": 16
+  },
+  "media": [
+    {
+      "url": "224076b7819e459389196ec817c612b9_640.webp",
+      "transferKB": 96.2,
+      "encodedKB": 95.9,
+      "ms": 16
+    },
+    {
+      "url": "cd509be2d4664765986dde43662a06f3_640.webp",
+      "transferKB": 96.2,
+      "encodedKB": 95.9,
+      "ms": 44
+    },
+    {
+      "url": "ad66eed6558e4a10ac525be63124bff0_640.webp",
+      "transferKB": 96.2,
+      "encodedKB": 95.9,
+      "ms": 79
+    },
+    {
+      "url": "0583eaea08f5438ba80215f8bb26014f_640.webp",
+      "transferKB": 96.2,
+      "encodedKB": 95.9,
+      "ms": 117
+    },
+    {
+      "url": "96351b12b4e74319a9e43b590bc05746_640.webp",
+      "transferKB": 96,
+      "encodedKB": 95.7,
+      "ms": 17
+    },
+    {
+      "url": "3fd6583324434f8f9ce1dda4c0a4d7fa_640.webp",
+      "transferKB": 96,
+      "encodedKB": 95.7,
+      "ms": 44
+    },
+    {
+      "url": "9c4bb672e34941c7890aa030d424f07d_640.webp",
+      "transferKB": 96,
+      "encodedKB": 95.7,
+      "ms": 46
+    },
+    {
+      "url": "b750b060be634343bfac3b9e8e371098_640.webp",
+      "transferKB": 96,
+      "encodedKB": 95.7,
+      "ms": 64
+    },
+    {
+      "url": "63b36e6711cf4e1398d88ef69c172019_640.webp",
+      "transferKB": 96,
+      "encodedKB": 95.7,
+      "ms": 82
+    },
+    {
+      "url": "d282409a2dfa4b3a8b827bd0e3486bf0_640.webp",
+      "transferKB": 96,
+      "encodedKB": 95.7,
+      "ms": 97
+    }
+  ],
+  "budgets": {
+    "cls": 0.02,
+    "thumbnail_kb": 120,
+    "lcp_ms": 2500
+  }
+}

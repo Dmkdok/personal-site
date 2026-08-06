@@ -1,0 +1,206 @@
+{
+  "theme": "dark",
+  "samples": 75,
+  "failures": [],
+  "unmeasurable": [],
+  "worst": [
+    {
+      "selector": "p.label.hero__eyebrow",
+      "text": "Санкт-Петербург · Python · горы",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/",
+      "theme": "dark",
+      "ratio": 5.31,
+      "required": 4.5
+    },
+    {
+      "selector": "span.hero__line",
+      "text": "Рассказываю, как это было.",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 85.12,
+      "fontWeight": 800,
+      "onImage": false,
+      "page": "/",
+      "theme": "dark",
+      "ratio": 5.31,
+      "required": 3.0
+    },
+    {
+      "selector": "p.label",
+      "text": "Где меня найти",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/",
+      "theme": "dark",
+      "ratio": 5.31,
+      "required": 4.5
+    },
+    {
+      "selector": "li.stack__item",
+      "text": "Python",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/dev",
+      "theme": "dark",
+      "ratio": 5.31,
+      "required": 4.5
+    },
+    {
+      "selector": "p.label",
+      "text": "Служебный вход",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/login",
+      "theme": "dark",
+      "ratio": 5.31,
+      "required": 4.5
+    },
+    {
+      "selector": "label.field__label",
+      "text": "Логин",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/login",
+      "theme": "dark",
+      "ratio": 5.31,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Разработка",
+      "color": "rgb(168, 177, 187)",
+      "backdrop": [
+        "rgba(44, 49, 55, 0.82)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/",
+      "theme": "dark",
+      "ratio": 6.32,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Главная",
+      "color": "rgb(168, 177, 187)",
+      "backdrop": [
+        "rgba(44, 49, 55, 0.82)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/dev",
+      "theme": "dark",
+      "ratio": 6.32,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Главная",
+      "color": "rgb(168, 177, 187)",
+      "backdrop": [
+        "rgba(44, 49, 55, 0.82)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/photo",
+      "theme": "dark",
+      "ratio": 6.32,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Главная",
+      "color": "rgb(168, 177, 187)",
+      "backdrop": [
+        "rgba(44, 49, 55, 0.82)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/blog",
+      "theme": "dark",
+      "ratio": 6.32,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Главная",
+      "color": "rgb(168, 177, 187)",
+      "backdrop": [
+        "rgba(44, 49, 55, 0.82)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/search?q=",
+      "theme": "dark",
+      "ratio": 6.32,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Главная",
+      "color": "rgb(168, 177, 187)",
+      "backdrop": [
+        "rgba(44, 49, 55, 0.82)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/login",
+      "theme": "dark",
+      "ratio": 6.32,
+      "required": 4.5
+    }
+  ]
+}

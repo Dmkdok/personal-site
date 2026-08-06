@@ -1,0 +1,488 @@
+{
+  "stops": [
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Перейти к содержимому",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Главная",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Разработка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Фото",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Блог",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "input",
+      "id": null,
+      "label": "",
+      "indicator_on": "parent"
+    },
+    {
+      "page": "/",
+      "tag": "button",
+      "id": null,
+      "label": "Переключить тему",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Telegram",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "GitHub",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "VK",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "YouTube",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Фото\n            Альбомы из гор и с марш",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Разработка\n            Проекты и репозит",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Блог\n            Заметки о поездках, гор",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "GitHub",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "Telegram",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "VK",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/",
+      "tag": "a",
+      "id": null,
+      "label": "YouTube",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "Перейти к содержимому",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "Главная",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "Разработка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "Фото",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "Блог",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "input",
+      "id": null,
+      "label": "",
+      "indicator_on": "parent"
+    },
+    {
+      "page": "/photo",
+      "tag": "button",
+      "id": null,
+      "label": "Переключить тему",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "Тестовый",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "E2E галерея bgdchrvfm",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "GitHub",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "Telegram",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "VK",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo",
+      "tag": "a",
+      "id": null,
+      "label": "YouTube",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "a",
+      "id": null,
+      "label": "Перейти к содержимому",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "a",
+      "id": null,
+      "label": "Главная",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "a",
+      "id": null,
+      "label": "Разработка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "a",
+      "id": null,
+      "label": "Фото",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "a",
+      "id": null,
+      "label": "Блог",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "input",
+      "id": null,
+      "label": "",
+      "indicator_on": "parent"
+    },
+    {
+      "page": "/blog",
+      "tag": "button",
+      "id": null,
+      "label": "Переключить тему",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "a",
+      "id": null,
+      "label": "GitHub",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "a",
+      "id": null,
+      "label": "Telegram",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "a",
+      "id": null,
+      "label": "VK",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/blog",
+      "tag": "a",
+      "id": null,
+      "label": "YouTube",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "a",
+      "id": null,
+      "label": "Перейти к содержимому",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "a",
+      "id": null,
+      "label": "Главная",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "a",
+      "id": null,
+      "label": "Разработка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "a",
+      "id": null,
+      "label": "Фото",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "a",
+      "id": null,
+      "label": "Блог",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "input",
+      "id": null,
+      "label": "",
+      "indicator_on": "parent"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "button",
+      "id": null,
+      "label": "Переключить тему",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "a",
+      "id": null,
+      "label": "GitHub",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "a",
+      "id": null,
+      "label": "Telegram",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "a",
+      "id": null,
+      "label": "VK",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/search?q=",
+      "tag": "a",
+      "id": null,
+      "label": "YouTube",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "Перейти к содержимому",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "Главная",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "Разработка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "Фото",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "Блог",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "input",
+      "id": null,
+      "label": "",
+      "indicator_on": "parent"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "button",
+      "id": null,
+      "label": "Переключить тему",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "← Все альбомы",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "GitHub",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "Telegram",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "VK",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/photo/e2e-galereia-bgdchrvfm",
+      "tag": "a",
+      "id": null,
+      "label": "YouTube",
+      "indicator_on": "self"
+    }
+  ],
+  "without_a_focus_indicator": []
+}
