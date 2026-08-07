@@ -9,29 +9,48 @@ approved_at: 2026-08-04
 **Branch `session/2026-08-06-m3-fixes-and-e2e`, tree clean, nothing running.** No remote; merging
 into `main` is the owner's call.
 
-M0–M8 are complete and **Phase 6 is closed** — the independent review ran for the first time on
-2026-08-08, returned FAIL on one Critical, and passes now that it and all six High findings are
-fixed. See `docs/REVIEW.md`; it also records what the reviewers checked and found clean, so the
-next review need not repeat it. The in-article CLS defect M8 left open is fixed and re-measured.
+**The session ended mid-milestone, on an out-of-band `/pause`, with M9 approved and barely begun.**
+Two implementer subagents had just been dispatched (T090–T094 and T095–T098/T100) and were stopped
+while still reading — **neither wrote a single file**, which was verified against `git status`, not
+taken from their reports. The tree contains no half-finished M9 code. All five gates are green.
 
-**M9 is written but not started. It is waiting on the owner's «утверждаю».** `SPEC.md` F41–F48,
-`TASKS.md` T090–T101, ADR-013/014/015 (all `proposed`). No M9 code exists.
+M0–M8 are complete. **Phase 6 is closed**: the independent review ran for the first time on
+2026-08-08, returned FAIL on one Critical, and passes at `a0c2835` now that it and all six High
+findings are fixed (`docs/REVIEW.md`). The in-article CLS defect M8 left open is fixed and
+re-measured. **M9 was approved by the owner («утверждаю», 2026-08-08)**: `SPEC.md` F41–F48,
+`TASKS.md` T090–T101, ADR-013/014/015 accepted. Only T099 has any work behind it, and only half.
 
-### Next action
+### Next three actions, in order
 
-**Ask for the gate, then implement M9 in this order:** T090 → T091 → T092 → T093 first and as one
-piece — deduplication and deletion are a single design (ADR-013), and building either alone turns
-"the owner deleted an article" into "the owner broke another article's cover". T094–T099 are the
-owner's remaining requests and are independent of each other. T100/T101 are the review's Medium
-findings.
+1. **T090–T093, as one piece.** Deduplication and deletion are a single design (ADR-013) and
+   building either alone turns "the owner deleted an article" into "the owner broke another
+   article's cover". `media_asset` keyed by SHA-256 for dedup; **no reference table** — `release(stem)`
+   asks the database whether any row still points at that stem, across `photo.original_path` and its
+   three rendition columns, `post.cover_path`, `project.cover_path`, and the `/media/…` URLs inside
+   `body_md`/`body_html` and `value_md`/`value_html`. Two traps written down because they have
+   already cost this project time: **a media path lives in TWO columns**, `body_md` *and*
+   `body_html` — miss the second and published articles lose their pictures silently; and
+   **renditions must be found by globbing `<stem>_*.webp`, never by rebuilding widths** — today's
+   `blog.py::_delete_cover_files` guesses `_640.webp` with a regex and only works while
+   `IMAGE_WIDTHS` is `(640, 1600)`, which T094 changes. `scripts/migrate_media.py` is the house
+   style for the maintenance script T093 needs, and it already reported the 8 orphans T093 deletes.
+2. **T094–T098**, independent of each other and of the above: rendition profiles and the 50 MB cap
+   (ADR-014 — **re-measure `docs/qa/perf-50.json`, do not assume**), favicon, the whole copyright
+   line (ADR-015), the home tagline (**the T085 dot-in-a-DOM-id trap applies**), and the article
+   cover leaving the article body (**assert `og:image` and the index card survive** — that
+   assertion is the point of the task).
+3. **T099–T101.** Finish T099 by regenerating the screenshots and restoring the media section of
+   `README.md` — see the task line, it names exactly what is missing. T100/T101 are the review's
+   Medium findings; T101 is cross-cutting and touches `security.py`, `ui.js`, `main.py`,
+   `auth.py` and `photos.py`, so it does not parallelise with anything.
 
-**Decided by the owner on 2026-08-08:**
-- T074, the production deploy, is **not** happening in a working session. The owner will run it
-  himself once the site is finished. Everything else on the launch checklist is met.
-- «Блог» and «статьи» mean the same thing. One rule for pictures in text — 1920 px — and it
-  applies to project descriptions too.
-- He exports files up to **50 MB**; the 25 MB cap goes up.
-- `README.md` is to be **Russian**, unlike everything under `docs/`.
+**Waiting on the owner:** nothing blocking. **T074, the production deploy, is deliberately not
+happening inside a working session** — the owner will run it himself once the site is finished.
+That is now the only unticked item on the launch checklist.
+
+**Decided by the owner on 2026-08-08:** «блог» and «статьи» mean the same thing, so one rule for
+pictures in text — 1920 px — and it covers project descriptions too; he exports files up to
+**50 MB**, so the 25 MB cap goes up; `README.md` is **Russian**, unlike everything under `docs/`.
 
 ## Checklist
 - [x] Phase 0 intake
@@ -43,11 +62,12 @@ findings.
 - [x] Phase 5 tests green (unit/API 204/204; e2e 37/37; lint and format clean)
 - [x] Phase 6 review clean (`docs/REVIEW.md`, PASS at `a0c2835`; Critical + 6 High fixed, Mediums scheduled as T100/T101)
 - [x] Phase 7 handoff (`docs/HANDOFF.md`; the production deploy stays open by the owner's choice)
-- [ ] **GATE — M9 awaiting «утверждаю»**
+- [x] **GATE — M9 approved 2026-08-08 («утверждаю»)**
+- [ ] M9 implementation — **not started**; T099 half done, T090–T098 and T100/T101 untouched
 
 ## Test report
 
-All five gates run 2026-08-08, on the tree as committed at `a0c2835`.
+All five gates run 2026-08-08 at the end of the session, on the tree as committed.
 
 | Gate | Command | Result |
 |---|---|---|
@@ -57,15 +77,16 @@ All five gates run 2026-08-08, on the tree as committed at `a0c2835`.
 | Lint | `uv run ruff check .` | clean, exit 0 |
 | Format | `uv run ruff format --check .` | clean, exit 0 |
 
-The suite grew 193 → 204 unit/API and 36 → 37 e2e: intrinsic picture dimensions, the two prose
-scrollers, the decompression-bomb path, the `X-Forwarded-For` throttle bypass, and an article-page
-CLS budget that did not exist before.
+No failing tests. The suite grew 193 → 204 unit/API and 36 → 37 e2e this session: intrinsic picture
+dimensions, the two prose scrollers, the decompression-bomb path, the `X-Forwarded-For` throttle
+bypass, and an article-page CLS budget that did not exist before.
 
 `-q` is set twice, so a passing run prints dots and no summary line. **Read the exit code.** Never
 pipe a test run through `tail` or `grep`: you get the pipe's status and a red suite reads as green.
 
-**Nothing is known bad.** The in-article CLS line that stood here is closed: `docs/qa/perf-article.json`
-records 0.00023 against a 0.02 budget, and the owner's own article measures the same.
+**Nothing is known bad.** The in-article CLS line that used to stand here is closed —
+`docs/qa/perf-article.json` records 0.00023 against a 0.02 budget, and the owner's own article
+measures the same.
 
 ## Notes
 - 2026-08-04 — Intake: personal multi-section portfolio site (Главная / Разработка / Фото / Блог) for Dmitriy Bogdanov. Classified as marketing/portfolio site with an authenticated authoring surface.
@@ -120,3 +141,5 @@ records 0.00023 against a 0.02 budget, and the owner's own article measures the 
 - 2026-08-08 — **In-article picture CLS closed: 0.119 → 0.00023** (`docs/qa/perf-article.json`). `markdown.py` emits the rendition's own size, read from the file header by `images.intrinsic_size` — Pillow opens lazily, so it is a seek and not a decode. Two things worth keeping: **`body_html` is rendered once, at save**, so a renderer change reaches new writing only — `scripts/rerender_prose.py` re-renders stored rows from the Markdown that produced them, and it has to skip rows whose HTML is deliberately blank, because `pages._put_value` empties it for the social links and the copyright name on purpose. And **the e2e case is portrait deliberately**: with the fix disabled, two landscape frames measured 0.014, inside budget, and the test would have proved nothing; portrait measured 0.030. Verified both ways before believing it.
 - 2026-08-08 — Owner's decisions recorded under "Resume here": no production deploy inside a working session, «блог» = «статьи», 50 MB uploads, Russian README.
 - 2026-08-08 — **M9 written and awaiting the gate.** F41–F48, T090–T101, ADR-013/014/015 proposed. Two design notes that took the most thought: deletion **asks the database** who still uses a file rather than keeping a reference table, because a count that drifts either leaks files (harmless) or deletes one that is still on a page (the exact failure being prevented) — the cost is a few `LIKE` scans, fine at this size, and the threshold to revisit is a few thousand articles. And "photographs at their best" is delivered as a **native-width rendition at quality 92**, not as the original file: `/media` is mounted over `derived/` only, and that mount is what makes an original unreachable structurally rather than by rule (ADR-012). Serving the original would trade a structural guarantee for a configuration one, on the single property that must not fail.
+- **2026-08-08 — Session ended mid-milestone on an out-of-band `/pause`, and this time the handoff was audited rather than summarised.** Two implementer subagents had just been dispatched for M9 and were stopped while still reading; `git status` confirmed neither had written a file. **This is the second time a `/pause` has landed on this project while subagents were in flight** — the first, on 2026-08-06, produced a handoff written from a mid-run snapshot that had to be corrected afterwards. The rule that follows: on pause, stop the agents first, then read the tree, and never record a subagent's self-report as the state of the repository.
+- 2026-08-08 — T099 is deliberately half done rather than half claimed. `README.md` and `scripts/screenshots.py` are written and **the script was actually run** (8 screenshots, both themes) rather than committed unexercised — the T073 mistake, where "documented *and* tried once" was ticked with the second half unmet. The «Обслуживание медиа» section was cut from the README before committing because it documented `make media-orphans` / `make media-prune` and the deduplication guarantee, none of which exist until T090 and T093. An accurate short README beats an aspirational one; the task line says exactly what to put back.

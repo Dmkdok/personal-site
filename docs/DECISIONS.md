@@ -103,7 +103,7 @@ ADR-lite. All proposed on 2026-08-04, pending the approval gate.
 ## ADR-013 — Deletion asks the database who still uses a file; there is no reference table
 
 - Date: 2026-08-08
-- Status: proposed
+- Status: accepted
 - Context: two of the owner's M9 requests collide. Deletion has to become complete — empty directories survive today, `_delete_cover_files` *guesses* rendition names with a regex that only works while `IMAGE_WIDTHS` happens to be `(640, 1600)`, and a picture removed from an article's text is never deleted at all. Deduplication (F42) has to make one file serve two places. Put together carelessly, they turn "the owner deleted an article" into "the owner broke another article's cover".
 - Decision: one new table, `media_asset`, keyed by the SHA-256 of the uploaded bytes and holding the original's path, the derived stem, the dimensions and the size. That is the whole of the dedup mechanism: an upload whose hash is already there reuses the stored paths and writes nothing. Deletion does **not** get a reference table. Instead `release(stem)` asks the database directly whether any row still points at that stem — `photo.original_path` and its three rendition columns, `post.cover_path`, `project.cover_path`, and the `/media/…` URLs inside `body_md`/`body_html` and `value_md`/`value_html` — and deletes the original, every `<stem>_*.webp` found by **globbing** rather than guessing, the `media_asset` row and any directory the removal emptied, only when the answer is nobody.
 - Alternatives rejected: a `media_reference` table with a count. It has to be written correctly at every site that touches a path, and there is no way to notice when it drifts: too many references leaks files, which is harmless, and too few deletes a file that is still on a page, which is the exact failure this ADR exists to prevent. A scan cannot drift — it reads the same rows the site renders from.
@@ -113,7 +113,7 @@ ADR-lite. All proposed on 2026-08-04, pending the approval gate.
 ## ADR-014 — "Best view" is a native-width rendition, not the original file
 
 - Date: 2026-08-08
-- Status: proposed
+- Status: accepted
 - Context: the owner is a photographer who prepares his own frames, and says the current pipeline spoils them — `WEBP_QUALITY = 82` at a 2560 px ceiling. He wants the photography section shown at its best, article pictures capped around FullHD, and confirmed that "blog" and "articles" mean the same thing. The obvious reading, "serve the original as it was uploaded", breaks the one structural invariant this project has: `/media` is mounted over `derived/` **only**, which is what makes an original unreachable by URL as a matter of shape rather than of vigilance (ADR-012).
 - Decision: the mount does not move and the originals stay unreachable. "Best" is delivered as a rendition at the original's **own width**, generated only when it is not already in the ladder, at quality 92 — visually indistinguishable from the source and still a file we produced, in the directory the web server is allowed to see. The scattered width tuples become three named profiles in `app.services.images`: `PHOTO` (640, 1600, 2560, native — quality 92), `PROSE` (640, 1280, 1920 — quality 85) and `COVER` (640, 1600 — quality 85). Nothing is ever upscaled. `MAX_UPLOAD_MB` goes to 50, the size the owner says he actually exports.
 - Alternatives rejected: copying the original into `derived/` as a "full" rendition — that *is* publishing the original, with a rename to make it feel different. Serving `/media` through an application route or a rule-based Caddy matcher so `originals/` could be exposed selectively — trading a structural guarantee for a configuration one, on the single property that must not fail. A global quality bump without profiles — it would put a 92-quality 2560 px file behind every thumbnail in the grid for nothing.
@@ -122,7 +122,7 @@ ADR-lite. All proposed on 2026-08-04, pending the approval gate.
 ## ADR-015 — The copyright line is stored whole, and stops knowing the year
 
 - Date: 2026-08-08
-- Status: proposed
+- Status: accepted
 - Context: `partials/site_links.html` renders `© {{ current_year }} {{ rights }}`, so only the name is editable and the year is assembled in the template. The owner wants to edit the line itself.
 - Decision: `footer.rights` stores the entire line — `© 2026 Дмитрий Богданов` — and the template prints it verbatim. Existing rows are migrated by prefixing the symbol and the current year, so nothing visibly changes on the day it ships.
 - Consequences: the year no longer advances by itself; on 1 January the owner edits one field, from the site, which is what "editable in full" means. `current_year` loses its only consumer. The value stays plain text with `value_html` blank, per `pages._put_value` — a name is not Markdown, and rendering it would invite a stray `*` into the footer.
