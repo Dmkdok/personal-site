@@ -24,7 +24,7 @@ router = APIRouter(prefix="/dev", tags=["dev"])
 # A cover is shown at ~300 CSS px in the list and at most ~670 px on the detail
 # page, so a single rendition covers both, retina included.
 COVER_WIDTHS = (960,)
-COVER_KIND = "project"
+COVER_KIND = images.PROJECTS
 
 MAX_TITLE = 250
 MAX_SUMMARY = 400
@@ -154,8 +154,12 @@ def _parse(values: dict[str, str]) -> dict[str, Any]:
     }
 
 
-def _store_cover(cover: UploadFile | None) -> str | None:
-    """Validate and render one cover. Returns the stored derivative's path."""
+def _store_cover(cover: UploadFile | None, group: str) -> str | None:
+    """Validate and render one cover. Returns the stored derivative's path.
+
+    `group` is the project's own directory, so a project's cover sits with the
+    project it belongs to rather than among every cover uploaded that year.
+    """
     if cover is None or not cover.filename:
         return None
     data = cover.file.read()
@@ -167,6 +171,7 @@ def _store_cover(cover: UploadFile | None) -> str | None:
             cover.filename,
             cover.content_type,
             kind=COVER_KIND,
+            group=group,
             widths=COVER_WIDTHS,
         )
     except images.ImageRejected as exc:
@@ -320,7 +325,6 @@ def project_create(
     submitted = _submitted(title, summary, body_md, repo_url, demo_url, tech_stack)
     try:
         fields = _parse(submitted)
-        cover_path = _store_cover(cover)
     except ProjectInvalid as exc:
         return _form_response(request, admin, _new_form(submitted, str(exc)))
 
@@ -328,12 +332,21 @@ def project_create(
     project = Project(
         slug=unique_slug(db, Project, fields["title"]),
         body_html=render_markdown(fields["body_md"]),
-        cover_path=cover_path,
         is_published=False,
         sort_order=(last or 0) + 1,
         **fields,
     )
     db.add(project)
+    # Flushed before the cover is stored, because the cover's directory is named
+    # after the project and the id only exists once the row does.
+    db.flush()
+
+    try:
+        project.cover_path = _store_cover(cover, images.group_name(project.id, project.slug))
+    except ProjectInvalid as exc:
+        db.rollback()
+        return _form_response(request, admin, _new_form(submitted, str(exc)))
+
     db.commit()
 
     return _board(
@@ -365,7 +378,7 @@ def project_update(
     )
     try:
         fields = _parse(submitted)
-        new_cover = _store_cover(cover)
+        new_cover = _store_cover(cover, images.group_name(project.id, project.slug))
     except ProjectInvalid as exc:
         return _form_response(request, admin, _edit_form(project, submitted, str(exc)))
 

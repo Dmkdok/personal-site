@@ -14,7 +14,7 @@ services:
     environment:
       ENV: production
     volumes: !override
-      - ./data/media:/data/media
+      - ${MEDIA_HOST_DIR:-./data/media}:/data/media
     command:
       ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers",
        "--forwarded-allow-ips", "*"]

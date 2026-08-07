@@ -114,6 +114,9 @@ Needs: no code, no file management, no fragile admin UI, clear feedback on long 
 | F35 | Editable site copy | Given a logged-in admin on the home page, when an editable text block is clicked, then it can be edited inline in Markdown and saved without a page reload, and the change is visible to visitors |
 | F36 | Admin affordances hidden from visitors | Given an anonymous visitor, when any public page renders, then no edit control, admin bar or admin-only markup is present in the HTML |
 | F37 | Save feedback and failure handling | Given any admin save, when it succeeds then a confirmation is shown; when it fails then the error is shown and the entered content is not lost |
+| F38 | Image size control inside an article | Given an image inserted into an article, when the author appends a size from a fixed vocabulary to its Markdown, then the published page renders it at that width — column, wide or full — with a caption when one is given, responsive sources, and no arbitrary attribute or inline style reaching the HTML; the syntax is discoverable from the editor without reading documentation |
+| F39 | Editable contact links and copyright | Given a logged-in admin, when a social link or the copyright name is changed from the site, then both the footer and the home-page contacts block reflect it without a code change; an emptied link disappears from both; only `http` and `https` URLs are accepted |
+| F40 | Media grouped by the thing it belongs to | Given an album or an article, when its files are stored, then originals and derivatives live under a directory of their own inside a per-kind parent, on a volume that survives the application being rebuilt or removed, so that one album's files can be located, copied or restored without picking them out of everyone else's |
 
 ## Non-functional
 

@@ -5,14 +5,23 @@ project covers all go through here, so validation and storage rules exist in
 exactly one place.
 
 Storage layout, all relative to MEDIA_ROOT:
-    originals/<kind>/<yyyy>/<uuid>.<ext>
-    derived/<kind>/<yyyy>/<uuid>_<width>.webp
+    originals/<kind>/<group>/<uuid>.<ext>
+    derived/<kind>/<group>/<uuid>_<width>.webp
+
+`kind` is the logical parent — `photos`, `posts`, `projects` — and `group` is
+the album, article or project the file belongs to, so everything one of them
+owns can be found, copied or restored on its own (F40). Files used to be filed
+by year, which put one album's photographs among every other album's.
+
+The split between `originals/` and `derived/` stays above the grouping on
+purpose: only `derived/` is mounted over HTTP, so an original cannot be
+reached by a URL as a matter of structure rather than of vigilance.
 """
 
 import logging
+import re
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -33,6 +42,38 @@ _MAGIC = (
 )
 
 WEBP_QUALITY = 82
+
+# The logical parents. Plural, because each holds many albums or articles.
+PHOTOS = "photos"
+POSTS = "posts"
+PROJECTS = "projects"
+
+# Files whose owner is not known yet — an image dropped into an article that
+# has not been saved. Rare, and it keeps such files out of everyone else's way.
+UNFILED = "_unfiled"
+
+_UNSAFE_IN_GROUP = re.compile(r"[^a-z0-9_-]+")
+GROUP_MAX = 60
+
+
+def group_name(identifier: int | None, slug: str) -> str:
+    """A directory name for one album, article or project.
+
+    The id comes first because it is stable and unique for the life of the row;
+    the slug follows because the point of grouping is that a human can find the
+    right directory without consulting the database. A later rename leaves the
+    directory name stale but never ambiguous — the id still identifies it.
+    """
+    trimmed = _UNSAFE_IN_GROUP.sub("-", slug.lower()).strip("-")[:GROUP_MAX]
+    if identifier is None:
+        return trimmed or UNFILED
+    return f"{identifier}-{trimmed}" if trimmed else str(identifier)
+
+
+def safe_group(group: str) -> str:
+    """Never let a caller's group escape its parent directory."""
+    cleaned = _UNSAFE_IN_GROUP.sub("-", group.lower()).strip("-")[:GROUP_MAX]
+    return cleaned or UNFILED
 
 
 class ImageRejected(Exception):
@@ -81,7 +122,7 @@ def validate_upload(filename: str, content_type: str | None, data: bytes) -> str
     return sniffed
 
 
-def _resolve_inside(root: Path, relative: str) -> Path:
+def resolve_inside(root: Path, relative: str) -> Path:
     """Resolve a media-relative path, refusing anything that escapes the root."""
     root = root.resolve()
     target = (root / relative).resolve()
@@ -90,16 +131,20 @@ def _resolve_inside(root: Path, relative: str) -> Path:
     return target
 
 
-def store_original(data: bytes, mime: str, *, kind: str = "album") -> tuple[str, Path]:
+def store_original(
+    data: bytes, mime: str, *, kind: str = PHOTOS, group: str = ""
+) -> tuple[str, Path]:
     """Write the untouched upload under a server-generated name.
 
-    The client's filename is never used for anything on disk.
+    The client's filename is never used for anything on disk. `kind` is the
+    logical parent — `photos`, `posts`, `projects` — and `group` is the album,
+    article or project the file belongs to, so that everything one of them owns
+    sits in a directory of its own (F40).
     """
     extension = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}[mime]
-    year = datetime.now(UTC).strftime("%Y")
-    relative = f"{kind}/{year}/{uuid.uuid4().hex}{extension}"
+    relative = f"{kind}/{safe_group(group)}/{uuid.uuid4().hex}{extension}"
 
-    absolute = _resolve_inside(settings.originals_dir, relative)
+    absolute = resolve_inside(settings.originals_dir, relative)
     absolute.parent.mkdir(parents=True, exist_ok=True)
     absolute.write_bytes(data)
     return relative, absolute
@@ -117,12 +162,15 @@ def verify_decodable(path: Path) -> None:
 def generate_derivatives(
     original_relative: str,
     *,
-    kind: str = "album",
     widths: tuple[int, ...] | None = None,
 ) -> StoredImage:
-    """Produce WebP renditions. Aspect ratio is preserved and nothing is upscaled."""
+    """Produce WebP renditions. Aspect ratio is preserved and nothing is upscaled.
+
+    Every rendition mirrors the original's own relative path under `derived/`,
+    so the grouping chosen at intake carries through without being restated.
+    """
     widths = widths or settings.derivative_widths
-    source = _resolve_inside(settings.originals_dir, original_relative)
+    source = resolve_inside(settings.originals_dir, original_relative)
 
     result = StoredImage(original_path=original_relative, byte_size=source.stat().st_size)
 
@@ -144,7 +192,7 @@ def generate_derivatives(
             rendition = image.resize((width, height), Image.Resampling.LANCZOS)
 
             relative = f"{stem}_{width}.webp"
-            absolute = _resolve_inside(settings.derived_dir, relative)
+            absolute = resolve_inside(settings.derived_dir, relative)
             absolute.parent.mkdir(parents=True, exist_ok=True)
             rendition.save(absolute, "WEBP", quality=WEBP_QUALITY, method=5)
             result.derivatives[width] = relative
@@ -152,7 +200,7 @@ def generate_derivatives(
         # A small original still needs something to serve.
         if not result.derivatives:
             relative = f"{stem}_{image.width}.webp"
-            absolute = _resolve_inside(settings.derived_dir, relative)
+            absolute = resolve_inside(settings.derived_dir, relative)
             absolute.parent.mkdir(parents=True, exist_ok=True)
             image.save(absolute, "WEBP", quality=WEBP_QUALITY, method=5)
             result.derivatives[image.width] = relative
@@ -167,7 +215,7 @@ def delete_files(*relative_paths: str | None) -> None:
             continue
         for root in (settings.originals_dir, settings.derived_dir):
             try:
-                candidate = _resolve_inside(root, relative)
+                candidate = resolve_inside(root, relative)
             except ImageRejected:
                 continue
             if candidate.is_file():
@@ -189,7 +237,8 @@ def store_and_process(
     filename: str,
     content_type: str | None,
     *,
-    kind: str = "album",
+    kind: str = PHOTOS,
+    group: str = "",
     widths: tuple[int, ...] | None = None,
 ) -> StoredImage:
     """Validate, store and render one image synchronously.
@@ -198,10 +247,10 @@ def store_and_process(
     through the background pool instead.
     """
     mime = validate_upload(filename, content_type, data)
-    relative, absolute = store_original(data, mime, kind=kind)
+    relative, absolute = store_original(data, mime, kind=kind, group=group)
     try:
         verify_decodable(absolute)
-        return generate_derivatives(relative, kind=kind, widths=widths)
+        return generate_derivatives(relative, widths=widths)
     except Exception:
         delete_files(relative)
         raise

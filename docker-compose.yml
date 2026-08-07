@@ -45,12 +45,17 @@ services:
         postgresql+psycopg://${POSTGRES_USER:-portfolio}:${POSTGRES_PASSWORD:-portfolio}@db:5432/${POSTGRES_DB:-portfolio}
       MEDIA_ROOT: /data/media
     volumes:
-      # Photographs live on the host disk. `docker compose down -v` cannot
-      # touch them.
-      - ./data/media:/data/media
+      # Photographs live on the host disk, not in a named volume: `docker
+      # compose down -v` cannot touch them, and they can be inspected, copied
+      # and restored with ordinary tools. Point MEDIA_HOST_DIR somewhere
+      # outside the checkout on a server — a mounted block device, say — so a
+      # fresh clone or a `git clean` cannot take them with it.
+      - ${MEDIA_HOST_DIR:-./data/media}:/data/media
       # Development convenience: edit templates/CSS/Python and reload.
       - ./app:/app/app:ro
       - ./migrations:/app/migrations:ro
+      # One-off maintenance commands, e.g. scripts/migrate_media.py.
+      - ./scripts:/app/scripts:ro
     ports:
       - "8000:8000"
     command:

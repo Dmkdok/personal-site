@@ -114,6 +114,19 @@
               hx-swap="innerHTML"
             >{{ post.body_md }}</textarea>
             <p class="field__hint" id="editor-drop-hint">{{ t("blog.drop_hint") }}</p>
+
+            {# The size vocabulary is invisible otherwise: there is no button
+               for it, and nobody guesses `{.wide}`. Closed by default so it
+               costs the owner nothing once it is known. #}
+            <details class="editor__details">
+              <summary class="editor__summary">{{ t("blog.md.size_summary") }}</summary>
+              {% for form in ["normal", "wide", "full", "caption"] %}
+                <p class="field__hint">
+                  <code>{{ t("blog.md.size_" ~ form ~ "_code") }}</code>
+                  {{ t("blog.md.size_" ~ form ~ "_text") }}
+                </p>
+              {% endfor %}
+            </details>
           </section>
 
           <section class="editor__pane editor__preview" aria-labelledby="pane-preview">

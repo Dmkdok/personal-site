@@ -6,7 +6,10 @@
 {% set level = card_level|default(2) %}
 <a class="card post-card" href="/blog/{{ post.slug }}">
   {% if cover %}
-    <span class="card__media">
+    {# Decorative: the card's own title names the article. Empty alt alone is
+       not enough here — the a11y sweep asks decorative images to be out of the
+       tree as well, the way the album card already does it. #}
+    <span class="card__media" aria-hidden="true">
       <img
         src="{{ cover.src }}"
         {% if cover.srcset %}srcset="{{ cover.srcset }}"{% endif %}

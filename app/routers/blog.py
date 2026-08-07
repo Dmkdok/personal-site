@@ -18,7 +18,15 @@ from sqlalchemy import select
 
 from app.deps import CurrentAdmin, DbSession, OptionalAdmin
 from app.models.post import Post, PostStatus
-from app.services.images import ImageRejected, delete_files, media_url, store_and_process
+from app.services.images import (
+    POSTS,
+    UNFILED,
+    ImageRejected,
+    delete_files,
+    group_name,
+    media_url,
+    store_and_process,
+)
 from app.services.markdown import excerpt_from, render_markdown
 from app.services.slugs import unique_slug
 from app.templating import render, toast_headers, translate
@@ -28,6 +36,7 @@ router = APIRouter(prefix="/blog", tags=["blog"])
 # Covers and in-article pictures never need the 2560 rendition an album photo
 # does: they are displayed inside a text column, not opened full screen.
 IMAGE_WIDTHS = (640, 1600)
+POST_KIND = POSTS
 
 _WIDTH_SUFFIX = re.compile(r"_(\d+)\.webp$")
 
@@ -373,7 +382,12 @@ def upload_cover(
     data = file.file.read()
     try:
         stored = store_and_process(
-            data, file.filename, file.content_type, kind="post", widths=IMAGE_WIDTHS
+            data,
+            file.filename,
+            file.content_type,
+            kind=POST_KIND,
+            group=group_name(post.id, post.slug),
+            widths=IMAGE_WIDTHS,
         )
     except ImageRejected as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -418,15 +432,34 @@ def remove_cover(
 
 
 @router.post("/admin/images")
-def upload_inline_image(admin: CurrentAdmin, file: UploadFile | None = File(None)) -> JSONResponse:
-    """Store a picture dropped into the editor and hand back Markdown for it."""
+def upload_inline_image(
+    db: DbSession,
+    admin: CurrentAdmin,
+    file: UploadFile | None = File(None),
+    post_id: int | None = Form(None),
+) -> JSONResponse:
+    """Store a picture dropped into the editor and hand back Markdown for it.
+
+    `post_id` says which article the picture belongs to, so it is filed with
+    that article (F40). It is optional and unknown ids are ignored rather than
+    refused: an editor that has not yet learnt to send it must keep working,
+    and the picture then lands in `posts/_unfiled/`.
+    """
     if file is None or not file.filename:
         return JSONResponse({"error": translate("blog.image_no_file")}, status_code=400)
+
+    post = db.get(Post, post_id) if post_id else None
+    group = group_name(post.id, post.slug) if post else UNFILED
 
     data = file.file.read()
     try:
         stored = store_and_process(
-            data, file.filename, file.content_type, kind="post", widths=IMAGE_WIDTHS
+            data,
+            file.filename,
+            file.content_type,
+            kind=POST_KIND,
+            group=group,
+            widths=IMAGE_WIDTHS,
         )
     except ImageRejected as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)

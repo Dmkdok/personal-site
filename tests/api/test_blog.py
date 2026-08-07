@@ -141,7 +141,7 @@ def test_index_card_shows_cover_title_excerpt_and_date(client, make_post):
         title="Ночёвка на плато",
         excerpt="Как мы ставили палатку в темноте.",
         published_at=datetime(2026, 8, 4, tzinfo=UTC),
-        cover_path="post/2026/abc_1600.webp",
+        cover_path="posts/7-statia/abc_1600.webp",
     )
 
     html = client.get("/blog").text
@@ -150,10 +150,10 @@ def test_index_card_shows_cover_title_excerpt_and_date(client, make_post):
     assert "Как мы ставили палатку в темноте." in html
     assert "4 августа 2026" in html
     assert 'datetime="2026-08-04"' in html
-    assert "/media/post/2026/abc_1600.webp" in html
+    assert "/media/posts/7-statia/abc_1600.webp" in html
     # The 640 rendition comes from the same store_and_process call, so the card
     # can offer it without a second database column.
-    assert "/media/post/2026/abc_640.webp" in html
+    assert "/media/posts/7-statia/abc_640.webp" in html
 
 
 def test_index_carries_no_tags_reading_time_or_counters(client, make_post):
@@ -465,7 +465,7 @@ def test_inline_image_upload_returns_markdown_for_the_cursor(admin_client):
 
     assert response.status_code == 200
     body = response.json()
-    assert body["url"].startswith("/media/post/")
+    assert body["url"].startswith("/media/posts/")
     assert body["url"].endswith(".webp")
     assert body["markdown"] == f"![описание изображения]({body['url']})"
 

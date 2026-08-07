@@ -63,7 +63,14 @@
       {{ t("dev.field_cover_replace") if values.cover_path else t("dev.field_cover") }}
     </label>
     {% if values.cover_path %}
-      <img class="project-form__cover" src="{{ media_url(values.cover_path) }}" alt="" />
+      {# A preview of the cover just above its own label: decorative, and out of
+         the accessibility tree rather than merely unlabelled. #}
+      <img
+        class="project-form__cover"
+        src="{{ media_url(values.cover_path) }}"
+        alt=""
+        aria-hidden="true"
+      />
       <label class="field__checkbox">
         <input type="checkbox" name="remove_cover" value="1" />
         {{ t("dev.field_cover_remove") }}

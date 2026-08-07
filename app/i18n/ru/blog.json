@@ -85,7 +85,17 @@
       "ph_item": "пункт",
       "ph_code": "код",
       "ph_url": "https://",
-      "ph_alt": "описание изображения"
+      "ph_alt": "описание изображения",
+
+      "size_summary": "Размер картинки и подпись",
+      "size_normal_code": "![описание](адрес)",
+      "size_normal_text": "— по ширине текста",
+      "size_wide_code": "![описание](адрес){.wide}",
+      "size_wide_text": "— шире текста",
+      "size_full_code": "![описание](адрес){.full}",
+      "size_full_text": "— во всю колонку",
+      "size_caption_code": "![описание](адрес \"подпись\")",
+      "size_caption_text": "— подпись под картинкой"
     },
 
     "months": {

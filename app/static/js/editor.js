@@ -253,9 +253,19 @@
     replaceRange(start, end, text, start + text.length, start + text.length);
   }
 
+  /** The article being edited, so its pictures are filed with it (F40). */
+  function currentPostId() {
+    var form = document.querySelector("[hx-post^='/blog/admin/posts/']");
+    var match = form && /\/blog\/admin\/posts\/(\d+)/.exec(form.getAttribute("hx-post"));
+    return match ? match[1] : "";
+  }
+
   function uploadOne(file) {
     var payload = new FormData();
     payload.append("file", file);
+
+    var postId = currentPostId();
+    if (postId) payload.append("post_id", postId);
 
     return fetch("/blog/admin/images", {
       method: "POST",

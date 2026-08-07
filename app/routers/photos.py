@@ -35,7 +35,7 @@ logger = logging.getLogger("portfolio.photo")
 router = APIRouter(prefix="/photo", tags=["photo"])
 
 # Storage bucket under MEDIA_ROOT. Album photos are the only batch uploads.
-PHOTO_KIND = "album"
+PHOTO_KIND = images.PHOTOS
 
 MAX_TITLE = 200
 MAX_CAPTION = 600
@@ -371,7 +371,7 @@ def process_photo(db: Session, photo_id: int) -> None:
     db.commit()
 
     try:
-        stored = images.generate_derivatives(photo.original_path, kind=PHOTO_KIND)
+        stored = images.generate_derivatives(photo.original_path)
     except (FileNotFoundError, OSError) as exc:
         # A missing original is a different problem from a bad one: say which.
         missing = isinstance(exc, FileNotFoundError)
@@ -693,7 +693,9 @@ def photo_upload(
     relative: str | None = None
     try:
         mime = images.validate_upload(file.filename, file.content_type, data)
-        relative, absolute = images.store_original(data, mime, kind=PHOTO_KIND)
+        relative, absolute = images.store_original(
+            data, mime, kind=PHOTO_KIND, group=images.group_name(album.id, album.slug)
+        )
         images.verify_decodable(absolute)
     except images.ImageRejected as exc:
         # Nothing half-written survives a rejection.

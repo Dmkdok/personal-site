@@ -24,10 +24,15 @@ $COMPOSE exec -T db pg_dump -U "$PG_USER" -d "$PG_DB" --clean --if-exists \
   | gzip > "$BACKUP_DIR/db-$STAMP.sql.gz"
 
 echo "→ archiving media"
-if [ -d ./data/media ]; then
-  tar -czf "$BACKUP_DIR/media-$STAMP.tar.gz" -C ./data media
+# Follows MEDIA_HOST_DIR, which on a server points outside the checkout. The
+# archive always unpacks to a directory called `media`, whatever it is called
+# on disk, so the restore in docs/HANDOFF.md §5 does not depend on the layout.
+MEDIA_DIR="${MEDIA_HOST_DIR:-./data/media}"
+if [ -d "$MEDIA_DIR" ]; then
+  tar -czf "$BACKUP_DIR/media-$STAMP.tar.gz" \
+    -C "$(dirname "$MEDIA_DIR")" --transform 's,^[^/]*,media,' "$(basename "$MEDIA_DIR")"
 else
-  echo "  (no ./data/media yet — skipped)"
+  echo "  (no $MEDIA_DIR yet — skipped)"
 fi
 
 echo "→ pruning backups older than 30 days"

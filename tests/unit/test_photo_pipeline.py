@@ -215,5 +215,70 @@ def test_delete_files_tolerates_paths_that_are_already_gone():
 
 
 def test_media_url_points_at_the_public_mount():
-    assert images.media_url("album/2026/abc_640.webp") == "/media/album/2026/abc_640.webp"
+    assert images.media_url("photos/3-gory/abc_640.webp") == "/media/photos/3-gory/abc_640.webp"
     assert images.media_url(None) is None
+
+
+# --------------------------------------------------------------------------
+# T083 / F40 — one album's files live in one directory
+# --------------------------------------------------------------------------
+def test_files_are_filed_under_the_thing_they_belong_to():
+    """Not by year. `album/2026/` put one album's photographs among everyone's."""
+    group = images.group_name(12, "elbrus-s-severa")
+    relative, absolute = images.store_original(
+        make_image(40, 30), "image/jpeg", kind=images.PHOTOS, group=group
+    )
+
+    assert relative.startswith("photos/12-elbrus-s-severa/")
+    assert absolute.parent.name == "12-elbrus-s-severa"
+    assert absolute.parent.parent.name == "photos"
+    images.delete_files(relative)
+
+
+def test_a_rendition_lands_beside_its_own_original():
+    group = images.group_name(3, "zametka")
+    stored = images.store_and_process(
+        make_image(900, 600),
+        "shot.jpg",
+        "image/jpeg",
+        kind=images.POSTS,
+        group=group,
+        widths=(640,),
+    )
+
+    original = Path(stored.original_path)
+    for rendition in stored.derivatives.values():
+        assert Path(rendition).parent == original.parent
+    images.delete_files(stored.original_path, *stored.derivatives.values())
+
+
+@pytest.mark.parametrize(
+    ("identifier", "slug", "expected"),
+    [
+        (12, "elbrus", "12-elbrus"),
+        (12, "Эльбрус", "12"),  # a slug is transliterated upstream; nothing survives here
+        (None, "chernovik", "chernovik"),
+        (None, "", images.UNFILED),
+        (7, "", "7"),
+    ],
+)
+def test_group_names_are_stable_and_readable(identifier, slug, expected):
+    assert images.group_name(identifier, slug) == expected
+
+
+@pytest.mark.parametrize("hostile", ["../../etc", "a/../../b", "..", "/absolute", "with spaces"])
+def test_a_group_can_never_climb_out_of_its_parent(hostile):
+    group = images.safe_group(hostile)
+
+    assert "/" not in group
+    assert ".." not in group
+    relative, _ = images.store_original(
+        make_image(20, 20), "image/jpeg", kind=images.PHOTOS, group=hostile
+    )
+    assert relative.startswith(f"photos/{group}/")
+    assert (
+        (settings.originals_dir / relative)
+        .resolve()
+        .is_relative_to(settings.originals_dir.resolve())
+    )
+    images.delete_files(relative)

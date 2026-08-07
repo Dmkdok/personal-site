@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 COMPOSE := docker compose
 
-.PHONY: help up down restart logs build migrate revision shell psql test e2e lint fmt backup clean
+.PHONY: help up down restart logs build migrate revision shell psql test e2e lint fmt backup restore-check clean
 
 help:            ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -51,6 +51,9 @@ fmt:             ## Ruff autofix + format
 
 backup:          ## Dump the database and archive media into ./data/backups
 	@bash scripts/backup.sh
+
+restore-check:   ## Rehearse a restore into a scratch database (touches nothing live)
+	@bash scripts/restore-check.sh
 
 clean:           ## Stop and remove the database volume (media is NOT deleted)
 	$(COMPOSE) down -v

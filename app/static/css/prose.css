@@ -8,6 +8,13 @@
     font-size: var(--step-1);
     line-height: 1.7;
     color: var(--text);
+
+    /* The two widths a picture can claim beyond the text measure, written in
+       the source as {.wide} and {.full}. `wide` sits halfway between the
+       article column and the page's own content column so the three widths
+       read as a ladder; `full` is that content column exactly. */
+    --figure-wide: calc((var(--prose-max) + var(--page-max)) / 2);
+    --figure-full: var(--page-max);
   }
 
   .prose > * + * {
@@ -112,6 +119,37 @@
     margin-block-start: var(--space-2xs);
     color: var(--text-muted);
     font-size: var(--step--1);
+  }
+
+  /* --- Picture widths ------------------------------------------------------
+     A paragraph holding nothing but an image is rendered as a figure by
+     app/services/markdown.py, which also puts the width class here. Two class
+     selectors, so these beat `.prose figure` above. */
+  .prose .prose-figure--wide {
+    --figure-size: min(var(--figure-wide), 100vw - var(--gutter) * 2);
+  }
+
+  .prose .prose-figure--full {
+    --figure-size: min(var(--figure-full), 100vw - var(--gutter) * 2);
+  }
+
+  /* Breaking out of the measure symmetrically: the leftover space, once the
+     figure has claimed its width, split evenly between the two sides. It goes
+     negative when the figure is wider than the column — which is the point —
+     and back to zero on a screen too narrow to give anything away, so the
+     three widths collapse into one without a media query. */
+  .prose .prose-figure--wide,
+  .prose .prose-figure--full {
+    inline-size: var(--figure-size);
+    margin-inline: calc((100% - var(--figure-size)) / 2);
+    margin-block: var(--space-l);
+  }
+
+  /* The editor preview is a column inside a form, not the page: there is no
+     page to break out of, so both wide forms collapse to the pane. */
+  .editor__preview .prose {
+    --figure-wide: 100%;
+    --figure-full: 100%;
   }
 
   .prose hr {
