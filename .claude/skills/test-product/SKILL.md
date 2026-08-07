@@ -1,35 +1,53 @@
 ---
 name: test-product
 description: >-
-  Verifies product quality with automated tests and browser/Playwright checks.
+  Verifies product quality with automated tests and Playwright browser checks.
   Use after implementation milestones, before claiming delivery complete, or
-  when debugging UI behavior. Adapted from Anthropic webapp-testing patterns.
+  when debugging UI behavior. Adapts Anthropic webapp-testing patterns
+  (reconnaissance-then-action, networkidle, role selectors).
 ---
 
 # Test Product
 
 ## Goal
 
-Prove the product works against SPEC acceptance criteria. Skeptical by default.
+Prove the product works against SPEC acceptance criteria. Skeptical by default. No “should work.”
 
 ## Preferred toolkit
 
-1. Project test runner (vitest/jest/pytest/etc.) — unit/integration
-2. **Playwright** for e2e (Chromium, headless)
-3. In Cursor: browser MCP tools for exploratory QA / screenshots when useful
+1. Project test runner (vitest/jest/pytest/…) — unit/integration
+2. **Playwright** for e2e (Chromium; headless in CI/scripts)
+3. Browser MCP (Cursor/Claude) for exploratory QA / screenshots when useful
 
-Patterns inspired by [anthropics/skills webapp-testing](https://github.com/anthropics/skills) (see `vendor/anthropics/webapp-testing`). Full upstream skill may include helper scripts; this pack works without them.
+Upstream patterns: `vendor/anthropics/webapp-testing` ([anthropics/skills](https://github.com/anthropics/skills)). Prefer matching the repo’s language (TS `@playwright/test` vs Python `playwright`).
+
+## Decision tree
+
+```text
+Static HTML only?
+  yes → read file / file:// ; script against known selectors
+  no  → server running?
+          no  → start app (compose/dev script); wait for port
+          yes → reconnaissance-then-action (below)
+```
 
 ## Workflow
 
 ```text
-1. Read docs/SPEC.md acceptance criteria → checklist
-2. Ensure app boots (note URL/port)
-3. Run unit/integration tests
-4. Write/run Playwright flows for critical paths
-5. Capture failures with screenshots + console logs
-6. Fix or file blockers; re-run until green or waived in DECISIONS.md
+1. Read docs/SPEC.md acceptance → checklist in docs/STATUS.md
+2. Boot app; note base URL
+3. Unit/integration suite
+4. Playwright: critical user journeys only (auth, create, pay, core CTA)
+5. On failure: screenshot + console + trace; fix or DECISIONS waiver
+6. Re-run until green or explicit waiver
 ```
+
+## Reconnaissance-then-action
+
+1. `goto` → `wait_for_load_state("networkidle")` (or equivalent ready signal)
+2. Screenshot / inspect DOM
+3. Prefer **role/name/text** selectors (`getByRole`, `get_by_role`) over brittle CSS chains
+4. Then act (click/fill/assert)
 
 ## Playwright baseline
 
@@ -41,6 +59,7 @@ with sync_playwright() as p:
     page = browser.new_page()
     page.goto("http://localhost:3000")
     page.wait_for_load_state("networkidle")
+    page.get_by_role("button", name="Sign in").click()
     page.screenshot(path="docs/qa/home.png", full_page=True)
     browser.close()
 ```
@@ -49,10 +68,11 @@ Or TypeScript `@playwright/test` if the repo is JS/TS-first — match the stack.
 
 ## Rules
 
-- Always wait for network idle / explicit selectors on dynamic apps
+- Never assert on a dynamic page before it is ready
 - Prefer role/text selectors over brittle CSS chains
-- Do not claim "done" if critical acceptance criteria lack evidence
+- Critical SPEC items without evidence ⇒ not done
 - Record results in `docs/STATUS.md` under `## Test report`
+- Keep scripts/fixtures under `docs/qa/` or the project’s test dirs — not one-off `/tmp` only
 
 ## Reading the run correctly
 

@@ -58,6 +58,8 @@ never paste file contents back.
 - Delegate tasks that are well-bounded and can be validated independently.
 - Prefer small handoffs over giant implementation prompts.
 - If a task needs product judgment, keep it with the planning/parent agent rather than handing it to a subagent.
+- Never paste the entire `docs/` tree into a subagent prompt.
+- Parent keeps `docs/STATUS.md` current; on resume, STATUS is the source of truth for phase — not chat memory.
 
 ## Skills to load by phase
 
@@ -66,9 +68,11 @@ never paste file contents back.
 | 1 | `elicit-requirements` |
 | 2 | `draft-product-spec` |
 | 3 | `draft-tech-plan` |
-| 4 | `implement-product`, `frontend-design` |
+| 4 | `implement-product`, `coding-discipline`, `frontend-design` |
 | 5 | `test-product` |
-| 6 | `review-product`, `web-design-guidelines` |
+| 6 | `review-product`, `web-design-guidelines`, `secure-review` |
+| any | `concise-mode` when user asks кратко / экономь токены |
+| optional | `ui-quality-audit` — **only** on explicit UI/UX deep-audit request; not default Phase 6 |
 
 ## Reading code (Serena)
 

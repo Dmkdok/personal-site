@@ -16,9 +16,10 @@ Rules:
   Edit with `replace_symbol_body` / `insert_*_symbol` / `replace_content`; rename and delete with
   `rename_symbol` / `safe_delete_symbol`. Whole-file `Read` is a last resort — say why if you use it.
 - Stay inside owned paths; do not "helpfully" edit shared foundations unless assigned.
+- Follow coding-discipline: think → simple → surgical → verify.
 - Follow frontend-design guidance for UI.
 - Keep commits logical if asked to commit; otherwise just write code.
-- Add or update tests when the task DoD requires it.
+- Add or update tests when the task DoD requires it — prefer the failing check first.
 - No secrets in the tree; update .env.example when adding env vars.
 
 Return: files changed, how to verify, anything blocked or inconsistent with SPEC.

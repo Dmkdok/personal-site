@@ -18,14 +18,20 @@ If gate not approved → stop and return to orchestrate-product.
 ## Method
 
 1. Read the SPEC section for your area, your TASKS milestone, and `docs/CONVENTIONS.md` — not the
-   documents in full. Explore code with Serena (`get_symbols_overview` → `find_symbol`), not
-   whole-file reads; edit with `replace_symbol_body` / `replace_content`.
+   documents in full. Load skill **`coding-discipline`**. Explore code with Serena
+   (`get_symbols_overview` → `find_symbol`), not whole-file reads; edit with
+   `replace_symbol_body` / `replace_content`.
 2. Establish foundations first: tooling, tokens/layout shell, data layer, auth.
 3. Deliver a **vertical slice** early (one real user flow end-to-end).
 4. Parallelize only independent path ownership.
 5. After each milestone: run relevant checks; update `docs/STATUS.md` and tick `docs/TASKS.md`
    **before starting the next one**. A milestone that is finished but unrecorded is indistinguishable
    from one that was never started, and the next session will redo it.
+
+### Verification loop
+
+Prefer TDD when SPEC/PLAN requires tests: failing check → implement → pass. For bugs: repro first.
+Do not expand scope past the approved task (surgical diffs).
 
 ## Quality bar
 
@@ -34,6 +40,7 @@ If gate not approved → stop and return to orchestrate-product.
 - No secrets in repo; use `.env.example`
 - Typed boundaries where the stack supports them
 - Accessible interactive elements (labels, focus, keyboard)
+- Simplicity: no speculative abstractions
 
 ## Research
 

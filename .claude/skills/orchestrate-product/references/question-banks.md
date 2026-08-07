@@ -56,3 +56,15 @@ Ask in batches of 5–8. Skip what the user already answered. Dig deeper on vagu
 - "What would make you reject the result?"
 - "Show me three sites whose *feel* you want (not features)."
 - "What must never break?"
+
+## Question format (grill-me)
+
+For each item in a batch, prefer:
+
+```text
+N. <вопрос>
+   Рекомендация: <ваш лучший ответ / вариант A>
+   Альтернативы: B … / C …
+```
+
+User can reply «ок» / «B» / short correction. Faster than blank essays.

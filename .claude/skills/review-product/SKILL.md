@@ -41,17 +41,17 @@ Quote the minimum that makes a finding land; cite `file:line` and let the reader
 - [ ] No obvious broken links or placeholder lorem in production paths
 
 ### Security
-- [ ] No secrets committed
-- [ ] Authz checks on protected actions
-- [ ] Basic XSS/SQL injection hygiene for the stack
+- Run skill **`secure-review`** (manual checklist; Semgrep if available)
+- Critical/High security findings ⇒ FAIL unless waived in DECISIONS.md
 
 ### UX / UI
 - Run `web-design-guidelines` on key UI files
 - Spot-check mobile width
-- Distinctive design per brief (not generic AI template)
+- Distinctive design per brief (not generic AI template) — `frontend-design` bar
 
 ### Engineering
 - [ ] Sensible structure matching PLAN.md
+- [ ] Diffs look surgical (flag drive-by refactors)
 - [ ] Dead code / TODOs called out
 - [ ] CI or at least documented test commands
 

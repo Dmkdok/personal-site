@@ -9,7 +9,7 @@ description: >-
 compatibility: Cursor Agent, Claude Code; Plan Mode recommended for Phase 1–3
 metadata:
   author: product-factory
-  version: "1.0.0"
+  version: "1.1.0"
   lang_user: ru
   lang_internal: en
 ---
@@ -97,7 +97,8 @@ Copy structure from `templates/product-factory/` when present, else `templates/`
 
 ### Phase 1 — Elicit (read skill `elicit-requirements`)
 
-Ask in **batches of 5–8 questions**, not one giant dump. Prefer structured choices when possible.
+Grill until shared understanding: batches of 5–8, **recommended answers** on each question, skip
+what the repo already answers. Prefer structured choices when possible.
 
 Stop eliciting only when [Definition of Ready](references/pipeline.md#definition-of-ready) is met.
 
@@ -126,7 +127,7 @@ Present in Russian:
 On approval, write `docs/STATUS.md` → `phase: implement` and proceed.
 On change requests, update docs and re-ask. Never skip the gate.
 
-### Phase 4 — Implement (`implement-product` + subagents)
+### Phase 4 — Implement (`implement-product` + `coding-discipline` + subagents)
 
 Delegate via Task / subagents per [references/delegation.md](references/delegation.md).
 
@@ -135,7 +136,8 @@ Parent agent:
 - Keeps `docs/STATUS.md` updated **as each milestone lands, not at the end** — an unrecorded
   milestone is lost work when the session runs out of context
 - Merges results; resolves conflicts
-- Does not dump entire codebase into chat — summarize
+- Verifies each milestone before starting the next
+- Does not dump entire codebase into chat — summarize (or activate `concise-mode` if the user asked)
 - Reads code through Serena's symbol tools, not whole files (see
   [references/delegation.md](references/delegation.md#reading-code-serena))
 
@@ -145,9 +147,9 @@ For UI work, apply `frontend-design`. Prefer distinctive, brief-specific design;
 
 Run automated checks + Playwright / browser verification. Fix failures before claiming done.
 
-### Phase 6 — Review (`review-product` + `web-design-guidelines`)
+### Phase 6 — Review (`review-product` + `web-design-guidelines` + `secure-review`)
 
-Independent verification (verifier mindset). Critical issues must be fixed.
+Independent verification (verifier mindset). Critical functional **or** security issues must be fixed.
 
 ### Phase 7 — Handoff
 
@@ -158,7 +160,8 @@ Russian summary for the user:
 - Known limitations
 - Suggested next iterations
 
-English `docs/HANDOFF.md` for continuity across tools/sessions.
+English `docs/HANDOFF.md` **and** an up-to-date `docs/STATUS.md` for continuity across
+tools/sessions. A later agent must be able to resume from STATUS alone without the prior chat.
 
 ## Progress checklist
 
@@ -183,3 +186,7 @@ Copy into `docs/STATUS.md` and tick:
 - Parallel agents editing the same files without ownership
 - Inventing brand/voice when the user already stated them
 - Closing with “should work” without running verification
+- Drive-by refactors and speculative architecture (violates `coding-discipline`)
+- Auto-running `ui-quality-audit` on every delivery (optional skill — only on explicit request)
+- Claiming tests green from TASKS checkboxes or chat memory without running the suite
+- Dumping all of `docs/` into every subagent prompt
