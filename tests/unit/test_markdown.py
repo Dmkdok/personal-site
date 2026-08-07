@@ -128,7 +128,7 @@ def test_common_formatting_is_preserved():
         "<ul>",
         "<ol>",
         "<blockquote>",
-        "<pre>",
+        "<pre ",
         '<img src="/media/post/2026/a_1600.webp" alt="вершина"',
         '<a href="https://example.com"',
     ):
@@ -306,6 +306,87 @@ def test_srcset_never_escapes_the_media_root(renditions):
 
     assert "srcset" not in html, "a path out of the media root produced renditions"
     assert_inert(html)
+
+
+# -- scrolling boxes --------------------------------------------------------
+# Wide content scrolls inside its own box so the page never does. Both boxes
+# have to be reachable without a mouse: Chrome 127+ makes scroll containers
+# focusable by itself, Firefox and Safari do not.
+def test_a_code_block_is_a_focusable_named_region():
+    html = render_markdown("```\nprint('привет')\n```")
+
+    assert '<pre tabindex="0" role="region" aria-label="Блок кода">' in html
+    assert_inert(html)
+
+
+def test_a_table_scrolls_in_a_wrapper_and_stays_a_table():
+    """`display: block` on a <table> costs it its role and its header links."""
+    html = render_markdown("| a | b |\n|---|---|\n| 1 | 2 |")
+
+    assert '<div class="table-scroll" role="region" tabindex="0" aria-label="Таблица">' in html
+    assert "<table>" in html
+    assert html.count("</div>") == 1, html
+    assert "<th>a</th>" in html
+    assert_inert(html)
+
+
+def test_an_author_cannot_write_their_own_region():
+    """Raw HTML is off at the parser, so `div` in the allow-list stays ours."""
+    html = render_markdown('<div role="region" tabindex="0">взлом</div>')
+
+    assert "<div" not in html, "an author reached the element the renderer owns"
+    assert "&lt;div" in html, "it should survive as visible text, escaped"
+    assert_inert(html)
+
+
+# -- intrinsic size ---------------------------------------------------------
+# Every picture is `loading="lazy"`, so one that reserves no height lets the
+# text below it jump when the bytes land. Two of them measured CLS 0.119
+# against a 0.02 budget before `width`/`height` were emitted.
+@pytest.fixture
+def readable_rendition():
+    """A rendition Pillow can actually open, unlike the `renditions` stubs."""
+    from PIL import Image
+
+    from app.config import settings
+
+    directory = settings.derived_dir / "post" / "2026"
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / "picture_1600.webp"
+    Image.new("RGB", (1600, 1067), "grey").save(path, "WEBP")
+    yield
+    path.unlink(missing_ok=True)
+
+
+def test_a_picture_carries_its_intrinsic_size(readable_rendition):
+    html = render_markdown(f"![вершина]({PICTURE}_1600.webp)")
+
+    assert 'width="1600"' in html
+    assert 'height="1067"' in html
+    assert_inert(html)
+
+
+def test_a_picture_we_cannot_measure_gets_no_size(renditions):
+    """The `renditions` stubs are not decodable: no box beats a guessed box."""
+    html = render_markdown(f"![вершина]({PICTURE}_1600.webp)")
+
+    assert "width=" not in html
+    assert "height=" not in html
+
+
+@pytest.mark.parametrize(
+    "src",
+    [
+        "https://evil.example/media/post/2026/picture_1600.webp",
+        "/media/../originals/post/2026/picture_1600.webp",
+        "/uploads/picture_1600.webp",
+    ],
+)
+def test_a_foreign_url_gets_no_size(src, readable_rendition):
+    html = render_markdown(f"![вершина]({src})")
+
+    assert "width=" not in html
+    assert "height=" not in html
 
 
 # -- smuggling --------------------------------------------------------------

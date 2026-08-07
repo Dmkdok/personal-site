@@ -37,7 +37,7 @@ from app.config import settings
 # for this. Importing it rather than writing a second one is deliberate: a
 # crafted `src` must be refused by exactly the rule that guards every other
 # media path.
-from app.services.images import ImageRejected, media_url, resolve_inside
+from app.services.images import ImageRejected, intrinsic_size, media_url, resolve_inside
 
 #: The words an author may write inside `{...}` after an image. Everything else
 #: is dropped, so a class attribute can never carry anything we did not choose.
@@ -52,6 +52,12 @@ _SIZES: dict[str | None, str] = {
 }
 
 _MEDIA_PREFIX = "/media/"
+
+#: Openers for the two scrolling boxes in prose. `role="region"` gives the box
+#: a name once it is focusable, so a screen reader says what has just been
+#: entered instead of announcing a bare group.
+_PRE_OPEN = '<pre tabindex="0" role="region" aria-label="Блок кода">'
+_TABLE_SCROLL_OPEN = '<div class="table-scroll" role="region" tabindex="0" aria-label="Таблица">'
 
 #: `<stem>_<width>.webp`, the shape app.services.images gives every rendition.
 #: The stem is matched, never assumed: the directory layout under the media
@@ -96,6 +102,24 @@ def _srcset(src: str) -> str:
     if len(found) < 2:
         return ""
     return ", ".join(f"{media_url(relative)} {width}w" for width, relative in found)
+
+
+def _dimensions(src: str) -> tuple[int, int] | None:
+    """The pixel size of the rendition `src` points at, or None.
+
+    Every picture in an article is `loading="lazy"`, so until its bytes arrive
+    it occupies no height and the text below it sits too high; when it lands,
+    that text jumps. Two pictures were enough to score CLS 0.119 against this
+    project's 0.02 budget. `width`/`height` give the browser the ratio to
+    reserve the box up front — the intrinsic size, not the displayed one, which
+    prose.css still governs through `inline-size: 100%`.
+
+    Foreign URLs get nothing: their size is unknowable here, and a guess would
+    reserve the wrong box, which is worse than reserving none.
+    """
+    if not src.startswith(_MEDIA_PREFIX):
+        return None
+    return intrinsic_size(src[len(_MEDIA_PREFIX) :])
 
 
 def _figure_paragraphs(state: Any) -> None:
@@ -153,6 +177,10 @@ class _ProseRenderer(RendererHTML):
             # Inside a figure the title is the caption, not a second tooltip.
             parts.append(f'title="{escapeHtml(title)}"')
 
+        pixels = _dimensions(src)
+        if pixels:
+            parts += [f'width="{pixels[0]}"', f'height="{pixels[1]}"']
+
         srcset = _srcset(src)
         if srcset:
             parts.append(f'srcset="{escapeHtml(srcset)}"')
@@ -171,6 +199,24 @@ class _ProseRenderer(RendererHTML):
         if width:
             classes += f" prose-figure--{width}"
         return f'<figure class="{classes}">\n'
+
+    # A scrolling box has to be reachable without a mouse. Chrome 127+ makes
+    # scroll containers focusable on its own; Firefox and Safari do not, and
+    # there a wide code block or table simply cannot be read from a keyboard.
+    def fence(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
+        return super().fence(tokens, idx, options, env).replace("<pre>", _PRE_OPEN, 1)
+
+    def code_block(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
+        return super().code_block(tokens, idx, options, env).replace("<pre>", _PRE_OPEN, 1)
+
+    def table_open(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
+        # The scroller is this wrapper, never the table: `display: block` on a
+        # <table> costs it its role, its header associations and its row and
+        # column counts in the accessibility tree.
+        return f"{_TABLE_SCROLL_OPEN}<table>"
+
+    def table_close(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
+        return "</table></div>\n"
 
     def paragraph_close(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
         image = tokens[idx].meta.get("figure_image")
@@ -202,7 +248,7 @@ ALLOWED_TAGS: set[str] = {
     "blockquote", "ul", "ol", "li",
     "a", "img", "figure", "figcaption",
     "table", "thead", "tbody", "tr", "th", "td",
-    "span",
+    "span", "div",
 }
 # fmt: on
 
@@ -216,6 +262,11 @@ ALLOWED_ATTRIBUTES: dict[str, set[str]] = {
     # filters attribute names, never values. "style" is never allowed: the CSP
     # forbids it, and it would be a way out of the layout.
     "figure": {"class"},
+    # The two scrolling boxes. Authors cannot produce either set of attributes:
+    # raw HTML is off at the parser and `attrs_plugin` reaches images only, so
+    # these arrive from the renderer above or not at all.
+    "div": {"class", "role", "tabindex", "aria-label"},
+    "pre": {"role", "tabindex", "aria-label"},
     "td": {"align"},
     "th": {"align", "scope"},
     "code": {"class"},

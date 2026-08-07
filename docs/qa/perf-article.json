@@ -1,0 +1,37 @@
+{
+  "pictures": 2,
+  "viewport": "1440x900",
+  "throughput_kbps": 400,
+  "cls_on_load": 0.00023,
+  "cls_after_scrolling_to_the_end": 0.00023,
+  "shifts": [
+    {
+      "value": 0.000230419921875,
+      "sources": [
+        "DIV.nav__capsule"
+      ]
+    }
+  ],
+  "lcp_ms": 352,
+  "lcp_element": "P.",
+  "images": [
+    {
+      "width": "1600",
+      "height": "2400",
+      "loading": "lazy",
+      "srcset": true,
+      "loaded": true
+    },
+    {
+      "width": "1600",
+      "height": "2400",
+      "loading": "lazy",
+      "srcset": true,
+      "loaded": true
+    }
+  ],
+  "budgets": {
+    "cls": 0.02
+  },
+  "was_before_the_fix": 0.119
+}

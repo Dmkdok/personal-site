@@ -24,7 +24,7 @@ import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from PIL import Image, ImageOps, UnidentifiedImageError
+from PIL import Image, ImageOps
 
 from app.config import settings
 
@@ -34,6 +34,11 @@ logger = logging.getLogger("portfolio.images")
 # native dependency and the owner shoots camera JPEG.
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+
+#: Hard ceiling on pixel count, independent of Pillow's own bomb thresholds.
+#: 120 Mp is far above anything the owner's cameras produce and far below what
+#: it takes to exhaust a worker: at four bytes a pixel this is ~480 MB decoded.
+MAX_PIXELS = 120_000_000
 
 # Magic bytes, checked because a client-supplied content type proves nothing.
 _MAGIC = (
@@ -131,6 +136,22 @@ def resolve_inside(root: Path, relative: str) -> Path:
     return target
 
 
+def intrinsic_size(derived_relative: str) -> tuple[int, int] | None:
+    """The pixel size of a rendition under `derived/`, or None if unreadable.
+
+    Pillow reads the header, not the pixels, so this is a seek rather than a
+    decode. It exists so markup can carry `width`/`height`: a lazy picture with
+    no reserved height lets the text below it jump when the bytes arrive.
+    """
+    try:
+        with Image.open(resolve_inside(settings.derived_dir, derived_relative)) as image:
+            return image.size
+    except (ImageRejected, OSError, ValueError):
+        # Missing, outside the media root, or not an image we can read. The
+        # caller falls back to markup without dimensions rather than failing.
+        return None
+
+
 def store_original(
     data: bytes, mime: str, *, kind: str = PHOTOS, group: str = ""
 ) -> tuple[str, Path]:
@@ -151,11 +172,27 @@ def store_original(
 
 
 def verify_decodable(path: Path) -> None:
-    """Confirm Pillow can actually read the file. Cheap guard against fuzzed input."""
+    """Confirm Pillow can actually read the file. Cheap guard against fuzzed input.
+
+    Catches broadly on purpose. The narrow tuple this used to carry —
+    `UnidentifiedImageError, OSError, ValueError` — let `DecompressionBombError`
+    straight through, which is not a subclass of any of them: the caller's
+    `except ImageRejected` never ran, so the request became a 500 carrying an
+    HTML page to a client parsing JSON, and the stored original stayed on disk.
+    Everything reaching this function is untrusted input, and every way it can
+    fail means the same thing to the person uploading it.
+    """
     try:
         with Image.open(path) as image:
+            if image.width * image.height > MAX_PIXELS:
+                # Pillow only *warns* between its own limit and twice it, and a
+                # warned-about image is still decoded — several bytes a pixel,
+                # in a background worker where nobody is waiting to be told.
+                raise ImageRejected("Слишком большое изображение — уменьшите разрешение.")
             image.verify()
-    except (UnidentifiedImageError, OSError, ValueError) as exc:
+    except ImageRejected:
+        raise
+    except Exception as exc:
         raise ImageRejected("Файл повреждён или не читается как изображение.") from exc
 
 

@@ -21,8 +21,8 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import Browser, Playwright
 
-from e2e.conftest import wait_for_ready
-from e2e.helpers import AdminApi, Album, photo_bytes, ru
+from e2e.conftest import Trash, wait_for_ready
+from e2e.helpers import AdminApi, Album, Post, photo_bytes, ru
 
 pytestmark = pytest.mark.perf
 
@@ -30,6 +30,11 @@ PHOTO_COUNT = 50
 CLS_BUDGET = 0.02  # "≈ 0"; 0.1 is Google's "good" line, this is far stricter
 THUMB_BUDGET_KB = 120
 LCP_BUDGET_MS = 2500
+
+#: Throttle for the article measurement. A shift only exists in the window
+#: between the text painting and the picture landing on top of it; on an
+#: unthrottled localhost that window is too small to catch a real regression.
+ARTICLE_KBPS = 400
 
 # Installed before any page script so nothing is missed between navigation and
 # the first paint.
@@ -216,3 +221,124 @@ def test_the_50_photo_grid_meets_its_budgets(
 
     # -- LCP ----------------------------------------------------------------
     assert 0 < settled["lcp"] <= LCP_BUDGET_MS, settled
+
+
+# ---------------------------------------------------------------------------
+# Pictures inside an article (F9)
+#
+# The album grid above is stable because the photo templates emit intrinsic
+# dimensions. Pictures written into an article go through
+# `app/services/markdown.py` instead, which emitted none: two of them measured
+# CLS 0.119 against the same 0.02 budget, the text below them jumping as each
+# lazy picture arrived. This is the regression test for that.
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def illustrated_article(admin_api: AdminApi, trash: Trash, run_token: str) -> Post:
+    """A published article with two pictures and text under each of them.
+
+    Portrait, because that is the shape that hurts: at the prose column's width
+    an unreserved 2:3 frame shoves most of a viewport's worth of text down when
+    it lands, where an unreserved landscape one barely leaves the budget.
+    """
+    post = trash.post(admin_api.create_post(f"E2E вёрстка {run_token}"))
+    urls = [
+        admin_api.upload_inline_image(
+            post, photo_bytes(1600, 2400, seed=index), f"prose-{run_token}-{index}.jpg"
+        )
+        for index in range(2)
+    ]
+    # Enough prose under each picture that a shift has something to move.
+    paragraph = "Текст под картинкой, которому положено стоять на месте. " * 12
+    admin_api.publish_post(
+        post,
+        "\n\n".join(
+            [paragraph, f"![Кадр один]({urls[0]})", paragraph, f"![Кадр два]({urls[1]})", paragraph]
+        ),
+    )
+    return post
+
+
+def test_an_illustrated_article_reserves_room_for_its_pictures(
+    browser: Browser, base_url: str, qa_dir: Path, illustrated_article: Post
+) -> None:
+    context = browser.new_context(base_url=base_url, viewport={"width": 1440, "height": 900})
+    try:
+        page = context.new_page()
+        page.add_init_script(INSTRUMENT)
+
+        cdp = context.new_cdp_session(page)
+        cdp.send("Network.enable")
+        cdp.send(
+            "Network.emulateNetworkConditions",
+            {
+                "offline": False,
+                "latency": 40,
+                "downloadThroughput": ARTICLE_KBPS * 1024,
+                "uploadThroughput": ARTICLE_KBPS * 1024,
+            },
+        )
+
+        page.goto(f"/blog/{illustrated_article.slug}", wait_until="load")
+        page.wait_for_load_state("networkidle")
+        cls_on_load = page.evaluate("() => window.__cls")
+
+        # The second picture is below the fold and lazy: it can only shift the
+        # page once something scrolls it into view.
+        page.evaluate(
+            "() => new Promise((done) => {"
+            "  let y = 0;"
+            "  const step = () => {"
+            "    y += window.innerHeight;"
+            "    window.scrollTo(0, y);"
+            "    if (y < document.body.scrollHeight) setTimeout(step, 200); else done();"
+            "  };"
+            "  step();"
+            "})"
+        )
+        page.wait_for_load_state("networkidle")
+
+        settled = page.evaluate(
+            "() => ({ cls: window.__cls, shifts: window.__shifts, lcp: window.__lcp,"
+            " element: window.__lcpElement || null })"
+        )
+        pictures = page.evaluate(
+            """
+            () => Array.from(document.querySelectorAll('.prose img')).map((i) => ({
+              width: i.getAttribute('width'),
+              height: i.getAttribute('height'),
+              loading: i.getAttribute('loading'),
+              srcset: !!i.getAttribute('srcset'),
+              loaded: i.complete && i.naturalWidth > 0
+            }))
+            """
+        )
+    finally:
+        context.close()
+
+    report = {
+        "pictures": len(pictures),
+        "viewport": "1440x900",
+        "throughput_kbps": ARTICLE_KBPS,
+        "cls_on_load": round(cls_on_load, 5),
+        "cls_after_scrolling_to_the_end": round(settled["cls"], 5),
+        "shifts": settled["shifts"],
+        "lcp_ms": round(settled["lcp"]),
+        "lcp_element": settled["element"],
+        "images": pictures,
+        "budgets": {"cls": CLS_BUDGET},
+        "was_before_the_fix": 0.119,
+    }
+    (qa_dir / "perf-article.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    assert len(pictures) == 2, pictures
+    for picture in pictures:
+        # The cause, asserted directly: a ratio the browser can reserve before
+        # a single byte of the picture has arrived.
+        assert picture["width"] and int(picture["width"]) > 0, pictures
+        assert picture["height"] and int(picture["height"]) > 0, pictures
+        assert picture["loaded"], pictures
+
+    assert cls_on_load <= CLS_BUDGET, report["shifts"]
+    assert settled["cls"] <= CLS_BUDGET, report["shifts"]

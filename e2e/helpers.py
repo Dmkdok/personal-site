@@ -198,6 +198,19 @@ class AdminApi:
         assert match, "editor page carries no post id"
         return Post(id=int(match.group(1)), slug=slug, title=title)
 
+    def upload_inline_image(self, post: Post, data: bytes, name: str) -> str:
+        """Store a picture for the body of `post` and return its `/media/…` URL."""
+        response = self._request.post(
+            "/blog/admin/images",
+            multipart={
+                "file": {"name": name, "mimeType": "image/jpeg", "buffer": data},
+                "post_id": str(post.id),
+            },
+            headers=self._headers(),
+        )
+        assert response.status == 200, f"inline image → {response.status}: {response.text()[:300]}"
+        return response.json()["url"]
+
     def publish_post(self, post: Post, body_md: str = "") -> None:
         response = self._request.post(
             f"/blog/admin/posts/{post.id}/publish",
