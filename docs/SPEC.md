@@ -217,4 +217,4 @@ Status 2026-08-07. Two items remain open, both named explicitly below.
 - [ ] **OPEN — The owner completes all three publishing flows unaided, without touching code.** Automated flows pass, but the owner has not sat down and done it. This is an acceptance step no test can stand in for.
 - [x] Photos survive `docker compose down` followed by `up`. *(Host bind mount at `./data/media`; `make clean` drops only the database volume.)*
 - [x] `docs/HANDOFF.md` written, including VPS deployment steps and the backup command.
-- [ ] **OPEN — A restore from `make backup` artefacts has not been rehearsed.** The procedure is written up in `docs/HANDOFF.md` §5 but never executed; T073's DoD asks for it to be tried once.
+- [x] A restore from `make backup` artefacts has been rehearsed. *(2026-08-07, `make restore-check`: a dump replayed into a scratch database, the media archive unpacked to a temporary directory, and every restored path checked against it — 13 rows, 44 files, nothing missing. T086.)*

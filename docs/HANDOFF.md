@@ -73,7 +73,8 @@ On Windows, `run.ps1` wraps the same targets for PowerShell.
 | `SECRET_KEY` | Session signing key. Generate a fresh one per environment. |
 | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Seeded into the database on first startup. The plaintext is never logged and never stored — only the Argon2id hash. |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Database credentials. |
-| `MEDIA_ROOT` | Where photographs live. `/data/media` in the container, bind-mounted from `./data/media`. |
+| `MEDIA_ROOT` | Where photographs live *inside the container* — `/data/media`. |
+| `MEDIA_HOST_DIR` | Where that directory sits on the **host**. Defaults to `./data/media`. On a server point it outside the checkout — `/srv/portfolio/media`, or a mounted block device — so re-cloning the repository or `git clean` cannot take the originals with it. Backups read the same directory. |
 | `ENV` | `local` or `production`. `production` makes session cookies `Secure`. |
 | `SITE_URL` | Absolute base for canonical tags and `sitemap.xml`. |
 | `SITE_DOMAIN` | Production only. The hostname Caddy obtains a certificate for. |
@@ -99,9 +100,27 @@ pending and fails anything whose original has vanished.
 **Articles.** `/blog` → «Новая статья» → the editor has a Markdown pane and a live preview rendered
 through the *same* function as the published page, so the preview cannot drift. Raw HTML is
 disabled and the output is sanitised against an allow-list, so pasted `<script>` or `onerror=`
-simply disappears. Images can be dropped into the editor and are inserted at the cursor. Drafts are
-404 for visitors and marked «черновик» for you. Publishing sets `published_at`; unpublishing puts
-it back to a draft.
+simply disappears. Images can be dropped into the editor, pasted, or picked with the toolbar
+button, and are inserted at the cursor. Drafts are 404 for visitors and marked «черновик» for you.
+Publishing sets `published_at`; unpublishing puts it back to a draft.
+
+*Sizing a picture inside an article.* A picture on a line of its own becomes a figure and can claim
+one of three widths — the disclosure under the editor's text area shows all of them:
+
+| You write | You get |
+|---|---|
+| `![описание](адрес)` | the width of the text column |
+| `![описание](адрес){.wide}` | wider than the column, breaking out on both sides |
+| `![описание](адрес){.full}` | the full content column |
+| `![описание](адрес "подпись")` | the same, with «подпись» underneath as a caption |
+
+Nothing else is accepted: an unknown word in the braces is dropped rather than passed through, and
+there is no way to write a raw width or a `style` (ADR-011).
+
+**Contact links and the copyright line.** Signed in, «Изменить ссылки» at the footer edits the four
+social links and the name in the copyright. The footer and the home page's contact chips read the
+same five values, so one edit changes both; clearing a link removes it from both. Only `http` and
+`https` addresses are accepted (F39).
 
 **Projects.** `/dev` → cards created and edited inline: title, summary, optional Markdown body,
 repository and demo links, tech stack, optional cover. Drag to reorder, toggle to publish. A
@@ -137,8 +156,18 @@ Media and database must come from the same run, or photo rows will point at file
 there. Photos already survive `docker compose down` followed by `up` — they are on a host bind
 mount, not in a volume — and `make clean` deletes only the database volume.
 
-> **Not yet exercised.** A restore has not been performed end to end on this machine. Do one dry
-> run against a scratch database before relying on it — that is the one open item on T073.
+**Rehearse it without touching anything live:**
+
+```bash
+make restore-check          # newest pair in ./data/backups
+```
+
+It replays the dump into a scratch database beside the real one, unpacks the media archive into a
+temporary directory, and then checks that every media path in the restored rows is actually present
+in the archive — the check that catches a database and a media archive taken from two different
+runs, which is the failure mode that matters. The scratch database is dropped afterwards.
+
+> Rehearsed 2026-08-07 and passed: 13 rows restored, 44 files, nothing missing (T086).
 
 ---
 
@@ -173,12 +202,12 @@ Then: sign in at `https://<domain>/login`, change the seeded password, and add t
 
 ## 7. Verification status
 
-Last run 2026-08-07 on the owner's machine.
+Last run 2026-08-07, end of the second session, on the owner's machine.
 
 | Gate | Command | Result |
 |---|---|---|
-| Unit + API | `docker compose run --rm tests` | **137 passed**, exit 0 |
-| End-to-end | `uv run pytest e2e` | **27 passed**, exit 0 |
+| Unit + API | `docker compose run --rm tests` | **193 passed**, exit 0 |
+| End-to-end | `uv run pytest e2e` | **36 passed**, exit 0 |
 | Six launch flows | `uv run pytest e2e -m launch_flow` | **6 passed**, exit 0 |
 | Lint | `uv run ruff check .` | clean |
 | Format | `uv run ruff format --check .` | clean |
@@ -198,8 +227,12 @@ images carrying `loading="lazy"`, intrinsic dimensions, `srcset` and alt text.
 
 ## 8. Known gaps
 
-1. **A restore has never been rehearsed** (§5). The highest-value thing to do next.
-2. **The production stack has never been deployed** (§6).
+1. **The production stack has never been deployed** (§6). The highest-value thing to do next.
+2. **A picture inside an article shifts the page as it loads.** Measured 2026-08-07: an article with
+   two pictures scores CLS 0.119 against this project's 0.02 budget, on a 400 kB/s cold load. They
+   are lazy-loaded and carry no `width`/`height`, so nothing reserves their height. The album grid
+   is unaffected (`docs/qa/perf-50.json`); this is the article page only. The renderer already
+   inspects each rendition when it builds the `srcset` — reading the dimensions there is the fix.
 3. **Touch targets follow WCAG 2.2 AA 2.5.8 (24 px), not the 44 px that SPEC F12 originally
    asked for.** 54 controls at 360 px width sit between the two — the icon buttons at 34×34, footer
    links from 17×17, buttons 36 px tall. None breach the accessibility standard. Waived
@@ -232,10 +265,17 @@ app/
   static/            css/ (tokens.css first), js/, fonts/
   i18n/ru/           one JSON per area — no user-visible string lives in a template
 migrations/          Alembic; the whole schema is one revision
+scripts/             backup.sh, restore-check.sh, migrate_media.py
 tests/               unit + API suite (container only)
 e2e/                 Playwright (host only)
 docs/                SPEC, PLAN, TASKS, CONVENTIONS, DECISIONS, STATUS, qa/
 ```
+
+**Where the pictures are.** Everything one album, article or project owns lives in a directory of
+its own: `<originals|derived>/<photos|posts|projects>/<id>-<slug>/`. Only `derived/` is mounted at
+`/media`, so an original cannot be reached by a URL — that is a property of the layout, not a rule
+someone has to remember. `scripts/migrate_media.py` moved the old year-based tree and is safe to
+re-run; it reports files nothing references rather than deleting them (ADR-012).
 
 Read `docs/CONVENTIONS.md` before writing code here. It records the rules the modules rely on and
 a short list of Jinja and CSP traps that have already cost this project time — two of them were

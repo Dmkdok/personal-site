@@ -39,8 +39,8 @@
     {
       "path": "/",
       "tag": "a",
-      "label": "Telegram",
-      "width": 92,
+      "label": "GitHub",
+      "width": 76,
       "height": 36,
       "inlineInProse": false,
       "crowded": false
@@ -48,8 +48,8 @@
     {
       "path": "/",
       "tag": "a",
-      "label": "GitHub",
-      "width": 76,
+      "label": "Telegram",
+      "width": 92,
       "height": 36,
       "inlineInProse": false,
       "crowded": false

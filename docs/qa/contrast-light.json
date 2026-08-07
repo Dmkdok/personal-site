@@ -1,6 +1,6 @@
 {
   "theme": "light",
-  "samples": 75,
+  "samples": 76,
   "failures": [],
   "unmeasurable": [],
   "worst": [
@@ -64,6 +64,22 @@
       "fontWeight": 400,
       "onImage": false,
       "page": "/dev",
+      "theme": "light",
+      "ratio": 4.65,
+      "required": 4.5
+    },
+    {
+      "selector": "time",
+      "text": "7 августа 2026",
+      "color": "rgb(100, 108, 119)",
+      "backdrop": [
+        "rgb(238, 240, 243)"
+      ],
+      "background": "rgb(238, 240, 243)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
@@ -176,22 +192,6 @@
       "fontWeight": 500,
       "onImage": false,
       "page": "/login",
-      "theme": "light",
-      "ratio": 5.03,
-      "required": 4.5
-    },
-    {
-      "selector": "a.button.button--primary",
-      "text": "На главную",
-      "color": "rgb(20, 23, 26)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/does-not-exist",
       "theme": "light",
       "ratio": 5.03,
       "required": 4.5

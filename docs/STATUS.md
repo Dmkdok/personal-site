@@ -6,34 +6,34 @@ approved_at: 2026-08-04
 
 ## Resume here
 
-**M0–M7 are complete. Everything that can be verified here is green.**
+**Branch `session/2026-08-06-m3-fixes-and-e2e`, tree clean, nothing running.** No remote; merging
+into `main` is the owner's call.
 
-| Gate | Command | Result |
-|---|---|---|
-| Unit + API | `docker compose run --rm tests` | 137 passed, exit 0 |
-| End-to-end | `uv run pytest e2e` | 27 passed, exit 0 |
-| Six launch flows | `uv run pytest e2e -m launch_flow` | 6 passed, exit 0 |
-| Lint | `uv run ruff check .` | clean |
-| Format | `uv run ruff format --check .` | clean |
+M0–M8 are complete. All six defects the owner reported are fixed and verified in a browser, and
+the one launch-checklist item M7 left open (a rehearsed restore) is closed. Every gate is green —
+see the Test report below.
 
-`docs/HANDOFF.md` is the document to read next — running, editing, backup/restore, VPS deployment,
-and the known gaps. This file is the session log.
+**Phase 6 — the independent review — has still not been run.** That is the only thing between here
+and calling this done, and it is the next action.
 
-**The two things nobody has done yet**, both on the launch checklist in `SPEC.md`:
+### Next three actions, in order
 
-1. **Rehearse a restore.** `make backup` works; replaying its artefacts has never been tried.
-   Procedure is in `HANDOFF.md` §5. This is T073's DoD and the highest-value next action.
-2. **Deploy the production stack.** `docker-compose.prod.yml` and the `Caddyfile` are written and
-   validate, but have never been brought up on a real server (T074).
+1. **Run Phase 6.** `review-product` / the `reviewer` subagent against `docs/SPEC.md`: correctness,
+   security, UX, completeness. Put the UI through `web-design-guidelines`. Findings get fixed or
+   waived with an ADR. Only then tick Phase 6 in the checklist below.
+2. **Fix the in-article picture CLS.** Measured this session and left deliberately unfixed because
+   the session ended: an article page with two pictures scores **CLS 0.119** against the project's
+   0.02 budget, on a 400 kB/s cold load at 1440×900. The pictures are `loading="lazy"` and carry no
+   `width`/`height`, so nothing reserves their height and the text below them jumps. The renderer
+   in `app/services/markdown.py` already stats each rendition in `_srcset`; reading the dimensions
+   there and emitting them as attributes is the fix. Re-measure, do not assume.
+3. **Deploy the production stack** (T074). `docker-compose.prod.yml` and the `Caddyfile` validate
+   but have never been brought up on a real server. Note `MEDIA_HOST_DIR` is new — point it outside
+   the checkout there.
 
-Then Phase 6: an independent review pass (`reviewer` / `review-product`) before calling it done.
-
-**Git state — read this before committing.** Work sits on branch
-`session/2026-08-06-m3-fixes-and-e2e`, not on `main`, and there is no remote. As of this writing
-the branch holds five commits off `4bfc65b`; the last of them and part of the docs were written by
-an out-of-band `/pause` run that fired while a subagent was still working, so its snapshot of the
-e2e results was captured mid-run and has been corrected here. Merging into `main` is the owner's
-call; nothing depends on it.
+**Waiting on the owner:** nothing blocking. Two judgement calls are theirs if they want them
+revisited — the `{.wide}` / `{.full}` vocabulary (ADR-011) and keeping media on a bind mount rather
+than a named volume (ADR-012).
 
 ## Checklist
 - [x] Phase 0 intake
@@ -41,29 +41,32 @@ call; nothing depends on it.
 - [x] Phase 2 SPEC.md
 - [x] Phase 3 PLAN.md + TASKS.md
 - [x] GATE user approved
-- [x] Phase 4 implementation (M0–M7 done)
-- [x] Phase 5 tests green (unit/API 137/137; e2e 27/27; lint and format clean)
+- [x] Phase 4 implementation (M0–M8 done)
+- [x] Phase 5 tests green (unit/API 193/193; e2e 36/36; lint and format clean)
 - [ ] Phase 6 review clean (or accepted waivers)
-- [x] Phase 7 handoff (`docs/HANDOFF.md`; two launch-checklist items remain open by name)
+- [x] Phase 7 handoff (`docs/HANDOFF.md`; one launch-checklist item remains open — the production deploy)
 
 ## Test report
 
-**Unit + API** — last run 2026-08-06 end of session, `docker compose run --rm tests`, exit 0.
+All five gates run at the end of the 2026-08-07 session, on the tree as committed.
 
-- **137 tests: 137 passed, 0 failed.** Re-run after the day's edits, not carried over from an
-  earlier note.
-- Green: auth, authorisation sweep, search, SEO, projects, blog, markdown, photo pipeline units
-  and the full photo API surface.
+| Gate | Command | Result |
+|---|---|---|
+| Unit + API | `docker compose run --rm tests` | **193 passed**, exit 0 |
+| End-to-end | `uv run pytest e2e` | **36 passed**, exit 0 |
+| Six launch flows | `uv run pytest e2e -m launch_flow` | **6 passed**, exit 0 |
+| Lint | `uv run ruff check .` | clean, exit 0 |
+| Format | `uv run ruff format --check .` | clean, exit 0 |
 
-**End-to-end** — last run 2026-08-07 on the host, `uv run pytest e2e` (Playwright, Chromium).
+No failing tests. The suite grew from 137 to 193 unit/API tests and from 27 to 36 e2e over this
+session — the picture vocabulary, the media layout, the editable links, the home-page editing flow
+and the lightbox's size assertions all arrived with their own coverage.
 
-- **27 tests: 27 passed, 0 failed.** The six launch flows of T070 — login, album upload, article
-  publish, lightbox by keyboard, theme persistence, search — are the `launch_flow` marker and pass
-  as their own gate (6 passed).
-- Machine-readable a11y and performance evidence is in `docs/qa/`.
+`-q` is set twice, so a passing run prints dots and no summary line. **Read the exit code.** Never
+pipe a test run through `tail` or `grep`: you get the pipe's status and a red suite reads as green.
 
-**Lint** — `uv run ruff check .` green. `uv run ruff format --check .` red on 7 files (not part of
-T001's DoD, but `make lint` runs it).
+**Not covered by any gate, and known bad:** in-article picture CLS, 0.119 against a 0.02 budget.
+Measured by hand (see "Resume here", action 2). `docs/qa/perf-50.json` covers the album grid only.
 
 ## Notes
 - 2026-08-04 — Intake: personal multi-section portfolio site (Главная / Разработка / Фото / Блог) for Dmitriy Bogdanov. Classified as marketing/portfolio site with an authenticated authoring surface.
@@ -104,3 +107,12 @@ T001's DoD, but `make lint` runs it).
 - 2026-08-07 — **An e2e flake was found and fixed that the tester's own three runs had not surfaced**, caught by re-running the suite independently rather than taking the report at face value: `test_an_article_can_be_written_and_published_without_a_mouse` failed roughly one run in three, ending at `/blog?title=…` — the browser's native GET. htmx makes the swapped «Новая статья» form visible and focused before it finishes settling, and only a settled form has its submit intercepted; synthetic keystrokes fit inside that ~20 ms window, a human cannot. The test now waits for htmx's `htmx:afterSettle` instead of racing it; five consecutive runs green. Worth remembering as a pattern: **any e2e step that types into htmx-swapped markup and submits immediately has this race.**
 - 2026-08-07 — `uv run ruff format --check .` is clean now too. The hand-grouped `ALLOWED_TAGS` set in `services/markdown.py` is fenced with `# fmt: off` so the formatter cannot explode it into 30 one-per-line entries; the other seven files were reformatted normally.
 - **2026-08-07 — T075 done. `docs/HANDOFF.md` written**: stack, local run and the two environment traps, configuration, content editing for all three sections, backup *and* restore, VPS deployment with the production overlay, verification status, six known gaps, and a code map. The launch checklist in `SPEC.md` is now ticked except for two items named explicitly there — the owner's own unaided pass through the publishing flows, and a rehearsed restore.
+- **2026-08-07 (session 2) — M8: the six defects the owner hit while using the finished site. Every one was reproduced before it was touched, and two of the three hypotheses that came with the report were wrong about the mechanism.** That is the lesson worth carrying: read-the-code hypotheses were right that something was broken and wrong about why.
+- 2026-08-07 — **T085, the dead «Править» button.** The block key is `home.intro`, the partial built `id="content-home.intro"`, and htmx read the target `#content-home.intro` as «#content-home with class intro». Nothing matched, so htmx logged `htmx:targetError` and never sent a request — a button that looked broken but was in fact aimed at nothing. **Any key that becomes part of a DOM id must have its dots normalised out**, in the id *and* in every `hx-target` that names it. F35 had no e2e coverage at all until now.
+- 2026-08-07 — **T080, the lightbox. The hypothesis (grid min-content blowing out the width) was wrong; the width was fine.** `.lightbox__figure` was sized by its content, so `max-block-size: 100%` on the image resolved against nothing and the picture kept its full aspect height: a 4000×6000 portrait measured 1328×1992 inside a 900 px viewport, top at −566, which is why only the middle was ever visible. The figure is now a grid with a definite height. **Small test photographs hid this for the whole project** — the defect needs a 6000 px source, which is what `e2e/test_lightbox.py` now uploads.
+- 2026-08-07 — Two more defects fell out of that one measurement, neither reported: `sizes` was a flat `100vw`, up to three times the truth for a portrait; and the neighbour preloader fetched `data-src`, always the largest rendition, after which the browser is entitled to reuse that cached candidate rather than fetch the right one. A 360 px phone was downloading 2560 px files. **When a browser picks a surprisingly large candidate, suspect the cache before the descriptors.**
+- 2026-08-07 — T082, the blog index. `--measure` is `68ch`, and `ch` resolves against *the element's own font*: put on a wrapper it inherits the larger body font, and the excerpt ran to 115 characters a line. Moved onto the text at `52ch` it measures 72. **A measure cap belongs on the text, never on its container.**
+- 2026-08-07 — **T083, media layout.** Files were filed by year, so one album's photographs sat among every other album's. Now `<originals|derived>/<kind>/<id>-<slug>/`. The originals-vs-derived split deliberately stays *above* the grouping: it is what makes the single `/media` mount over `derived/` keep an original unreachable by URL structurally rather than by rule (ADR-012). The migration has to move three things together — files, path columns, and the `/media/…` URLs inside article bodies in **both** `body_md` and `body_html`; miss the last and published articles lose their pictures silently.
+- 2026-08-07 — T081. **The in-article image feature was never broken.** All three insertion routes — toolbar, drop, paste — worked end to end when driven in a browser. What was missing was any way to discover it or to size the result. Before rewriting a feature the owner says they do not use, drive it first.
+- 2026-08-07 — **T086 closed the hole in T073.** T073 was ticked in M7 while half its DoD — "documented *and* tried once" — was not met, and `SPEC.md` recorded it as open at the same time. `make restore-check` now replays a dump into a scratch database and checks every restored path against the media archive; that last check is the point, because a dump that replays cleanly still leaves a broken site if the two artefacts came from different runs.
+- 2026-08-07 — Traps confirmed again this session, for whoever is next: **the i18n catalogue is cached at import**, so editing `app/i18n/ru/*.json` needs `docker compose restart web` even though `--reload` is on. **The fixed admin bar swallows taps on the footer at ≤640 px** — anything added down there needs clearance. The `tests` container drops and recreates its **own** database, so it cannot hurt the dev data; the e2e suite, which drives the live site, writes into the dev database and its fixtures clean up after themselves.
