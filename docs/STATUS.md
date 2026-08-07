@@ -9,31 +9,29 @@ approved_at: 2026-08-04
 **Branch `session/2026-08-06-m3-fixes-and-e2e`, tree clean, nothing running.** No remote; merging
 into `main` is the owner's call.
 
-M0–M8 are complete. All six defects the owner reported are fixed and verified in a browser, and
-the one launch-checklist item M7 left open (a rehearsed restore) is closed. Every gate is green —
-see the Test report below.
+M0–M8 are complete and **Phase 6 is closed** — the independent review ran for the first time on
+2026-08-08, returned FAIL on one Critical, and passes now that it and all six High findings are
+fixed. See `docs/REVIEW.md`; it also records what the reviewers checked and found clean, so the
+next review need not repeat it. The in-article CLS defect M8 left open is fixed and re-measured.
 
-**Phase 6 — the independent review — has still not been run.** That is the only thing between here
-and calling this done, and it is the next action.
+**M9 is written but not started. It is waiting on the owner's «утверждаю».** `SPEC.md` F41–F48,
+`TASKS.md` T090–T101, ADR-013/014/015 (all `proposed`). No M9 code exists.
 
-### Next three actions, in order
+### Next action
 
-1. **Run Phase 6.** `review-product` / the `reviewer` subagent against `docs/SPEC.md`: correctness,
-   security, UX, completeness. Put the UI through `web-design-guidelines`. Findings get fixed or
-   waived with an ADR. Only then tick Phase 6 in the checklist below.
-2. **Fix the in-article picture CLS.** Measured this session and left deliberately unfixed because
-   the session ended: an article page with two pictures scores **CLS 0.119** against the project's
-   0.02 budget, on a 400 kB/s cold load at 1440×900. The pictures are `loading="lazy"` and carry no
-   `width`/`height`, so nothing reserves their height and the text below them jumps. The renderer
-   in `app/services/markdown.py` already stats each rendition in `_srcset`; reading the dimensions
-   there and emitting them as attributes is the fix. Re-measure, do not assume.
-3. **Deploy the production stack** (T074). `docker-compose.prod.yml` and the `Caddyfile` validate
-   but have never been brought up on a real server. Note `MEDIA_HOST_DIR` is new — point it outside
-   the checkout there.
+**Ask for the gate, then implement M9 in this order:** T090 → T091 → T092 → T093 first and as one
+piece — deduplication and deletion are a single design (ADR-013), and building either alone turns
+"the owner deleted an article" into "the owner broke another article's cover". T094–T099 are the
+owner's remaining requests and are independent of each other. T100/T101 are the review's Medium
+findings.
 
-**Waiting on the owner:** nothing blocking. Two judgement calls are theirs if they want them
-revisited — the `{.wide}` / `{.full}` vocabulary (ADR-011) and keeping media on a bind mount rather
-than a named volume (ADR-012).
+**Decided by the owner on 2026-08-08:**
+- T074, the production deploy, is **not** happening in a working session. The owner will run it
+  himself once the site is finished. Everything else on the launch checklist is met.
+- «Блог» and «статьи» mean the same thing. One rule for pictures in text — 1920 px — and it
+  applies to project descriptions too.
+- He exports files up to **50 MB**; the 25 MB cap goes up.
+- `README.md` is to be **Russian**, unlike everything under `docs/`.
 
 ## Checklist
 - [x] Phase 0 intake
@@ -42,31 +40,32 @@ than a named volume (ADR-012).
 - [x] Phase 3 PLAN.md + TASKS.md
 - [x] GATE user approved
 - [x] Phase 4 implementation (M0–M8 done)
-- [x] Phase 5 tests green (unit/API 193/193; e2e 36/36; lint and format clean)
-- [ ] Phase 6 review clean (or accepted waivers)
-- [x] Phase 7 handoff (`docs/HANDOFF.md`; one launch-checklist item remains open — the production deploy)
+- [x] Phase 5 tests green (unit/API 204/204; e2e 37/37; lint and format clean)
+- [x] Phase 6 review clean (`docs/REVIEW.md`, PASS at `a0c2835`; Critical + 6 High fixed, Mediums scheduled as T100/T101)
+- [x] Phase 7 handoff (`docs/HANDOFF.md`; the production deploy stays open by the owner's choice)
+- [ ] **GATE — M9 awaiting «утверждаю»**
 
 ## Test report
 
-All five gates run at the end of the 2026-08-07 session, on the tree as committed.
+All five gates run 2026-08-08, on the tree as committed at `a0c2835`.
 
 | Gate | Command | Result |
 |---|---|---|
-| Unit + API | `docker compose run --rm tests` | **193 passed**, exit 0 |
-| End-to-end | `uv run pytest e2e` | **36 passed**, exit 0 |
+| Unit + API | `docker compose run --rm tests` | **204 passed**, exit 0 |
+| End-to-end | `uv run pytest e2e` | **37 passed**, exit 0 |
 | Six launch flows | `uv run pytest e2e -m launch_flow` | **6 passed**, exit 0 |
 | Lint | `uv run ruff check .` | clean, exit 0 |
 | Format | `uv run ruff format --check .` | clean, exit 0 |
 
-No failing tests. The suite grew from 137 to 193 unit/API tests and from 27 to 36 e2e over this
-session — the picture vocabulary, the media layout, the editable links, the home-page editing flow
-and the lightbox's size assertions all arrived with their own coverage.
+The suite grew 193 → 204 unit/API and 36 → 37 e2e: intrinsic picture dimensions, the two prose
+scrollers, the decompression-bomb path, the `X-Forwarded-For` throttle bypass, and an article-page
+CLS budget that did not exist before.
 
 `-q` is set twice, so a passing run prints dots and no summary line. **Read the exit code.** Never
 pipe a test run through `tail` or `grep`: you get the pipe's status and a red suite reads as green.
 
-**Not covered by any gate, and known bad:** in-article picture CLS, 0.119 against a 0.02 budget.
-Measured by hand (see "Resume here", action 2). `docs/qa/perf-50.json` covers the album grid only.
+**Nothing is known bad.** The in-article CLS line that stood here is closed: `docs/qa/perf-article.json`
+records 0.00023 against a 0.02 budget, and the owner's own article measures the same.
 
 ## Notes
 - 2026-08-04 — Intake: personal multi-section portfolio site (Главная / Разработка / Фото / Блог) for Dmitriy Bogdanov. Classified as marketing/portfolio site with an authenticated authoring surface.
@@ -116,3 +115,8 @@ Measured by hand (see "Resume here", action 2). `docs/qa/perf-50.json` covers th
 - 2026-08-07 — T081. **The in-article image feature was never broken.** All three insertion routes — toolbar, drop, paste — worked end to end when driven in a browser. What was missing was any way to discover it or to size the result. Before rewriting a feature the owner says they do not use, drive it first.
 - 2026-08-07 — **T086 closed the hole in T073.** T073 was ticked in M7 while half its DoD — "documented *and* tried once" — was not met, and `SPEC.md` recorded it as open at the same time. `make restore-check` now replays a dump into a scratch database and checks every restored path against the media archive; that last check is the point, because a dump that replays cleanly still leaves a broken site if the two artefacts came from different runs.
 - 2026-08-07 — Traps confirmed again this session, for whoever is next: **the i18n catalogue is cached at import**, so editing `app/i18n/ru/*.json` needs `docker compose restart web` even though `--reload` is on. **The fixed admin bar swallows taps on the footer at ≤640 px** — anything added down there needs clearance. The `tests` container drops and recreates its **own** database, so it cannot hurt the dev data; the e2e suite, which drives the live site, writes into the dev database and its fixtures clean up after themselves.
+- **2026-08-08 — Phase 6 ran for the first time and returned FAIL.** Two independent reviewers, neither of which wrote code. Full record in `docs/REVIEW.md`. **The Critical: F17's login throttle was bypassable with one header.** `client_ip()` took `X-Forwarded-For`'s *leftmost* entry — the one the client writes — so a rotating value bought a fresh five attempts every time; `docker-compose.prod.yml` made it worse with `--forwarded-allow-ips "*"`, under which uvicorn rewrites `request.client.host` from the same header, leaving **no untainted source of the peer address anywhere in the shipped configuration**. Reproduced before it was touched: `[401 × 6]`, never a 429. **The suite had been green because no test sent the header** — the lesson worth carrying, and the second time this project has found a control that passed while checking nothing (the authorisation sweep was the first).
+- 2026-08-08 — Six High findings, all fixed with the Critical: `ADMIN_PASSWORD=change-me` shipped unvalidated while `SECRET_KEY`'s identical placeholder was refused; `DecompressionBombError` is not an `OSError` or a `ValueError` and walked past `verify_decodable`, giving a 500 with an HTML body to a client parsing JSON and leaving the original on disk; `.search-field__input` killed the site-wide focus ring with `outline: none` inside `@layer components`, on the one control present on every page; the reorder/publish/delete buttons carried no `id`, so htmx could not restore focus and a keyboard admin dropped to `<body>` on every arrow press; a rejected site-links save returned 200 and therefore said nothing at all, in the footer; `.prose table { display: block }` stripped the table's role in Chrome and Firefox, and the comment claiming the browser wraps it was simply wrong; the upload queue was a live region that announced ~150 times for a 50-file drop.
+- 2026-08-08 — **In-article picture CLS closed: 0.119 → 0.00023** (`docs/qa/perf-article.json`). `markdown.py` emits the rendition's own size, read from the file header by `images.intrinsic_size` — Pillow opens lazily, so it is a seek and not a decode. Two things worth keeping: **`body_html` is rendered once, at save**, so a renderer change reaches new writing only — `scripts/rerender_prose.py` re-renders stored rows from the Markdown that produced them, and it has to skip rows whose HTML is deliberately blank, because `pages._put_value` empties it for the social links and the copyright name on purpose. And **the e2e case is portrait deliberately**: with the fix disabled, two landscape frames measured 0.014, inside budget, and the test would have proved nothing; portrait measured 0.030. Verified both ways before believing it.
+- 2026-08-08 — Owner's decisions recorded under "Resume here": no production deploy inside a working session, «блог» = «статьи», 50 MB uploads, Russian README.
+- 2026-08-08 — **M9 written and awaiting the gate.** F41–F48, T090–T101, ADR-013/014/015 proposed. Two design notes that took the most thought: deletion **asks the database** who still uses a file rather than keeping a reference table, because a count that drifts either leaks files (harmless) or deletes one that is still on a page (the exact failure being prevented) — the cost is a few `LIKE` scans, fine at this size, and the threshold to revisit is a few thousand articles. And "photographs at their best" is delivered as a **native-width rendition at quality 92**, not as the original file: `/media` is mounted over `derived/` only, and that mount is what makes an original unreachable structurally rather than by rule (ADR-012). Serving the original would trade a structural guarantee for a configuration one, on the single property that must not fail.

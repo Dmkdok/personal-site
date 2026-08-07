@@ -118,6 +118,24 @@ Needs: no code, no file management, no fragile admin UI, clear feedback on long 
 | F39 | Editable contact links and copyright | Given a logged-in admin, when a social link or the copyright name is changed from the site, then both the footer and the home-page contacts block reflect it without a code change; an emptied link disappears from both; only `http` and `https` URLs are accepted |
 | F40 | Media grouped by the thing it belongs to | Given an album or an article, when its files are stored, then originals and derivatives live under a directory of their own inside a per-kind parent, on a volume that survives the application being rebuilt or removed, so that one album's files can be located, copied or restored without picking them out of everyone else's |
 
+### M9 — media lifecycle, quality and identity
+
+Added 2026-08-08 from the owner's second round of use. They span several areas,
+so they are grouped by where they came from rather than split across the tables
+above.
+
+| ID | Requirement | Acceptance |
+|----|-------------|------------|
+| F41 | Deleting something deletes its files | Given an album, an article, a project, a cover or a picture removed from an article's text, when the deletion is saved, then every file that belonged to it and is referenced by nothing else is gone from both `originals/` and `derived/` — every rendition, not a guessed subset — and any directory left empty by the removal is gone too; a file another page still uses is kept |
+| F42 | The same picture is stored once | Given a picture uploaded a second time — the same frame used as an article's cover and again in its opening paragraph — when it is stored, then the bytes already on disk are reused, no second copy is written, and both places serve the same URL |
+| F43 | Photographs published as photographs | Given a photograph in an album, when it is published, then the site can serve it at the full resolution it was uploaded at, at a quality where re-compression is not visible; given a picture inside an article, it is capped at 1920 px, where maximum quality buys nothing; an upload of up to 50 MB is accepted |
+| F44 | The site is recognisable in a tab | Given any page, when it is open in a browser tab or saved to a home screen, then it shows the site's own «Dm» mark, legible against both light and dark browser chrome, served from this origin under the existing CSP |
+| F45 | The whole copyright line is editable | Given a logged-in admin, when the copyright line in the footer is edited, then the entire line — symbol, year and name — is what is stored and shown; nothing about it is assembled in a template |
+| F46 | The home page's own line is editable | Given a logged-in admin on the home page, when the line under the hero is clicked, then it edits in place like every other block and the change is visible to visitors |
+| F47 | A cover is a cover, not the first picture | Given an article with a cover, when a visitor opens it, then the cover appears in the blog index card and as the Open Graph image but does not open the article's text |
+| F48 | The repository explains itself | Given someone arriving at the repository on GitHub, when they read `README.md`, then they learn what the site is, what it is built from, how to run it, how to run the tests, how it deploys, and where the rest of the documentation lives, with screenshots |
+
+
 ## Non-functional
 
 **Performance**
