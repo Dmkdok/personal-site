@@ -7,6 +7,69 @@
      Index — cards reuse .card; only the date line and the draft marker are new.
      Still no tags, no reading time, no counters. That absence is the brief.
      ========================================================================= */
+  /* One article per row, cover on the left — the shape `.project` uses on /dev.
+     A blog of a few long reads is a list, not a wall of equal tiles.
+
+     `.card-grid` itself is untouched: photo and dev tile with it, and it is
+     shared infrastructure. This is a modifier applied next to it. */
+  .card-grid--posts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    /* The rules stop where the content stops. Left to the full container width
+       a row is a cover, a capped column of text and a third of empty page,
+       which reads as a mistake rather than as a choice. */
+    max-inline-size: 52rem;
+    border-block-start: 1px solid var(--line);
+  }
+
+  .card-grid--posts .post-card {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: var(--space-m) var(--space-l);
+    align-items: start;
+    padding-block: var(--space-l);
+    border-block-end: 1px solid var(--line);
+  }
+
+  /* An article without a cover keeps its text in line with the rest. */
+  .card-grid--posts .post-card:not(:has(> .card__media)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card-grid--posts .card__media {
+    aspect-ratio: 16 / 10;
+  }
+
+  .post-card__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2xs);
+  }
+
+  /* A comfortable measure however wide the column gets. `ch` resolves against
+     the element's own font, so the cap belongs on the text and not on the
+     wrapper: set on the wrapper it inherits the larger body font and the
+     excerpt runs to 115 characters. `ch` is the width of a zero, wider than an
+     average Cyrillic lowercase letter, so 52ch measures ~72 characters here —
+     the same cap the other supporting texts in `components.css` use. */
+  .card-grid--posts .post-card__title {
+    max-inline-size: var(--measure);
+  }
+
+  .card-grid--posts .card__note {
+    max-inline-size: 52ch;
+  }
+
+  /* Below the breakpoint the cover goes back on top: a 15rem column and a
+     readable line cannot both fit on a phone. */
+  @media (width < 46rem) {
+    .card-grid--posts .post-card {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-s);
+    }
+  }
+
   .post-card__title {
     display: flex;
     flex-wrap: wrap;

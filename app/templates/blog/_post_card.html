@@ -10,7 +10,7 @@
       <img
         src="{{ cover.src }}"
         {% if cover.srcset %}srcset="{{ cover.srcset }}"{% endif %}
-        sizes="(min-width: 60rem) 19rem, 92vw"
+        sizes="(min-width: 60rem) 15rem, 92vw"
         alt=""
         loading="lazy"
         decoding="async"
@@ -18,18 +18,22 @@
     </span>
   {% endif %}
 
-  <h{{ level }} class="card__title post-card__title">
-    {{ post.title }}
-    {% if is_draft %}<span class="post-flag">{{ t("blog.draft_flag") }}</span>{% endif %}
-  </h{{ level }}>
+  {# The text is wrapped so the card can become a row — cover in one column,
+     everything else in the other — the way `.project` does on /dev. #}
+  <div class="post-card__body">
+    <h{{ level }} class="card__title post-card__title">
+      {{ post.title }}
+      {% if is_draft %}<span class="post-flag">{{ t("blog.draft_flag") }}</span>{% endif %}
+    </h{{ level }}>
 
-  {% if post.excerpt %}
-    <p class="card__note">{{ post.excerpt }}</p>
-  {% endif %}
+    {% if post.excerpt %}
+      <p class="card__note">{{ post.excerpt }}</p>
+    {% endif %}
 
-  {% if post.published_at %}
-    <p class="post-card__date">
-      <time datetime="{{ iso_date(post.published_at) }}">{{ ru_date(post.published_at) }}</time>
-    </p>
-  {% endif %}
+    {% if post.published_at %}
+      <p class="post-card__date">
+        <time datetime="{{ iso_date(post.published_at) }}">{{ ru_date(post.published_at) }}</time>
+      </p>
+    {% endif %}
+  </div>
 </a>

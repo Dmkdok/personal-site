@@ -19,7 +19,7 @@
     {% endif %}
 
     {% if posts %}
-      <div class="card-grid">
+      <div class="card-grid card-grid--posts">
         {% for post in posts %}
           {% include "blog/_post_card.html" %}
         {% endfor %}
@@ -38,7 +38,7 @@
           <h2 class="drafts__title" id="drafts-heading">{{ t("blog.drafts_title") }}</h2>
           <p class="drafts__note">{{ t("blog.drafts_note") }}</p>
         </div>
-        <div class="card-grid">
+        <div class="card-grid card-grid--posts">
           {% for post in drafts %}
             {% with is_draft = true, card_level = 3 %}
               {% include "blog/_post_card.html" %}
