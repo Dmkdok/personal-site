@@ -69,9 +69,22 @@
     "field_label": "Текст блока",
     "hint": "Поддерживается Markdown: **жирный**, *курсив*, [ссылка](https://…)",
     "save": "Сохранить",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "saved": "Сохранено"
   },
   "footer": {
-    "rights": "Дмитрий Богданов"
+    "rights": "Дмитрий Богданов",
+    "rights_label": "Имя в копирайте",
+    "github_label": "GitHub",
+    "github_default": "https://github.com/Dmkdok",
+    "telegram_label": "Telegram",
+    "telegram_default": "https://t.me/dmkdok_blog",
+    "vk_label": "VK",
+    "vk_default": "https://vk.ru/dmkdok",
+    "youtube_label": "YouTube",
+    "youtube_default": "https://www.youtube.com/@dmkdok",
+    "edit": "Изменить ссылки",
+    "hint": "Только адреса на http:// или https://. Пустое поле убирает ссылку.",
+    "invalid_url": "Нужен адрес, начинающийся с http:// или https://"
   }
 }

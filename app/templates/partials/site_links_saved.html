@@ -1,0 +1,13 @@
+{# The save response: the footer block for the main swap, plus — when the owner
+   is on the home page — an out-of-band copy of the contacts chips, so both
+   renderings of the same rows update in one round trip.
+
+   The two fragments are siblings on purpose. htmx lifts out-of-band elements
+   out of the response before the main swap, so nesting the chips inside the
+   footer block would be relying on how deep it looks. #}
+{% include "partials/site_links.html" %}
+{% if with_contacts %}
+  {% with oob = true %}
+    {% include "partials/site_contacts.html" %}
+  {% endwith %}
+{% endif %}

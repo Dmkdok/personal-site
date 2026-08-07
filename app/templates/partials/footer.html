@@ -1,11 +1,13 @@
+{# The links and the copyright name come from `site_content`, so the owner can
+   change them from the site. `site_links()` is a template global (registered in
+   `routers/pages.py`) because the footer is part of `base.html` and every page
+   needs it — passing it through each router's context would mean editing every
+   router for one shared block. #}
 <footer class="site-footer">
   <div class="container site-footer__inner">
-    <p>© {{ current_year }} {{ t("footer.rights") }}</p>
-    <ul class="site-footer__links" role="list">
-      <li><a href="https://github.com/Dmkdok" rel="me noopener noreferrer" target="_blank">GitHub</a></li>
-      <li><a href="https://t.me/dmkdok_blog" rel="me noopener noreferrer" target="_blank">Telegram</a></li>
-      <li><a href="https://vk.ru/dmkdok" rel="me noopener noreferrer" target="_blank">VK</a></li>
-      <li><a href="https://www.youtube.com/@dmkdok" rel="me noopener noreferrer" target="_blank">YouTube</a></li>
-    </ul>
+    {% set footer_data = site_links() %}
+    {% with links = footer_data.links, rights = footer_data.rights %}
+      {% include "partials/site_links.html" %}
+    {% endwith %}
   </div>
 </footer>

@@ -1,0 +1,60 @@
+{# Edit mode for the footer links. Replaces the rendered block in place.
+
+   The inputs are plain text rather than `type="url"`: validation is the
+   server's job (`_clean_url` in `routers/pages.py`), and a browser that
+   silently swallows the submission would hide a rejection the owner needs to
+   see. Every id is dot-free — see `editable.html` for what a dot costs. #}
+<form
+  class="site-links site-links--editing"
+  id="site-links"
+  hx-post="/admin/site-links"
+  hx-target="#site-links"
+  hx-swap="outerHTML"
+>
+  <div class="site-links__fields">
+    {% for field in fields %}
+      <div class="field">
+        <label class="field__label" for="{{ field.dom_id }}">{{ field.label }}</label>
+        <input
+          class="field__input"
+          id="{{ field.dom_id }}"
+          name="{{ field.name }}"
+          type="text"
+          inputmode="url"
+          spellcheck="false"
+          autocomplete="off"
+          value="{{ field.value }}"
+          {% if field.invalid %}aria-invalid="true" aria-describedby="{{ field.dom_id }}-error"{% endif %}
+        />
+        {% if field.invalid %}
+          <p class="site-links__error" id="{{ field.dom_id }}-error">{{ t("footer.invalid_url") }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    <div class="field">
+      <label class="field__label" for="site-link-rights">{{ rights_label }}</label>
+      <input
+        class="field__input"
+        id="site-link-rights"
+        name="rights"
+        type="text"
+        autocomplete="off"
+        value="{{ rights }}"
+      />
+    </div>
+  </div>
+
+  <p class="site-links__hint">{{ t("footer.hint") }}</p>
+
+  <div class="editable__actions">
+    <button class="button button--primary" type="submit">{{ t("editable.save") }}</button>
+    <button
+      class="button button--quiet"
+      type="button"
+      hx-get="/admin/site-links"
+      hx-target="#site-links"
+      hx-swap="outerHTML"
+    >{{ t("editable.cancel") }}</button>
+  </div>
+</form>

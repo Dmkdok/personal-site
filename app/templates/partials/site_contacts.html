@@ -1,0 +1,18 @@
+{# The same links as the footer, in the home page's contacts block, as chips.
+
+   `oob` is set only when this comes back as part of a save response: the owner
+   edits from the footer, and htmx swaps this block out of band so the chips
+   change without a reload. On a normal page render `oob` is undefined and the
+   attribute is absent. #}
+<div class="hero__contacts" id="site-contacts"{% if oob %} hx-swap-oob="true"{% endif %}>
+  <p class="label">{{ t("home.contacts_title") }}</p>
+  {% if links %}
+    <ul class="link-row" role="list">
+      {% for link in links %}
+        <li>
+          <a class="link-chip" href="{{ link.url }}" target="_blank" rel="me noopener noreferrer">{{ link.label }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</div>

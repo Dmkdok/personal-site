@@ -24,23 +24,12 @@
         {% endwith %}
       </div>
 
-      <div class="hero__contacts">
-        <p class="label">{{ t("home.contacts_title") }}</p>
-        <ul class="link-row" role="list">
-          <li>
-            <a class="link-chip" href="https://t.me/dmkdok_blog" target="_blank" rel="me noopener noreferrer">Telegram</a>
-          </li>
-          <li>
-            <a class="link-chip" href="https://github.com/Dmkdok" target="_blank" rel="me noopener noreferrer">GitHub</a>
-          </li>
-          <li>
-            <a class="link-chip" href="https://vk.ru/dmkdok" target="_blank" rel="me noopener noreferrer">VK</a>
-          </li>
-          <li>
-            <a class="link-chip" href="https://www.youtube.com/@dmkdok" target="_blank" rel="me noopener noreferrer">YouTube</a>
-          </li>
-        </ul>
-      </div>
+      {# The same rows the footer renders, as chips. Editing them lives with the
+         footer; this block is swapped out of band when a save comes back. #}
+      {% set contacts_data = site_links() %}
+      {% with links = contacts_data.links %}
+        {% include "partials/site_contacts.html" %}
+      {% endwith %}
     </section>
 
     <nav class="entries section" aria-label="{{ t('nav.menu') }}">

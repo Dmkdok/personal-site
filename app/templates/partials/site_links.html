@@ -1,0 +1,36 @@
+{# The owner's outbound links and the name in the copyright line, as the footer
+   shows them. The same rows render as chips on the home page — see
+   `site_contacts.html`: one source, two presentations.
+
+   Context: `links` is a list of {slug, label, url}, already vetted server-side,
+   and `rights` is the name after the ©. A link the owner cleared is simply not
+   in `links`, so it disappears from both places at once. #}
+<div class="site-links" id="site-links">
+  <p class="site-links__rights">© {{ current_year }} {{ rights }}</p>
+
+  {% if links %}
+    <ul class="site-footer__links" role="list">
+      {% for link in links %}
+        <li>
+          <a href="{{ link.url }}" rel="me noopener noreferrer" target="_blank">{{ link.label }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if is_admin %}
+    <button
+      class="site-links__edit"
+      type="button"
+      hx-get="/admin/site-links/edit"
+      hx-target="#site-links"
+      hx-swap="outerHTML"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </svg>
+      {{ t("footer.edit") }}
+    </button>
+  {% endif %}
+</div>
