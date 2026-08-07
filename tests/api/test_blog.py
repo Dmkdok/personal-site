@@ -428,9 +428,7 @@ def test_preview_matches_the_published_rendering_of_the_same_source(admin_client
         "> Цитата\n"
     )
     post = create_draft(admin_client, db, "Сравнение")
-    admin_client.post(
-        f"/blog/admin/posts/{post.id}/publish", data=fields(post, body_md=source)
-    )
+    admin_client.post(f"/blog/admin/posts/{post.id}/publish", data=fields(post, body_md=source))
 
     preview = admin_client.post("/blog/admin/preview", data={"body_md": source})
     db.expire_all()

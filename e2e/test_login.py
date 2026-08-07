@@ -9,9 +9,8 @@ from e2e.helpers import ru
 
 ADMIN_BAR = "Режим редактирования"
 
-pytestmark = pytest.mark.launch_flow
 
-
+@pytest.mark.launch_flow
 def test_login_reveals_admin_and_logout_takes_it_away(
     page: Page, base_url: str, admin_credentials: tuple[str, str]
 ) -> None:

@@ -76,9 +76,7 @@ def test_repeated_failures_are_throttled(client, db):
 
 def test_logout_invalidates_the_session(admin_client):
     token = admin_client.headers["X-CSRF-Token"]
-    response = admin_client.post(
-        "/logout", data={"csrf_token": token}, follow_redirects=False
-    )
+    response = admin_client.post("/logout", data={"csrf_token": token}, follow_redirects=False)
     assert response.status_code == 303
     assert "admin-bar" not in admin_client.get("/").text
 

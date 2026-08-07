@@ -78,7 +78,11 @@
 
     --text: light-dark(#14171a, #e9ebee);
     --text-muted: light-dark(#525c68, #a8b1bb);
-    --text-faint: light-dark(#767f8b, #8a939e);
+    /* Light side darkened from #767f8b (3.55:1 on --bg, under AA) to 4.65:1.
+       Still clearly lighter than --text-muted at 5.95:1, so the three-step text
+       hierarchy survives. Carries the eyebrow labels, field labels and the
+       tech-stack chips. */
+    --text-faint: light-dark(#646c77, #8a939e);
 
     --line: light-dark(#d6dbe1, #343a42);
     --line-strong: light-dark(#bcc4cd, #454c56);
@@ -88,7 +92,11 @@
     --accent: light-dark(#c0762a, #e0954a);
     --accent-ink: light-dark(#8f560f, #eaa460);
     --accent-wash: light-dark(#f2e6d6, #2f2620);
-    --on-accent: light-dark(#ffffff, #1c1f23);
+    /* Dark ink on the accent in both themes. White on the light amber measured
+       3.58:1, under AA's 4.5:1, on the active nav link, the primary button and
+       the cover flag; #14171a is 5.03:1 and leaves the brand colour untouched.
+       The dark theme already made this same choice. */
+    --on-accent: light-dark(#14171a, #1c1f23);
 
     --danger-ink: light-dark(#a3261d, #e8837a);
     --danger-wash: light-dark(#f7e3e1, #2f201f);

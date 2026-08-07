@@ -73,3 +73,11 @@ ADR-lite. All proposed on 2026-08-04, pending the approval gate.
 - Context: The owner wants Russian now and possibly English later, without a rewrite.
 - Decision: Content tables carry a `lang` column defaulting to `'ru'`; UI strings live in `app/i18n/ru.json` and are resolved through a template helper instead of being written into templates. No language switcher is built in v1.
 - Consequences: Adding English later means a second JSON file and a language filter on content queries, not a schema migration or a template sweep. Cost now is small and paid once.
+
+## ADR-010 — Touch targets held to WCAG 2.5.8's 24 px, not SPEC F12's 44 px
+
+- Date: 2026-08-07
+- Status: accepted
+- Context: F12 as written asks for 44×44 px interactive targets. The T071 sweep at 360 px width found 54 controls under that bar — the menu and theme icon buttons at 34×34, footer social links as small as 17×17, and every `.button` at 36 px tall — while **zero** of them breach WCAG 2.2 AA success criterion 2.5.8, which asks for 24×24 with inline and spacing exceptions (`docs/qa/target-size-360px.json`). 44×44 is Apple's and Google's guidance, not the conformance line the rest of this project is measured against.
+- Decision: The accessibility bar for target size is WCAG 2.2 AA 2.5.8. F12's wording is amended from 44×44 to that criterion. No CSS changes; the owner chose this over enlarging the controls, which would have visibly reshaped the navigation capsule and footer on phones.
+- Consequences: T071 can close on a standard rather than on a stricter house rule. The capsule and footer keep their intended proportions. If the site later gains genuinely finger-driven surfaces — a mobile-first gallery editor, say — this should be revisited for those controls specifically rather than reopened globally.

@@ -10,11 +10,14 @@ allow-list sanitiser. Either alone would probably do; both is cheap.
 import nh3
 from markdown_it import MarkdownIt
 
-_md = (
-    MarkdownIt("commonmark", {"html": False, "linkify": True, "typographer": True})
-    .enable(["table", "strikethrough", "linkify", "replacements", "smartquotes"])
+_md = MarkdownIt("commonmark", {"html": False, "linkify": True, "typographer": True}).enable(
+    ["table", "strikethrough", "linkify", "replacements", "smartquotes"]
 )
 
+# fmt: off
+# Grouped by role — block, headings, inline, lists, media, table — because the
+# allow-list is read when auditing what survives sanitising. One tag per line
+# would be 30 lines of noise and lose the grouping.
 ALLOWED_TAGS: set[str] = {
     "p", "br", "hr",
     "h1", "h2", "h3", "h4", "h5", "h6",
@@ -24,6 +27,7 @@ ALLOWED_TAGS: set[str] = {
     "table", "thead", "tbody", "tr", "th", "td",
     "span",
 }
+# fmt: on
 
 ALLOWED_ATTRIBUTES: dict[str, set[str]] = {
     # No "rel" here: nh3 rejects it in the allow-list when link_rel is set, and

@@ -63,7 +63,7 @@ Needs: no code, no file management, no fragile admin UI, clear feedback on long 
 | F9 | Article page renders sanitised Markdown | Given `/blog/{slug}` for a published article, when it renders, then headings, lists, quotes, links, code and images appear with readable measure (≈65–75 characters) and images are responsive; drafts return 404 to anonymous visitors |
 | F10 | Site-wide search across articles, projects and albums | Given a query of 2+ characters submitted from the pill, when `/search?q=…` renders, then matches from all three content types appear grouped under labelled headings, ranked by relevance; a query with no matches renders an explicit empty state; an empty query renders guidance rather than an error |
 | F11 | Light and dark themes | Given a first visit, when the page loads, then the theme follows `prefers-color-scheme`; when the visitor toggles it, then the choice is stored and applied on subsequent visits before first paint (no flash); both themes meet WCAG 2.2 AA contrast and the dark theme uses dark grey, never pure black |
-| F12 | Responsive layout | Given viewports of 360, 768, 1024 and 1440 px, when any page renders, then content is legible without horizontal scrolling and interactive targets are at least 44×44 px |
+| F12 | Responsive layout | Given viewports of 360, 768, 1024 and 1440 px, when any page renders, then content is legible without horizontal scrolling and interactive targets satisfy WCAG 2.2 AA 2.5.8 (24×24 px, with the inline and spacing exceptions). *Amended 2026-08-07 from a flat 44×44 px — see ADR-010.* |
 | F13 | SEO basics | Given any public page, when it renders, then it has a unique `<title>`, meta description, canonical URL and Open Graph tags with an image; `/sitemap.xml` lists all published pages and `/robots.txt` exists |
 | F14 | Error pages | Given an unknown URL or a server error, when it is served, then a styled 404 / 500 page renders inside the site layout with a route back to the home page |
 
@@ -202,13 +202,16 @@ Restated from the brief so they are testable as "must not be present": 3D/WebGL/
 
 ## Launch checklist
 
-- [ ] All requirements F1–F37 demonstrated as passing.
-- [ ] `docker compose up` on a clean checkout brings up the whole site; no manual steps beyond copying `.env.example`.
-- [ ] `pytest` suite green, including the F18 authorisation sweep and the upload pipeline tests.
-- [ ] Playwright flows green: login, album upload, article publish, lightbox, theme switch, search.
-- [ ] No browser console errors or failed network requests on any page in either theme.
-- [ ] Keyboard-only pass through navigation, search, lightbox and one full admin publishing flow.
-- [ ] Contrast checked in both themes; `prefers-reduced-motion` honoured.
-- [ ] The owner completes all three publishing flows unaided, without touching code.
-- [ ] Photos survive `docker compose down` followed by `up`.
-- [ ] `docs/HANDOFF.md` written, including VPS deployment steps and the backup command.
+Status 2026-08-07. Two items remain open, both named explicitly below.
+
+- [x] All requirements F1–F37 demonstrated as passing. *(137 unit/API tests plus 27 e2e; F12 as amended by ADR-010.)*
+- [x] `docker compose up` on a clean checkout brings up the whole site; no manual steps beyond copying `.env.example`.
+- [x] `pytest` suite green, including the F18 authorisation sweep and the upload pipeline tests. *(137 passed, exit 0.)*
+- [x] Playwright flows green: login, album upload, article publish, lightbox, theme switch, search. *(`pytest e2e -m launch_flow` → 6 passed, exit 0.)*
+- [x] No browser console errors or failed network requests on any page in either theme. *(Swept over `/`, `/dev`, `/photo`, `/blog`, `/search`, an album page.)*
+- [x] Keyboard-only pass through navigation, search, lightbox and one full admin publishing flow.
+- [x] Contrast checked in both themes; `prefers-reduced-motion` honoured. *(Light theme fixed — see ADR-010's neighbours in `docs/qa/contrast-*.json`; dark theme was clean throughout.)*
+- [ ] **OPEN — The owner completes all three publishing flows unaided, without touching code.** Automated flows pass, but the owner has not sat down and done it. This is an acceptance step no test can stand in for.
+- [x] Photos survive `docker compose down` followed by `up`. *(Host bind mount at `./data/media`; `make clean` drops only the database volume.)*
+- [x] `docs/HANDOFF.md` written, including VPS deployment steps and the backup command.
+- [ ] **OPEN — A restore from `make backup` artefacts has not been rehearsed.** The procedure is written up in `docs/HANDOFF.md` §5 but never executed; T073's DoD asks for it to be tried once.

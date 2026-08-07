@@ -38,9 +38,12 @@ accidentally ship a page without them.
 from app.deps import OptionalAdmin
 from app.templating import render
 
+
 @router.get("/blog", response_class=HTMLResponse)
 def index(request: Request, db: DbSession, admin: OptionalAdmin) -> HTMLResponse:
-    return render(request, "blog/index.html", {"active_section": "blog", "posts": posts}, admin=admin)
+    return render(
+        request, "blog/index.html", {"active_section": "blog", "posts": posts}, admin=admin
+    )
 ```
 
 `active_section` is one of `home` / `dev` / `photo` / `blog` and drives the

@@ -162,9 +162,7 @@ def post_index(request: Request, db: DbSession, admin: OptionalAdmin) -> HTMLRes
 
 
 @router.get("/{slug}", response_class=HTMLResponse)
-def post_detail(
-    request: Request, db: DbSession, admin: OptionalAdmin, slug: str
-) -> HTMLResponse:
+def post_detail(request: Request, db: DbSession, admin: OptionalAdmin, slug: str) -> HTMLResponse:
     post = db.scalar(select(Post).where(Post.slug == slug))
     # A draft simply does not exist for a visitor.
     if post is None or (post.status is not PostStatus.PUBLISHED and admin is None):

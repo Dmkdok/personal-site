@@ -334,7 +334,18 @@ def test_an_article_can_be_written_and_published_without_a_mouse(
 
     admin_page.goto("/blog")
     _tab_to(admin_page, ru("blog.new"))
+    # htmx makes the swapped form visible and focuses it before it finishes
+    # settling, and only a settled form has its submit intercepted. A human
+    # cannot Tab and press Enter inside that ~20 ms window; synthetic keystrokes
+    # can, and did — one run in three ended at `/blog?title=…`, the browser's
+    # native GET. Wait for htmx's own lifecycle event instead of racing it.
+    admin_page.evaluate(
+        "() => { window.__settled = false;"
+        " document.body.addEventListener('htmx:afterSettle',"
+        " () => { window.__settled = true; }, { once: true }); }"
+    )
     admin_page.keyboard.press("Enter")
+    admin_page.wait_for_function("() => window.__settled === true")
 
     expect(admin_page.get_by_label(ru("blog.new_title_label"))).to_be_focused()
     admin_page.keyboard.type(title)

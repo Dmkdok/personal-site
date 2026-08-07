@@ -50,7 +50,7 @@ def test_onerror_attribute_never_becomes_a_tag():
         "[кликни](javascript:alert(1))",
         "[кликни](JaVaScRiPt:alert(1))",
         "![картинка](javascript:alert(1))",
-        "<a href=\"javascript:alert(1)\">кликни</a>",
+        '<a href="javascript:alert(1)">кликни</a>',
     ],
 )
 def test_javascript_urls_never_reach_an_attribute(source):
@@ -82,7 +82,7 @@ def test_link_gets_a_safe_rel():
 
 
 def test_inline_rendering_is_sanitised_too():
-    html = render_inline('обычный **текст** <img src=x onerror=alert(1)>')
+    html = render_inline("обычный **текст** <img src=x onerror=alert(1)>")
 
     assert "<strong>текст</strong>" in html
     assert "<p>" not in html
@@ -130,7 +130,7 @@ def test_common_formatting_is_preserved():
         "<blockquote>",
         "<pre>",
         '<img src="/media/post/2026/a_1600.webp" alt="вершина"',
-        "<a href=\"https://example.com\"",
+        '<a href="https://example.com"',
     ):
         assert fragment in html, f"lost {fragment}"
 

@@ -140,9 +140,7 @@ def test_ordering_persists(admin_client, db):
     ordered = db.query(Project).order_by(Project.sort_order).all()
     first, second = ordered[0], ordered[1]
 
-    response = admin_client.post(
-        f"/dev/admin/projects/{second.id}/move", data={"direction": "up"}
-    )
+    response = admin_client.post(f"/dev/admin/projects/{second.id}/move", data={"direction": "up"})
     assert response.status_code == 200
 
     db.expire_all()

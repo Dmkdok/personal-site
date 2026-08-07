@@ -1,222 +1,13 @@
 {
   "theme": "light",
   "samples": 75,
-  "failures": [
-    {
-      "selector": "a.nav__link",
-      "text": "Главная",
-      "color": "rgb(255, 255, 255)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/",
-      "theme": "light",
-      "ratio": 3.58,
-      "required": 4.5
-    },
-    {
-      "selector": "p.label.hero__eyebrow",
-      "text": "Санкт-Петербург · Python · горы",
-      "color": "rgb(118, 127, 139)",
-      "backdrop": [
-        "rgb(238, 240, 243)"
-      ],
-      "background": "rgb(238, 240, 243)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/",
-      "theme": "light",
-      "ratio": 3.55,
-      "required": 4.5
-    },
-    {
-      "selector": "p.label",
-      "text": "Где меня найти",
-      "color": "rgb(118, 127, 139)",
-      "backdrop": [
-        "rgb(238, 240, 243)"
-      ],
-      "background": "rgb(238, 240, 243)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/",
-      "theme": "light",
-      "ratio": 3.55,
-      "required": 4.5
-    },
-    {
-      "selector": "a.nav__link",
-      "text": "Разработка",
-      "color": "rgb(255, 255, 255)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/dev",
-      "theme": "light",
-      "ratio": 3.58,
-      "required": 4.5
-    },
-    {
-      "selector": "li.stack__item",
-      "text": "Python",
-      "color": "rgb(118, 127, 139)",
-      "backdrop": [
-        "rgb(238, 240, 243)"
-      ],
-      "background": "rgb(238, 240, 243)",
-      "fontSize": 14.24,
-      "fontWeight": 400,
-      "onImage": false,
-      "page": "/dev",
-      "theme": "light",
-      "ratio": 3.55,
-      "required": 4.5
-    },
-    {
-      "selector": "a.nav__link",
-      "text": "Фото",
-      "color": "rgb(255, 255, 255)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/photo",
-      "theme": "light",
-      "ratio": 3.58,
-      "required": 4.5
-    },
-    {
-      "selector": "a.nav__link",
-      "text": "Блог",
-      "color": "rgb(255, 255, 255)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/blog",
-      "theme": "light",
-      "ratio": 3.58,
-      "required": 4.5
-    },
-    {
-      "selector": "p.label",
-      "text": "Служебный вход",
-      "color": "rgb(118, 127, 139)",
-      "backdrop": [
-        "rgb(238, 240, 243)"
-      ],
-      "background": "rgb(238, 240, 243)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/login",
-      "theme": "light",
-      "ratio": 3.55,
-      "required": 4.5
-    },
-    {
-      "selector": "label.field__label",
-      "text": "Логин",
-      "color": "rgb(118, 127, 139)",
-      "backdrop": [
-        "rgb(238, 240, 243)"
-      ],
-      "background": "rgb(238, 240, 243)",
-      "fontSize": 14.24,
-      "fontWeight": 400,
-      "onImage": false,
-      "page": "/login",
-      "theme": "light",
-      "ratio": 3.55,
-      "required": 4.5
-    },
-    {
-      "selector": "button.button.button--primary",
-      "text": "Войти",
-      "color": "rgb(255, 255, 255)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/login",
-      "theme": "light",
-      "ratio": 3.58,
-      "required": 4.5
-    },
-    {
-      "selector": "a.button.button--primary",
-      "text": "На главную",
-      "color": "rgb(255, 255, 255)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/does-not-exist",
-      "theme": "light",
-      "ratio": 3.58,
-      "required": 4.5
-    },
-    {
-      "selector": "a.nav__link",
-      "text": "Фото",
-      "color": "rgb(255, 255, 255)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/photo/e2e-galereia-muwixvemw",
-      "theme": "light",
-      "ratio": 3.58,
-      "required": 4.5
-    },
-    {
-      "selector": "p.photo-item__cover-flag",
-      "text": "Обложка",
-      "color": "rgb(255, 255, 255)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 400,
-      "onImage": false,
-      "page": "/photo/e2e-galereia-muwixvemw",
-      "theme": "light",
-      "ratio": 3.58,
-      "required": 4.5
-    }
-  ],
+  "failures": [],
   "unmeasurable": [],
   "worst": [
     {
       "selector": "p.label.hero__eyebrow",
       "text": "Санкт-Петербург · Python · горы",
-      "color": "rgb(118, 127, 139)",
+      "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
       ],
@@ -226,13 +17,13 @@
       "onImage": false,
       "page": "/",
       "theme": "light",
-      "ratio": 3.55,
+      "ratio": 4.65,
       "required": 4.5
     },
     {
       "selector": "span.hero__line",
       "text": "Рассказываю, как это было.",
-      "color": "rgb(118, 127, 139)",
+      "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
       ],
@@ -242,13 +33,13 @@
       "onImage": false,
       "page": "/",
       "theme": "light",
-      "ratio": 3.55,
+      "ratio": 4.65,
       "required": 3.0
     },
     {
       "selector": "p.label",
       "text": "Где меня найти",
-      "color": "rgb(118, 127, 139)",
+      "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
       ],
@@ -258,13 +49,13 @@
       "onImage": false,
       "page": "/",
       "theme": "light",
-      "ratio": 3.55,
+      "ratio": 4.65,
       "required": 4.5
     },
     {
       "selector": "li.stack__item",
       "text": "Python",
-      "color": "rgb(118, 127, 139)",
+      "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
       ],
@@ -274,13 +65,13 @@
       "onImage": false,
       "page": "/dev",
       "theme": "light",
-      "ratio": 3.55,
+      "ratio": 4.65,
       "required": 4.5
     },
     {
       "selector": "p.label",
       "text": "Служебный вход",
-      "color": "rgb(118, 127, 139)",
+      "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
       ],
@@ -290,13 +81,13 @@
       "onImage": false,
       "page": "/login",
       "theme": "light",
-      "ratio": 3.55,
+      "ratio": 4.65,
       "required": 4.5
     },
     {
       "selector": "label.field__label",
       "text": "Логин",
-      "color": "rgb(118, 127, 139)",
+      "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
       ],
@@ -306,13 +97,13 @@
       "onImage": false,
       "page": "/login",
       "theme": "light",
-      "ratio": 3.55,
+      "ratio": 4.65,
       "required": 4.5
     },
     {
       "selector": "a.nav__link",
       "text": "Главная",
-      "color": "rgb(255, 255, 255)",
+      "color": "rgb(20, 23, 26)",
       "backdrop": [
         "rgb(192, 118, 42)"
       ],
@@ -322,13 +113,13 @@
       "onImage": false,
       "page": "/",
       "theme": "light",
-      "ratio": 3.58,
+      "ratio": 5.03,
       "required": 4.5
     },
     {
       "selector": "a.nav__link",
       "text": "Разработка",
-      "color": "rgb(255, 255, 255)",
+      "color": "rgb(20, 23, 26)",
       "backdrop": [
         "rgb(192, 118, 42)"
       ],
@@ -338,13 +129,13 @@
       "onImage": false,
       "page": "/dev",
       "theme": "light",
-      "ratio": 3.58,
+      "ratio": 5.03,
       "required": 4.5
     },
     {
       "selector": "a.nav__link",
       "text": "Фото",
-      "color": "rgb(255, 255, 255)",
+      "color": "rgb(20, 23, 26)",
       "backdrop": [
         "rgb(192, 118, 42)"
       ],
@@ -354,13 +145,13 @@
       "onImage": false,
       "page": "/photo",
       "theme": "light",
-      "ratio": 3.58,
+      "ratio": 5.03,
       "required": 4.5
     },
     {
       "selector": "a.nav__link",
       "text": "Блог",
-      "color": "rgb(255, 255, 255)",
+      "color": "rgb(20, 23, 26)",
       "backdrop": [
         "rgb(192, 118, 42)"
       ],
@@ -370,13 +161,13 @@
       "onImage": false,
       "page": "/blog",
       "theme": "light",
-      "ratio": 3.58,
+      "ratio": 5.03,
       "required": 4.5
     },
     {
       "selector": "button.button.button--primary",
       "text": "Войти",
-      "color": "rgb(255, 255, 255)",
+      "color": "rgb(20, 23, 26)",
       "backdrop": [
         "rgb(192, 118, 42)"
       ],
@@ -386,13 +177,13 @@
       "onImage": false,
       "page": "/login",
       "theme": "light",
-      "ratio": 3.58,
+      "ratio": 5.03,
       "required": 4.5
     },
     {
       "selector": "a.button.button--primary",
       "text": "На главную",
-      "color": "rgb(255, 255, 255)",
+      "color": "rgb(20, 23, 26)",
       "backdrop": [
         "rgb(192, 118, 42)"
       ],
@@ -402,7 +193,7 @@
       "onImage": false,
       "page": "/does-not-exist",
       "theme": "light",
-      "ratio": 3.58,
+      "ratio": 5.03,
       "required": 4.5
     }
   ]
