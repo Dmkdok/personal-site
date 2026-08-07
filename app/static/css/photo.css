@@ -543,13 +543,21 @@
     cursor: zoom-out;
   }
 
+  /* Fills its grid row, so that the image inside has a *definite* box to be
+     measured against. This is the whole fix: the figure used to be sized by its
+     content, `max-block-size: 100%` on the image had nothing to resolve against,
+     and the picture kept its full aspect height — a 4000×6000 portrait rendered
+     1328×1992 inside a 900 px viewport with only its middle visible. The two
+     `min-*: 0` declarations disarm the automatic minimum size of a grid item,
+     which is min-content — the photograph's own 6000 px. */
   .lightbox__figure {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-xs);
-    max-inline-size: 100%;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    place-items: center;
+    inline-size: 100%;
+    block-size: 100%;
+    min-inline-size: 0;
     min-block-size: 0;
     scale: 0.985;
     transition: scale var(--dur) var(--ease);
@@ -559,11 +567,16 @@
     scale: 1;
   }
 
+  /* Both axes auto and both maxima definite: the browser scales the replaced
+     element proportionally against whichever constraint bites first, so the
+     element box stays exactly the picture and the accent rim keeps hugging it. */
   .lightbox__img {
     inline-size: auto;
     block-size: auto;
+    min-inline-size: 0;
+    min-block-size: 0;
     max-inline-size: 100%;
-    max-block-size: min(76vh, 100%);
+    max-block-size: 100%;
     object-fit: contain;
     border-radius: var(--radius-m);
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 34%, transparent),
@@ -571,6 +584,7 @@
   }
 
   .lightbox__caption {
+    margin-block-start: var(--space-xs);
     max-inline-size: 60ch;
     color: var(--text-muted);
     font-size: var(--step--1);

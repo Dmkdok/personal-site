@@ -1,30 +1,33 @@
-{# Edit mode for a site-copy block. Replaces the read-only block in place. #}
+{# Edit mode for a site-copy block. Replaces the read-only block in place.
+   See `editable.html` for why the key's dot cannot survive into a DOM id. #}
+{% set dom_id = "content-" ~ key|replace(".", "-") %}
+{% set field_id = "value-" ~ key|replace(".", "-") %}
 <form
   class="editable editable--editing"
-  id="content-{{ key }}"
+  id="{{ dom_id }}"
   hx-post="/admin/content/{{ key }}"
-  hx-target="#content-{{ key }}"
+  hx-target="#{{ dom_id }}"
   hx-swap="outerHTML"
 >
-  <label class="visually-hidden" for="value-{{ key }}">Текст блока</label>
+  <label class="visually-hidden" for="{{ field_id }}">{{ t("editable.field_label") }}</label>
   <textarea
     class="field__input field__input--area"
-    id="value-{{ key }}"
+    id="{{ field_id }}"
     name="value_md"
     rows="6"
     autofocus
   >{{ value_md }}</textarea>
 
-  <p class="editable__hint">Поддерживается Markdown: **жирный**, *курсив*, [ссылка](https://…)</p>
+  <p class="editable__hint">{{ t("editable.hint") }}</p>
 
   <div class="editable__actions">
-    <button class="button button--primary" type="submit">Сохранить</button>
+    <button class="button button--primary" type="submit">{{ t("editable.save") }}</button>
     <button
       class="button button--quiet"
       type="button"
       hx-get="/admin/content/{{ key }}"
-      hx-target="#content-{{ key }}"
+      hx-target="#{{ dom_id }}"
       hx-swap="outerHTML"
-    >Отмена</button>
+    >{{ t("editable.cancel") }}</button>
   </div>
 </form>

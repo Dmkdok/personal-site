@@ -107,17 +107,40 @@
     };
   }
 
+  /**
+   * The width the picture will really occupy, so `sizes` is not a lie.
+   *
+   * It is fitted inside the figure's box, and on anything taller than it is
+   * wide the height is what bites. The old value was a flat `100vw`, which
+   * overstates that by up to three times on a portrait shot — which is how a
+   * 2560 px rendition came to be drawn 553 px wide.
+   */
+  function renderedWidth(width, height) {
+    var box = image.parentNode.getBoundingClientRect();
+    var available = box.width || window.innerWidth;
+    var tall = box.height || window.innerHeight;
+    if (!width || !height) return Math.round(available);
+    return Math.round(Math.min(available, (tall * width) / height));
+  }
+
   function show(next) {
     if (!slides.length) return;
     // Wrapping keeps both arrows meaningful at either end of the sheet.
     index = (next + slides.length) % slides.length;
 
     var slide = slides[index];
-    image.src = slide.getAttribute("data-src") || slide.href;
+    var width = parseInt(slide.getAttribute("data-width"), 10) || 0;
+    var height = parseInt(slide.getAttribute("data-height"), 10) || 0;
+
+    // Order matters: the browser picks a candidate against whatever `sizes`
+    // says at the moment `srcset` is assigned.
+    image.sizes = renderedWidth(width, height) + "px";
     image.srcset = slide.getAttribute("data-srcset") || "";
-    image.sizes = "100vw";
-    image.width = parseInt(slide.getAttribute("data-width"), 10) || 0;
-    image.height = parseInt(slide.getAttribute("data-height"), 10) || 0;
+    image.src = slide.getAttribute("data-src") || slide.href;
+    // The originals' dimensions, kept for their aspect ratio alone: they hold
+    // the box steady while a larger rendition loads. CSS caps the drawn size.
+    image.width = width;
+    image.height = height;
     image.alt = slide.getAttribute("data-alt") || "";
 
     var text = slide.getAttribute("data-caption") || "";
@@ -133,10 +156,22 @@
     preload(index - 1);
   }
 
+  /**
+   * Warm the neighbour — the *same* candidate the lightbox will pick when it
+   * gets there. Fetching `data-src` outright warmed the largest rendition
+   * instead, and the browser is entitled to reuse a cached larger candidate
+   * rather than fetch the right one: a 2560 px file was being downloaded to be
+   * drawn 323 px wide on a phone.
+   */
   function preload(at) {
     if (slides.length < 2) return;
     var slide = slides[(at + slides.length) % slides.length];
+    var width = parseInt(slide.getAttribute("data-width"), 10) || 0;
+    var height = parseInt(slide.getAttribute("data-height"), 10) || 0;
+
     var ahead = new Image();
+    ahead.sizes = renderedWidth(width, height) + "px";
+    ahead.srcset = slide.getAttribute("data-srcset") || "";
     ahead.src = slide.getAttribute("data-src") || slide.href;
   }
 
@@ -160,10 +195,13 @@
     prevButton.disabled = slides.length < 2;
     nextButton.disabled = slides.length < 2;
 
-    show(slides.indexOf(link));
-
+    // Laid out before the first `show`, so `renderedWidth` has a real box to
+    // measure instead of the zeroes a `hidden` element reports. The fade still
+    // starts from the `--open` class a frame later, so nothing flashes.
     lockScroll();
     overlay.hidden = false;
+
+    show(slides.indexOf(link));
     if (reducedMotion()) {
       overlay.classList.add("lightbox--open");
     } else {

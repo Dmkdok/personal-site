@@ -6,10 +6,13 @@ keyboard evidence T071 needs for the lightbox.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.helpers import Album, ru
+from e2e.conftest import Trash, wait_for_ready
+from e2e.helpers import AdminApi, Album, photo_bytes, ru
 
 
 @pytest.mark.launch_flow
@@ -99,3 +102,97 @@ def test_a_thumbnail_is_a_plain_link_without_javascript(
         assert page.request.get(href).status == 200
     finally:
         context.close()
+
+
+# --------------------------------------------------------------------------
+# T080 — the open photograph must fit the screen.
+#
+# It did not. `.lightbox__figure` was sized by its content, so `max-block-size:
+# 100%` on the image had nothing to resolve against and the picture kept its
+# full aspect height: a 4000×6000 portrait rendered 1328×1992 inside a 900 px
+# viewport, centred, so only its middle was ever visible. Small test photographs
+# hid it — the shapes below are the ones that actually break.
+# --------------------------------------------------------------------------
+SHAPES = {"landscape": (6000, 4000), "portrait": (4000, 6000), "panorama": (6000, 1500)}
+VIEWPORTS = [(1440, 900), (360, 740), (1920, 1080)]
+
+
+@pytest.fixture
+def oversized_album(admin_api: AdminApi, trash: Trash, run_token: str) -> Album:
+    """An album of 6000 px photographs — landscape, portrait and panorama."""
+    album = trash.album(admin_api.create_album(f"E2E крупные {run_token}"))
+    for name, (width, height) in SHAPES.items():
+        admin_api.upload_photo(
+            album, photo_bytes(width, height, seed=width), f"e2e-{run_token}-{name}.jpg"
+        )
+    wait_for_ready(admin_api, album, len(SHAPES))
+    admin_api.publish_album(album)
+    return album
+
+
+MEASURE = """() => {
+    const img = document.querySelector('.lightbox__img');
+    const box = img.getBoundingClientRect();
+    return {
+      w: Math.round(box.width), h: Math.round(box.height),
+      left: Math.round(box.left), top: Math.round(box.top),
+      vw: window.innerWidth, vh: window.innerHeight,
+      docScroll: document.querySelector('.lightbox').scrollWidth,
+      picked: img.currentSrc,
+    };
+}"""
+
+
+@pytest.mark.parametrize(("width", "height"), VIEWPORTS)
+def test_an_open_photograph_never_exceeds_the_viewport(
+    page: Page, oversized_album: Album, width: int, height: int
+) -> None:
+    page.set_viewport_size({"width": width, "height": height})
+    page.goto(f"/photo/{oversized_album.slug}")
+
+    thumbnails = page.get_by_role("list", name=ru("photo.grid_label")).get_by_role("link")
+    expect(thumbnails).to_have_count(len(SHAPES))
+
+    for index in range(len(SHAPES)):
+        thumbnails.nth(index).click()
+        dialog = page.get_by_role("dialog", name=ru("photo.lightbox_label"))
+        expect(dialog).to_be_visible()
+        expect(page.locator(".lightbox__img")).to_have_js_property("complete", True)
+
+        m = page.evaluate(MEASURE)
+        shape = list(SHAPES)[index]
+        assert m["w"] <= m["vw"], f"{shape} at {width}×{height}: {m['w']}px wide in {m['vw']}px"
+        assert m["h"] <= m["vh"], f"{shape} at {width}×{height}: {m['h']}px tall in {m['vh']}px"
+        assert m["left"] >= 0 and m["top"] >= 0, (
+            f"{shape} at {width}×{height}: {m} spills off-screen"
+        )
+        assert m["docScroll"] <= m["vw"], (
+            f"{shape} at {width}×{height}: the overlay scrolls sideways"
+        )
+
+        page.keyboard.press("Escape")
+        expect(dialog).to_be_hidden()
+
+
+def test_the_rendition_fetched_matches_the_size_it_is_drawn_at(
+    page: Page, oversized_album: Album
+) -> None:
+    """`sizes` was a flat `100vw`, three times the truth for a portrait shot.
+
+    The preloader made it worse: it fetched `data-src` — always the largest
+    rendition — so the neighbour arrived at 2560 px and the browser reused that
+    cached candidate rather than the one it would otherwise have chosen.
+    """
+    page.set_viewport_size({"width": 360, "height": 740})
+    page.goto(f"/photo/{oversized_album.slug}")
+
+    thumbnails = page.get_by_role("list", name=ru("photo.grid_label")).get_by_role("link")
+    # The third shot: its neighbours have been preloaded by the time it opens.
+    thumbnails.nth(2).click()
+    expect(page.get_by_role("dialog", name=ru("photo.lightbox_label"))).to_be_visible()
+    expect(page.locator(".lightbox__img")).to_have_js_property("complete", True)
+
+    m = page.evaluate(MEASURE)
+    picked = int(re.search(r"_(\d+)\.webp", m["picked"]).group(1))
+    # 640 is the smallest rendition; on a 360 px phone nothing bigger is needed.
+    assert picked == 640, f"drawn {m['w']}px wide but fetched the {picked}px rendition"

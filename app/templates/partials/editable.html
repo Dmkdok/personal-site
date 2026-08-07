@@ -1,20 +1,25 @@
 {# A block of site copy: read-only for visitors, editable in place for the admin.
-   `key` identifies the block, `html` is the rendered value. #}
-<div class="editable" id="content-{{ key }}">
+   `key` identifies the block, `html` is the rendered value.
+   The key carries a dot (`home.intro`), and `#content-home.intro` is a valid CSS
+   selector meaning «#content-home with class intro» — which matches nothing, so
+   htmx raised htmx:targetError and did nothing. The dot is replaced everywhere
+   the key becomes part of a DOM id. #}
+{% set dom_id = "content-" ~ key|replace(".", "-") %}
+<div class="editable" id="{{ dom_id }}">
   <div class="editable__value">{{ html|safe }}</div>
   {% if is_admin %}
     <button
       class="editable__edit"
       type="button"
       hx-get="/admin/content/{{ key }}/edit"
-      hx-target="#content-{{ key }}"
+      hx-target="#{{ dom_id }}"
       hx-swap="outerHTML"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 20h9" />
         <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
       </svg>
-      Править
+      {{ t("editable.edit") }}
     </button>
   {% endif %}
 </div>
