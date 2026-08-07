@@ -32,13 +32,42 @@
     tooMany: zone.getAttribute("data-error-too-many") || "",
     uploadFailed: zone.getAttribute("data-error-upload") || "",
     network: zone.getAttribute("data-error-network") || "",
-    progress: zone.getAttribute("data-progress-label") || ""
+    progress: zone.getAttribute("data-progress-label") || "",
+    summary: zone.getAttribute("data-summary") || "",
+    summaryFailed: zone.getAttribute("data-summary-failed") || ""
   };
 
   var pending = [];
   var active = 0;
   var rowsByPhoto = {};
   var refreshTimer = null;
+
+  var statusLine = document.getElementById("upload-queue-status");
+  var counts = { total: 0, done: 0, failed: 0 };
+  var statusTimer = null;
+
+  /** Report progress once a second, as one sentence.
+   *
+   * The queue list is `aria-live="off"` because it cannot be anything else: a
+   * fifty-file drop appends fifty rows and rewrites each of them twice, and a
+   * screen reader would read all of it before the page could be used again.
+   * This is the same information at a rate a person can follow.
+   */
+  function announce() {
+    if (!statusLine || statusTimer) return;
+    statusTimer = window.setTimeout(function () {
+      statusTimer = null;
+      if (!counts.total) {
+        statusLine.textContent = "";
+        return;
+      }
+      var template = counts.failed ? text.summaryFailed : text.summary;
+      statusLine.textContent = template
+        .replace("{done}", counts.done)
+        .replace("{total}", counts.total)
+        .replace("{failed}", counts.failed);
+    }, 1000);
+  }
 
   function toast(message, kind) {
     if (window.portfolioToast) window.portfolioToast(message, kind);
@@ -105,6 +134,8 @@
       row.root.appendChild(row.error);
     }
     row.error.textContent = message;
+    counts.failed += 1;
+    announce();
   }
 
   // ------------------------------------------------------------------ queue
@@ -120,6 +151,8 @@
     list.forEach(function (file) {
       pending.push({ file: file, row: addRow(file) });
     });
+    counts.total += list.length;
+    announce();
     pump();
   }
 
@@ -197,6 +230,8 @@
         setState(row, "ready", text.ready);
         row.bar.remove();
         delete rowsByPhoto[photoId];
+        counts.done += 1;
+        announce();
       } else if (status === "failed") {
         var message = tile.querySelector(".photo-item__error");
         setError(row, message ? message.textContent.trim() : text.uploadFailed);
@@ -246,6 +281,10 @@
       queue.textContent = "";
       queueWrap.hidden = true;
       rowsByPhoto = {};
+      counts = { total: 0, done: 0, failed: 0 };
+      if (statusLine) statusLine.textContent = "";
+      // Hiding the wrap takes the focused button with it.
+      input.focus();
     });
   }
 })();

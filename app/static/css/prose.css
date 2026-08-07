@@ -157,11 +157,17 @@
     border-block-start: 1px solid var(--line);
   }
 
-  /* The table itself is wrapped by the browser inside this scroller. */
-  .prose table {
-    display: block;
+  /* The scroller is a wrapper emitted by app/services/markdown.py, not the
+     table itself. `display: block` on a <table> strips its implicit table role
+     in Chrome and Firefox — header associations and row/column counts vanish
+     from the accessibility tree — and no browser wraps it for you, which the
+     comment that used to sit here claimed. */
+  .prose .table-scroll {
     max-inline-size: 100%;
     overflow-x: auto;
+  }
+
+  .prose table {
     border-collapse: collapse;
     font-size: var(--step--1);
   }

@@ -22,12 +22,14 @@
 
       <div class="photo-actions" role="group" aria-label="{{ t('photo.album_actions_label') }}">
         <button class="button button--quiet" type="button"
+                id="album-{{ album.id }}-edit"
                 hx-get="/photo/admin/albums/{{ album.id }}/edit"
                 hx-target="#album-head"
                 hx-swap="outerHTML">{{ t("photo.edit_album") }}</button>
 
         <button class="button {{ 'button--quiet' if album.is_published else 'button--primary' }}"
                 type="button"
+                id="album-{{ album.id }}-publish"
                 hx-post="/photo/admin/albums/{{ album.id }}/publish"
                 hx-target="#album-head"
                 hx-swap="outerHTML">

@@ -50,6 +50,19 @@
     toast("Не удалось сохранить (ошибка " + status + "). Текст не потерян.", "error");
   });
 
+  // A rejected save comes back as a re-rendered form with status 200, so
+  // htmx:responseError never fires. The swap then destroys the submit button
+  // and focus falls to <body> — for the footer form, that is the very bottom
+  // of the page. Put the caret on the field that caused it instead.
+  document.body.addEventListener("htmx:afterSwap", function (event) {
+    var target = event.detail && event.detail.target;
+    if (!target || !target.querySelector) return;
+    var invalid =
+      (target.matches && target.matches("[aria-invalid='true']") && target) ||
+      target.querySelector("[aria-invalid='true']");
+    if (invalid) invalid.focus();
+  });
+
   document.body.addEventListener("htmx:sendError", function () {
     toast("Нет связи с сервером. Проверьте соединение и повторите.", "error");
   });

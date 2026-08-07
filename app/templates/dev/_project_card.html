@@ -60,6 +60,7 @@
                 hx-swap="outerHTML">{{ t("dev.edit") }}</button>
 
         <button class="button button--quiet" type="button"
+                id="project-{{ project.id }}-publish"
                 hx-post="/dev/admin/projects/{{ project.id }}/publish"
                 hx-target="#project-board"
                 hx-swap="outerHTML">
@@ -68,6 +69,7 @@
 
         <button class="button button--quiet" type="button"
                 hx-post="/dev/admin/projects/{{ project.id }}/move"
+                id="project-{{ project.id }}-up"
                 hx-vals='{"direction": "up"}'
                 hx-target="#project-board"
                 hx-swap="outerHTML"
@@ -78,6 +80,7 @@
 
         <button class="button button--quiet" type="button"
                 hx-post="/dev/admin/projects/{{ project.id }}/move"
+                id="project-{{ project.id }}-down"
                 hx-vals='{"direction": "down"}'
                 hx-target="#project-board"
                 hx-swap="outerHTML"

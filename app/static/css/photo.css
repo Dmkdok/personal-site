@@ -227,6 +227,17 @@
     margin-block-start: var(--space-m);
   }
 
+  /* Empty until the first drop; `:empty` keeps it from reserving a gap. */
+  .upload-queue__status {
+    margin-block-start: var(--space-m);
+    font-size: var(--step--1);
+    color: var(--text-muted);
+  }
+
+  .upload-queue__status:empty {
+    display: none;
+  }
+
   .upload-queue__head {
     display: flex;
     align-items: center;

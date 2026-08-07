@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PLACEHOLDERS = {"change-me", "change-me-to-a-long-random-string"}
@@ -41,6 +41,25 @@ class Settings(BaseSettings):
                 "SECRET_KEY must be a unique random string of at least 32 characters. "
                 'Generate one with: python -c "import secrets; print(secrets.token_urlsafe(48))"'
             )
+        return value
+
+    @field_validator("admin_password")
+    @classmethod
+    def _reject_placeholder_password(cls, value: str, info: ValidationInfo) -> str:
+        """The same guard `secret_key` gets, for the same reason.
+
+        `.env.example` shipped `ADMIN_PASSWORD=change-me` with nothing checking
+        it, while the identical placeholder in `SECRET_KEY` was refused. The
+        launch checklist says the only manual step is copying that file, so
+        read literally it produced a live site whose admin password is written
+        down in the repository.
+        """
+        if value in _PLACEHOLDERS:
+            raise ValueError(
+                "ADMIN_PASSWORD is still the placeholder from .env.example. Set a real password."
+            )
+        if info.data.get("env") == "production" and len(value) < 12:
+            raise ValueError("ADMIN_PASSWORD must be at least 12 characters when ENV=production.")
         return value
 
     @property

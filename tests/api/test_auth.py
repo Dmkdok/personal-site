@@ -5,7 +5,7 @@ import os
 from app.config import settings
 
 
-def _login(client, password: str, csrf: str | None = None):
+def _login(client, password: str, csrf: str | None = None, headers: dict[str, str] | None = None):
     if csrf is None:
         csrf = client.get("/login").text.split('name="csrf_token" value="')[1].split('"')[0]
     return client.post(
@@ -16,6 +16,7 @@ def _login(client, password: str, csrf: str | None = None):
             "csrf_token": csrf,
             "next": "/",
         },
+        headers=headers or {},
         follow_redirects=False,
     )
 
@@ -67,6 +68,28 @@ def test_repeated_failures_are_throttled(client, db):
 
     statuses = [
         _login(client, "wrong-again").status_code for _ in range(settings.login_max_attempts + 1)
+    ]
+    assert statuses[-1] == 429, statuses
+
+    db.query(LoginAttempt).delete()
+    db.commit()
+
+
+def test_a_rotating_forwarded_for_cannot_buy_more_attempts(client, db):
+    """F17 keys the budget on the peer, never on a header the client writes.
+
+    Reading `X-Forwarded-For`'s leftmost entry — the client-supplied one —
+    handed every attempt a fresh bucket, so the throttle counted to five and
+    never fired. The suite passed only because no test sent the header.
+    """
+    from app.models.admin_user import LoginAttempt
+
+    db.query(LoginAttempt).delete()
+    db.commit()
+
+    statuses = [
+        _login(client, "wrong-again", headers={"X-Forwarded-For": f"203.0.113.{n}"}).status_code
+        for n in range(settings.login_max_attempts + 1)
     ]
     assert statuses[-1] == 429, statuses
 

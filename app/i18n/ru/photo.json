@@ -52,6 +52,8 @@
     "choose_files": "Выбрать файлы",
     "choose_files_label": "Файлы для загрузки",
     "queue_label": "Очередь загрузки",
+    "upload_summary": "Готово {done} из {total}",
+    "upload_summary_failed": "Готово {done} из {total}, не удалось {failed}",
     "clear_queue": "Очистить список",
     "upload_progress_label": "Ход загрузки",
     "state_uploading": "Загружается",

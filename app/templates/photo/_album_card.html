@@ -44,6 +44,7 @@
 
       <button class="button button--quiet photo-icon-button" type="button"
               hx-post="/photo/admin/albums/{{ album.id }}/move"
+              id="album-{{ album.id }}-up"
               hx-vals='{"direction": "up", "view": "index"}'
               hx-target="#album-board"
               hx-swap="outerHTML"
@@ -54,6 +55,7 @@
 
       <button class="button button--quiet photo-icon-button" type="button"
               hx-post="/photo/admin/albums/{{ album.id }}/move"
+              id="album-{{ album.id }}-down"
               hx-vals='{"direction": "down", "view": "index"}'
               hx-target="#album-board"
               hx-swap="outerHTML"

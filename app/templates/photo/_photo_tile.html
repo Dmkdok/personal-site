@@ -66,6 +66,7 @@
 
         <button class="button button--quiet photo-icon-button" type="button"
                 hx-post="/photo/admin/photos/{{ photo.id }}/move"
+                id="photo-{{ photo.id }}-up"
                 hx-vals='{"direction": "up"}'
                 hx-target="#photo-grid"
                 hx-swap="outerHTML"
@@ -76,6 +77,7 @@
 
         <button class="button button--quiet photo-icon-button" type="button"
                 hx-post="/photo/admin/photos/{{ photo.id }}/move"
+                id="photo-{{ photo.id }}-down"
                 hx-vals='{"direction": "down"}'
                 hx-target="#photo-grid"
                 hx-swap="outerHTML"
@@ -86,6 +88,7 @@
 
         {% if ready and not is_cover %}
           <button class="button button--quiet photo-icon-button" type="button"
+                  id="photo-{{ photo.id }}-cover"
                   hx-post="/photo/admin/photos/{{ photo.id }}/cover"
                   hx-target="#photo-grid"
                   hx-swap="outerHTML"
@@ -96,6 +99,7 @@
         {% endif %}
 
         <button class="button button--quiet photo-icon-button photo-icon-button--danger" type="button"
+                id="photo-{{ photo.id }}-delete"
                 hx-delete="/photo/admin/photos/{{ photo.id }}"
                 hx-confirm="{{ t('photo.delete_photo_confirm') }}"
                 hx-target="#photo-grid"

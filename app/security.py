@@ -114,10 +114,18 @@ def csrf_ok(request: Request, submitted: str | None) -> bool:
 # Login throttling
 # --------------------------------------------------------------------------
 def client_ip(request: Request) -> str:
-    # Behind Caddy in production; X-Forwarded-For is set by the proxy we control.
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()[:45]
+    """The peer the request actually came from.
+
+    Deliberately does **not** read `X-Forwarded-For`. That header is written by
+    the client, and taking its leftmost entry turned F17's budget into
+    decoration: a rotating value bought a fresh five attempts every time, and
+    the suite stayed green only because no test sent the header.
+
+    Behind a proxy, uvicorn's `--proxy-headers` applies it for us — but only
+    for peers named in `--forwarded-allow-ips`, which is the one place that
+    knows which proxy is ours. One resolver that checks, rather than two where
+    the second does not.
+    """
     return (request.client.host if request.client else "unknown")[:45]
 
 

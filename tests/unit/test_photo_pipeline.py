@@ -180,6 +180,38 @@ def test_rejects_a_corrupt_image_that_survives_validation(tmp_path):
         images.verify_decodable(path)
 
 
+def test_rejects_a_decompression_bomb(tmp_path, monkeypatch):
+    """A valid image with an absurd pixel count is refused, not decoded.
+
+    `DecompressionBombError` is not an `OSError` or a `ValueError`, so the
+    narrow tuple this used to catch let it past `ImageRejected` entirely: the
+    upload became a 500 with an HTML body, sent to a client parsing JSON, and
+    the original stayed on disk.
+    """
+    monkeypatch.setattr(images, "MAX_PIXELS", 64)
+
+    path = tmp_path / "bomb.png"
+    Image.new("RGB", (64, 64), "white").save(path, "PNG")
+
+    with pytest.raises(images.ImageRejected):
+        images.verify_decodable(path)
+
+
+def test_an_oversized_image_leaves_nothing_behind(monkeypatch):
+    """Whatever the reason for rejection, the stored original goes with it."""
+    monkeypatch.setattr(images, "MAX_PIXELS", 64)
+    bucket = settings.originals_dir / KIND
+
+    def files() -> set[Path]:
+        return {path for path in bucket.rglob("*") if path.is_file()} if bucket.exists() else set()
+
+    before = files()
+    with pytest.raises(images.ImageRejected):
+        images.store_and_process(make_image(200, 200), "big.jpg", "image/jpeg", kind=KIND)
+
+    assert files() == before
+
+
 def test_a_rejected_upload_leaves_nothing_behind():
     """The original is written before it can be decoded, so it has to be undone."""
     corrupt = b"\xff\xd8\xff" + b"\x9c\x1f" * 512

@@ -40,7 +40,7 @@
       "tag": "input",
       "id": null,
       "label": "",
-      "indicator_on": "parent"
+      "indicator_on": "self"
     },
     {
       "page": "/",
@@ -166,7 +166,7 @@
       "tag": "input",
       "id": null,
       "label": "",
-      "indicator_on": "parent"
+      "indicator_on": "self"
     },
     {
       "page": "/photo",
@@ -186,7 +186,7 @@
       "page": "/photo",
       "tag": "a",
       "id": null,
-      "label": "E2E галерея viqpukhiq",
+      "label": "E2E галерея jqgeoqqqa",
       "indicator_on": "self"
     },
     {
@@ -257,7 +257,7 @@
       "tag": "input",
       "id": null,
       "label": "",
-      "indicator_on": "parent"
+      "indicator_on": "self"
     },
     {
       "page": "/blog",
@@ -270,7 +270,7 @@
       "page": "/blog",
       "tag": "a",
       "id": null,
-      "label": "Еще статья\n    \n\n      44446666666\n\n    ",
+      "label": "Еще статья\n    \n\n      Вау, это еще одна",
       "indicator_on": "self"
     },
     {
@@ -348,7 +348,7 @@
       "tag": "input",
       "id": null,
       "label": "",
-      "indicator_on": "parent"
+      "indicator_on": "self"
     },
     {
       "page": "/search?q=",
@@ -386,112 +386,112 @@
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "Перейти к содержимому",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "Главная",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "Разработка",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "Фото",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "Блог",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "input",
       "id": null,
       "label": "",
-      "indicator_on": "parent"
+      "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "button",
       "id": null,
       "label": "Переключить тему",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "← Все альбомы",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "GitHub",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "Telegram",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "VK",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-viqpukhiq",
+      "page": "/photo/e2e-galereia-jqgeoqqqa",
       "tag": "a",
       "id": null,
       "label": "YouTube",

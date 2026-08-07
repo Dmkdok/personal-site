@@ -285,6 +285,11 @@ def site_links_save(
             "partials/site_links_form.html",
             _form_context(typed, invalid),
             admin=admin,
+            # A rejection is a 200 carrying the form again, so `htmx:responseError`
+            # never fires and nothing else would say a word. This block sits in
+            # the footer, at the very bottom of the page — without the toast the
+            # save looks like it simply did nothing (F37).
+            headers=toast_headers(translate("footer.invalid_url"), "error"),
         )
 
     cleaned[RIGHTS_KEY] = rights.strip()

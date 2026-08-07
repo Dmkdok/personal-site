@@ -14,6 +14,8 @@
     data-error-upload="{{ t('photo.upload_failed') }}"
     data-error-network="{{ t('photo.upload_network_failed') }}"
     data-progress-label="{{ t('photo.upload_progress_label') }}"
+    data-summary="{{ t('photo.upload_summary') }}"
+    data-summary-failed="{{ t('photo.upload_summary_failed') }}"
   >
     <p class="upload-zone__title" id="upload-heading">{{ t("photo.drop_title") }}</p>
     <p class="upload-zone__note">{{ t("photo.drop_note") }}</p>
@@ -30,6 +32,13 @@
     </div>
   </div>
 
+  {# One throttled sentence, outside the queue and outside anything `hidden`,
+     so it exists before the first drop and is announced when it changes. The
+     list itself is silent: fifty files append fifty rows and then rewrite each
+     one twice, and as a live region that is ~150 announcements a screen-reader
+     user has to sit through before the page is usable again. #}
+  <p class="upload-queue__status" id="upload-queue-status" role="status"></p>
+
   <div class="upload-queue-wrap" id="upload-queue-wrap" hidden>
     <div class="upload-queue__head">
       <p class="label">{{ t("photo.queue_label") }}</p>
@@ -37,6 +46,6 @@
         {{ t("photo.clear_queue") }}
       </button>
     </div>
-    <ul class="upload-queue" id="upload-queue" role="list" aria-live="polite"></ul>
+    <ul class="upload-queue" id="upload-queue" role="list" aria-live="off"></ul>
   </div>
 </section>

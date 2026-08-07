@@ -15,9 +15,14 @@ services:
       ENV: production
     volumes: !override
       - ${MEDIA_HOST_DIR:-./data/media}:/data/media
+    # `--forwarded-allow-ips` must name the proxy, never "*". With "*" uvicorn
+    # rewrites the peer address from any client's own `X-Forwarded-For`, which
+    # hands the login throttle (F17) a fresh budget on every attempt. The
+    # default is Docker's private bridge range, which on this stack is Caddy
+    # and nothing else; override it if the deployment uses another pool.
     command:
       ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers",
-       "--forwarded-allow-ips", "*"]
+       "--forwarded-allow-ips", "${TRUSTED_PROXY_IPS:-172.16.0.0/12}"]
 
   caddy:
     image: caddy:2-alpine
