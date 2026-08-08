@@ -211,8 +211,11 @@ The production overlay: Caddy obtains and renews the certificate automatically, 
 the database publishes a host port, the code is baked into the image instead of bind-mounted,
 `ENV=production` makes cookies `Secure`, and Caddy caches `/media` hard (content-addressed names)
 and `/static` for a week. The upload ceiling is set in two places that must agree — `MAX_UPLOAD_MB`
-in `.env` and `request_body max_size` in the `Caddyfile`, currently 25 MB and 30 MB to leave room
-for the multipart envelope.
+in `.env` and `request_body max_size` in the `Caddyfile`, currently 50 MB and 55 MB to leave room
+for the multipart envelope. **Move them together.** With the proxy set lower, Caddy answers a bare
+413 before the application is reached, so the size the owner was promised is not the size he gets
+and no Russian message explains why — and nothing local reproduces it, because dev runs without
+the proxy.
 
 Then: sign in at `https://<domain>/login`, change the seeded password, and add the cron entry for
 `make backup`.

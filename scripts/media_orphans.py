@@ -134,9 +134,20 @@ def main() -> int:
         if len(empty) > 10:
             print(f"  … and {len(empty) - 10} more")
         if args.prune:
+            # The listing above is a moment old, and an upload landing in the
+            # meantime refills one of these. `rmdir` refuses a non-empty
+            # directory, which is the right answer — but unguarded it would end
+            # the run on a traceback *after* the files were already deleted, and
+            # a successful prune would read as a failed one.
+            removed = 0
             for directory in empty:
-                directory.rmdir()
-            print(f"Removed {len(empty)} empty director(ies).")
+                try:
+                    directory.rmdir()
+                except OSError as exc:
+                    print(f"  kept {directory.relative_to(settings.media_root)}: {exc.strerror}")
+                else:
+                    removed += 1
+            print(f"Removed {removed} empty director(ies).")
 
     if not args.prune and (orphans or empty):
         print("\nNothing was deleted. Re-run with --prune.")

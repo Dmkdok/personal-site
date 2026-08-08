@@ -1,6 +1,174 @@
 # Review
 
-Phase 6, run 2026-08-08 on commit `cbe63de` plus the CLS fix. Two independent
+Two Phase 6 runs. **Run 2 is the current one and is below**; run 1 is kept
+underneath it because its findings are the reason half of M9 exists, and a
+reviewer arriving later should be able to see what was already looked at.
+
+---
+
+# Run 2 — Phase 6 against M9, 2026-08-08
+
+Read at `ab46f82`; the fixes below are committed on top of it.
+
+Re-run because the passing verdict was against `a0c2835`, and M9 has since
+rewritten the media lifecycle, the upload limit, the CSRF failure path and the
+security headers on a 500. Read through Serena; the gates were re-run rather
+than taken from a checkbox, and the two claims singled out for a second reading
+— `images.release` and the one-shot CSRF retry guard — were traced end to end.
+
+## Verdict
+
+**PASS.** The pass returned **FAIL** on two High findings — no Critical — and
+both were fixed in the same session, along with both Mediums, on the owner's
+instruction. Neither High was a security defect and neither was visible to a
+visitor; both silently defeated a decision the owner had made and signed off
+on. Everything M9 claimed to have built, it built. What was wrong was the edge
+where two of those mechanisms met something outside themselves — a proxy, and
+another profile's ladder.
+
+## High — fixed
+
+- **The production body cap contradicts the 50 MB upload limit.**
+  [Caddyfile:20-23](../Caddyfile#L20-L23) sets `request_body { max_size 30MB }`
+  under a comment reading «Matches MAX_UPLOAD_MB with headroom for the multipart
+  envelope». T094 raised `MAX_UPLOAD_MB` to 50 on the owner's explicit decision
+  («he exports files up to 50 MB»), and the proxy was not moved with it. In
+  production every upload between 30 and 50 MB is refused by Caddy with a bare
+  413 **before the application is reached**, so `validate_upload`'s Russian
+  «слишком большой файл» never runs and the size the owner was promised is not
+  the size he gets. Nothing local catches it: dev runs without the proxy, and
+  T074 — the one thing that would exercise this path — is deliberately never run
+  inside a working session. This is the same shape as run 1's Critical: a
+  control that is green everywhere except where it is load-bearing.
+  **Fixed**: `max_size 55MB`, with the coupling written into the comment and
+  into `docs/HANDOFF.md`, which was quoting «25 MB and 30 MB» and was stale on
+  both numbers. No test can cover this — the proxy is not in the dev stack — so
+  the defence is that the two numbers now name each other in both places.
+
+- **Deduplication can strand a photograph on the cover ladder.**
+  [app/routers/photos.py:719-734](../app/routers/photos.py#L719-L734) accepts a
+  content-hash hit from *any* profile. `COVER` is `(640, 1600)` at quality 85;
+  `PHOTO` is `(640, 1600, 2560)` **plus the original's own width** at quality 92
+  ([images.py:109-116](../app/services/images.py#L109-L116)). So a frame first
+  uploaded as an article or project cover and later added to an album reuses the
+  cover's renditions, is marked `READY` on the spot, and never gets the
+  native-width rung — the lightbox serves 1600 px at quality 85 for a 4000 px
+  original, and nothing ever revisits it. ADR-014 calls showing the owner's
+  frames at their best the property that must not fail, and `store_and_process`
+  reasons about exactly this trade for prose, where it is invisible
+  ([images.py:598-604](../app/services/images.py#L598-L604)) — the album path
+  inherited the behaviour without inheriting the reasoning. The reverse
+  direction is harmless: a `PHOTO`-first frame reused as a cover gets a richer
+  ladder, and `cover_sources` globs rather than assuming.
+
+  **Fixed**, by the owner's choice of the two options put to him: top up rather
+  than refuse to deduplicate. `images.missing_rungs(asset, profile)` names the
+  widths a profile wants and the disk does not have — by glob, because the
+  profile a file came in under is recorded nowhere and would be one more thing
+  free to drift — and `images.top_up` renders exactly those onto the one stored
+  copy. `store_and_process` does it synchronously; the album route branches on
+  the same predicate and sends the upload to the background pool as a fresh one
+  would, because a 50 MB frame does not belong on the request path. One file,
+  one URL, every rung anyone has asked for; F42 is untouched.
+
+  Two regression tests, both confirmed to fail with the fix disabled: a cover
+  reused as a photograph gains its native-width rung
+  (`tests/unit/test_photo_pipeline.py`), and a cover reused in prose gains the
+  1280 rung while the original stays a single file (`tests/api/test_blog.py`).
+  **The second replaced a test that was asserting the defect** —
+  `test_a_second_upload_of_known_bytes_generates_no_new_renditions` demanded
+  that a dedup hit render nothing at all. It now asserts what F42 actually
+  promises: one stored file behind one URL, not an unrendered rung.
+
+## Medium / polish — fixed
+
+- **Three user-visible Russian strings are still hardcoded**, against ADR-007
+  and `docs/CONVENTIONS.md`: `aria-label="Блок кода"` and `aria-label="Таблица"`
+  in [app/services/markdown.py:57-58](../app/services/markdown.py#L57-L58), and
+  the «Сохранено» toast in
+  [app/routers/pages.py:116](../app/routers/pages.py#L116). All three predate
+  M9; T100 swept seven files for exactly this and these were not among them. The
+  two `aria-label`s are the ones that matter — they are what a screen reader
+  announces on entering a code block or a table.
+  **Fixed**: a `prose` area in `app/i18n/ru/common.json`, and the two openers
+  built per call rather than held as module constants — the catalogue is read on
+  import, and reading it *at* import here would depend on which module got there
+  first. The toast now uses `editable.saved`, which already held the same word
+  and was already used eleven lines below.
+
+- **`make media-prune` can end on a traceback after it has already deleted
+  files.** [scripts/media_orphans.py:135-138](../scripts/media_orphans.py#L135-L138)
+  calls `directory.rmdir()` unguarded, on a listing taken earlier in the run. A
+  directory that gained a file in between raises `OSError` and the script exits
+  non-zero having done most of its work — which reads as a failed prune when it
+  was a successful one. The file deletion immediately above it is careful about
+  precisely this race (`release` re-asks the database); the directory sweep is
+  not.
+  **Fixed**: each `rmdir` is guarded, a directory that refuses is named and
+  counted out, and the closing line reports what was actually removed rather
+  than what was listed.
+
+## Read twice, and clean
+
+- **`images.release` holds the line it is supposed to hold.** Every one of the
+  eight callers commits the rows *before* releasing, which is the whole
+  contract: `is_referenced` reads the database, so a row still in flight would
+  read as a live reference and the file would be kept — the safe direction.
+  `owners_of` scans every column in the schema that can hold a media path
+  (`Photo` ×4, `Post`, `Project`, `SiteContent`, each in both Markdown and
+  rendered HTML); the one it skips, `MediaAsset.original_path`, is bookkeeping
+  that `release` deletes itself. `Album` has no path of its own — its cover is a
+  foreign key to a `Photo`, so it is covered by the photo scan. `_delete_stem`
+  globs rather than reconstructing widths, so a ladder stored under a different
+  profile is still fully removed. The «owner deleted an article, owner broke
+  another article's cover» case is the one the design is built around and it
+  holds in both directions.
+
+- **The one-shot CSRF retry cannot loop.** `data-csrf-retried` is set before the
+  retry is issued and cleared only in `htmx:afterRequest` when
+  `event.detail.successful` is true — and the vendored htmx sets
+  `e.successful = !isError`, with `isError` true for any 4xx. So a second 403
+  leaves the flag set and the retry path is skipped: at most two requests per
+  episode. `/csrf` hands out the caller's *own* session token, there is no CORS
+  middleware anywhere in the app, so another origin cannot read the answer.
+
+- **Security headers now survive a 500.** `apply_security_headers` is a function
+  called from both `_security_headers` and the `Exception` handler, which is the
+  fix for `ServerErrorMiddleware` sitting outside the user stack. Confirmed live
+  on a 404 as well; the unit suite covers the 500 and was verified by breaking
+  the call.
+
+- **Run 1's Critical did not regress.** `client_ip` still refuses to read
+  `X-Forwarded-For`, with the reasoning written into the docstring.
+
+- Spot-checked live against the running stack: `sitemap.xml` lists eleven URLs
+  and every one of them returns 200, including both `/dev/{slug}`; a 205-
+  character query returns 200 with guidance rather than a JSON 422; `.env` is
+  untracked and both placeholder validators are in place; no credentials in the
+  tree.
+
+## Gates at the time of this verdict
+
+Run 2026-08-08, after the fixes above.
+
+| Gate | Command | Result |
+|---|---|---|
+| Unit + API | `docker compose run --rm tests` | **224 passed**, 4 skipped, exit 0 |
+| End-to-end | `uv run pytest e2e` | **40 passed**, exit 0 |
+| Six launch flows | `uv run pytest e2e -m launch_flow` | **6 passed**, exit 0 |
+| Lint | `uv run ruff check .` | clean, exit 0 |
+| Format | `uv run ruff format --check .` | clean, exit 0 |
+
+The suite grew 222 → 224: the two rung-top-up regressions. Both were checked in
+both directions by disabling the fix and watching them go red — as was the
+`data-autofocus` handler earlier in the same session, which took four e2e tests
+with it.
+
+---
+
+# Run 1 — Phase 6, 2026-08-08 at `a0c2835` (closed)
+
+Run on commit `cbe63de` plus the CLS fix. Two independent
 reviewers, neither of which wrote code: one on completeness/correctness/security
 against `SPEC.md` with the `secure-review` checklist, one on UI/UX with
 `web-design-guidelines`. Both read the tree through Serena and re-ran the gates

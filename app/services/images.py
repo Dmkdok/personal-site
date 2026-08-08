@@ -314,6 +314,45 @@ def find_asset(db: Session, digest: str) -> MediaAsset | None:
     return asset
 
 
+def missing_rungs(asset: MediaAsset, profile: Profile) -> tuple[int, ...]:
+    """Widths `profile` asks for that this upload does not have on disk.
+
+    Read by glob, never by comparing profiles: the ladder a file actually has
+    is a fact about the disk, and the profile it came in under is not recorded
+    anywhere — deliberately, because it would be one more thing free to drift.
+    """
+    if asset.width <= 0:
+        return ()
+    have = renditions_of(asset.stem)
+    return tuple(width for width in profile.widths_for(asset.width) if width not in have)
+
+
+def top_up(asset: MediaAsset, profile: Profile) -> StoredImage:
+    """Render the rungs `profile` wants and this upload is missing.
+
+    Deduplication is keyed on bytes, not on what the bytes were wanted for, so a
+    hit can hand back a ladder built under a narrower profile. `COVER` stops at
+    1600 px at quality 85; `PHOTO` wants the original's own width at 92. Without
+    this, a frame used first as a cover and then in an album would be served in
+    the lightbox at the cover's ceiling forever, and nothing would ever revisit
+    it — ADR-014's one property that must not fail, lost to a cache hit.
+
+    Storing the file a second time would also answer it, and would defeat F42.
+    Rendering the missing rungs onto the one copy answers it without a second
+    file: one upload, one URL, every ladder anyone has asked for.
+
+    Idempotent, and cheap when there is nothing to do — `missing_rungs` is a
+    glob.
+    """
+    if not missing_rungs(asset, profile):
+        return stored_from_asset(asset)
+
+    generate_derivatives(asset.original_path, profile=profile)
+    # Described from the disk rather than from what was just rendered: what is
+    # there now is the union of both ladders, and the caller must see all of it.
+    return stored_from_asset(asset)
+
+
 def record_asset(db: Session, digest: str, stored: StoredImage) -> None:
     """Remember these bytes, so the next upload of them writes nothing.
 
@@ -596,19 +635,24 @@ def store_and_process(
     Used for single images (covers, in-article pictures). Album batches go
     through the background pool instead.
 
-    Bytes we already hold are not stored twice (F42). A hit skips storage and
-    rendering entirely and hands back the renditions that exist, which may be a
-    different ladder from `profile` if the first upload came in under another
-    one — the same frame as a cover and then in the text serves at most 1600 px
-    rather than 1920. One file, one URL, and no second copy is the requirement;
-    a rung of resolution nobody can see is not.
+    Bytes we already hold are not stored twice (F42). A hit skips storage, and
+    skips rendering too whenever the ladder on disk already covers `profile` —
+    but it does not hand back a shorter ladder than the caller asked for.
+    `COVER` (640, 1600) and `PROSE` (640, 1280, 1920) are subsets of neither, so
+    the same frame used as a cover and then in an article genuinely needs both;
+    `top_up` renders the difference onto the one stored copy. One file, one URL,
+    every rung anyone has asked for.
     """
     mime = validate_upload(filename, content_type, data)
 
     digest = content_digest(data)
     existing = find_asset(db, digest)
     if existing is not None:
-        return stored_from_asset(existing)
+        # No second copy of the file — but the ladder behind it is topped up if
+        # this profile asks for a rung the first upload did not need. `COVER`
+        # and `PROSE` are not subsets of one another, so the same frame used as
+        # a cover and then in the text needs both.
+        return top_up(existing, profile)
 
     relative, absolute = store_original(data, mime, kind=kind, group=group)
     try:

@@ -17,9 +17,12 @@
 		-Server
 	}
 
-	# Matches MAX_UPLOAD_MB with headroom for the multipart envelope.
+	# MAX_UPLOAD_MB (50) plus headroom for the multipart envelope. Keep the two
+	# in step: below the app's limit and the proxy answers a bare 413 before the
+	# request is ever seen, so the owner gets no Russian message and no hint of
+	# which file was refused. This was 30MB while the app allowed 50.
 	request_body {
-		max_size 30MB
+		max_size 55MB
 	}
 
 	reverse_proxy web:8000

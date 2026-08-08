@@ -36,6 +36,7 @@ from mdit_py_plugins.attrs import attrs_plugin
 # containment check that guards every other media path, so a crafted `src`
 # pointing outside the media root simply finds nothing.
 from app.services.images import intrinsic_size, media_url, renditions_of
+from app.templating import translate
 
 #: The words an author may write inside `{...}` after an image. Everything else
 #: is dropped, so a class attribute can never carry anything we did not choose.
@@ -54,8 +55,22 @@ _MEDIA_PREFIX = "/media/"
 #: Openers for the two scrolling boxes in prose. `role="region"` gives the box
 #: a name once it is focusable, so a screen reader says what has just been
 #: entered instead of announcing a bare group.
-_PRE_OPEN = '<pre tabindex="0" role="region" aria-label="Блок кода">'
-_TABLE_SCROLL_OPEN = '<div class="table-scroll" role="region" tabindex="0" aria-label="Таблица">'
+#:
+#: Built per call rather than held as constants: the name is a user-visible
+#: string and therefore lives in the catalogue (ADR-007), and the catalogue is
+#: loaded on import — reading it at import time here would depend on which
+#: module got there first.
+
+
+def _pre_open() -> str:
+    label = escapeHtml(translate("prose.code_block"))
+    return f'<pre tabindex="0" role="region" aria-label="{label}">'
+
+
+def _table_scroll_open() -> str:
+    label = escapeHtml(translate("prose.table"))
+    return f'<div class="table-scroll" role="region" tabindex="0" aria-label="{label}">'
+
 
 #: `<stem>_<width>.webp`, the shape app.services.images gives every rendition.
 #: The stem is matched, never assumed: the directory layout under the media
@@ -197,16 +212,16 @@ class _ProseRenderer(RendererHTML):
     # scroll containers focusable on its own; Firefox and Safari do not, and
     # there a wide code block or table simply cannot be read from a keyboard.
     def fence(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
-        return super().fence(tokens, idx, options, env).replace("<pre>", _PRE_OPEN, 1)
+        return super().fence(tokens, idx, options, env).replace("<pre>", _pre_open(), 1)
 
     def code_block(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
-        return super().code_block(tokens, idx, options, env).replace("<pre>", _PRE_OPEN, 1)
+        return super().code_block(tokens, idx, options, env).replace("<pre>", _pre_open(), 1)
 
     def table_open(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
         # The scroller is this wrapper, never the table: `display: block` on a
         # <table> costs it its role, its header associations and its row and
         # column counts in the accessibility tree.
-        return f"{_TABLE_SCROLL_OPEN}<table>"
+        return f"{_table_scroll_open()}<table>"
 
     def table_close(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
         return "</table></div>\n"

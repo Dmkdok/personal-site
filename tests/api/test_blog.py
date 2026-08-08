@@ -640,20 +640,38 @@ def test_the_same_frame_as_cover_and_in_the_body_is_stored_once(admin_client, db
     release(db, stored.cover_path)
 
 
-def test_a_second_upload_of_known_bytes_generates_no_new_renditions(admin_client, db):
-    """The dedup hit skips rendering, not just storage."""
+def test_a_second_upload_of_known_bytes_writes_no_second_original(admin_client, db):
+    """The dedup hit skips storage, and skips rendering only when it can.
+
+    This test used to assert that a hit rendered *nothing*, which is what Phase
+    6 run 2 found wrong: `COVER` is (640, 1600) and `PROSE` is (640, 1280, 1920)
+    — neither is a subset of the other, so a frame used twice was being served
+    the first use's ladder. What F42 promises is one stored file behind one URL,
+    not that a rung the second use needs goes unrendered.
+    """
     post = create_draft(admin_client, db, "Без второй обработки")
-    frame = png_bytes(seed=4343)
+    frame = png_bytes(seed=4343)  # 1800×1200
 
     assert upload_cover(admin_client, post, frame).status_code == 200
     db.expire_all()
-    after_first = sorted(path.name for path in files_under(db.get(Post, post.id)))
+    before = sorted(path.name for path in files_under(db.get(Post, post.id)))
+    assert [name for name in before if name.endswith(".webp")] == [
+        name for name in before if name.endswith(("_640.webp", "_1600.webp"))
+    ]
 
     assert upload_into_body(admin_client, post, frame).status_code == 200
     db.expire_all()
     stored = db.get(Post, post.id)
+    after = sorted(path.name for path in files_under(stored))
 
-    assert sorted(path.name for path in files_under(stored)) == after_first
+    # One original. The bytes are not stored a second time (F42).
+    assert [name for name in after if not name.endswith(".webp")] == [
+        name for name in before if not name.endswith(".webp")
+    ]
+    # Nothing the cover was using disappeared…
+    assert set(before) <= set(after)
+    # …and prose's own rung was rendered onto the same stem rather than skipped.
+    assert [name for name in after if name.endswith("_1280.webp")], after
     release(db, stored.cover_path)
 
 

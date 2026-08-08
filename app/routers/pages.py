@@ -113,7 +113,7 @@ def content_save(
         "partials/editable.html",
         {"key": key, "html": block.value_html},
         admin=admin,
-        headers=toast_headers("Сохранено"),
+        headers=toast_headers(translate("editable.saved")),
     )
 
 

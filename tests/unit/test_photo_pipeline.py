@@ -312,6 +312,46 @@ def test_a_rendition_lands_beside_its_own_original(db):
     images.release(db, stored.original_path)
 
 
+def test_a_frame_reused_under_a_richer_profile_gets_the_missing_rungs(pipeline):
+    """A cover reused as a photograph must not stay on the cover's ladder.
+
+    Deduplication is keyed on bytes, not on what the bytes were wanted for.
+    `COVER` stops at 1600 px at quality 85 and never holds the frame's own
+    width; the lightbox is exactly where that difference is visible. Without the
+    top-up the second upload silently inherits the first one's ceiling and
+    nothing ever revisits it — ADR-014's one property that must not fail, lost
+    to a cache hit.
+    """
+    data = make_image(2001, 1334)
+
+    first = pipeline(data, profile=images.COVER)
+    assert sorted(first.derivatives) == [640, 1600]
+
+    second = pipeline(data, profile=images.PHOTO)
+
+    # Still one upload: same original, no second copy on disk (F42).
+    assert second.original_path == first.original_path
+    # …but now carrying every rung the photograph profile asks for.
+    assert sorted(second.derivatives) == [640, 1600, 2001]
+    assert derived(second.derivatives[2001]).is_file()
+
+
+def test_missing_rungs_names_only_what_is_absent(pipeline, db):
+    """The predicate the album upload branches on.
+
+    Truthy sends a deduplicated upload to the background pool instead of
+    marking it ready on the spot; empty keeps the fast path, which is what makes
+    the common case free.
+    """
+    data = make_image(2001, 1334)
+    pipeline(data, profile=images.COVER)
+
+    asset = images.find_asset(db, images.content_digest(data))
+    assert asset is not None
+    assert images.missing_rungs(asset, images.PHOTO) == (2001,)
+    assert images.missing_rungs(asset, images.COVER) == ()
+
+
 @pytest.mark.parametrize(
     ("identifier", "slug", "expected"),
     [

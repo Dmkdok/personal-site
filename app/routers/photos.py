@@ -718,19 +718,29 @@ def photo_upload(
 
     known = images.find_asset(db, images.content_digest(data))
     if known is not None:
-        # These exact bytes are already stored and already rendered (F42). The
-        # second copy costs one row: no file is written and the pool is not
-        # asked to redo work whose answer is on disk.
+        # These exact bytes are already stored (F42): no second file, whatever
+        # happens next. Whether they are already *rendered* for an album is a
+        # different question — a frame first uploaded as a cover carries the
+        # COVER ladder, which stops at 1600 px at quality 85 and never holds the
+        # frame's own width. Serving that in the lightbox forever is the one
+        # thing ADR-014 says must not happen, so the missing rungs go to the
+        # pool exactly as a fresh upload would.
         photo = Photo(
             album_id=album.id,
             original_path=known.original_path,
-            status=PhotoStatus.READY,
             sort_order=(last or 0) + 1,
         )
-        _assign_renditions(photo, images.stored_from_asset(known))
-        db.add(photo)
-        db.commit()
-        _ensure_cover(db, photo)
+        if images.missing_rungs(known, images.PHOTO):
+            photo.status = PhotoStatus.PENDING
+            db.add(photo)
+            db.commit()
+            background.submit_with_session(process_photo, photo.id)
+        else:
+            photo.status = PhotoStatus.READY
+            _assign_renditions(photo, images.stored_from_asset(known))
+            db.add(photo)
+            db.commit()
+            _ensure_cover(db, photo)
         return JSONResponse({"id": photo.id, "status": photo.status.value}, status_code=201)
 
     relative: str | None = None
