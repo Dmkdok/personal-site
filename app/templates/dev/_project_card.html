@@ -4,10 +4,17 @@
   {% set target_url = detail_url or project.repo_url %}
 
   {% if project.cover_path %}
+    {% set cover = cover_sources(project.cover_path) %}
     <a class="project__media" href="{{ target_url or '#' }}"
        {% if not detail_url and project.repo_url %}target="_blank" rel="noopener noreferrer"{% endif %}
        tabindex="-1" aria-hidden="true">
-      <img src="{{ media_url(project.cover_path) }}" alt="" loading="lazy" decoding="async" />
+      {# 15rem in the two-column layout, capped at 20rem once it stacks (dev.css).
+         Without this the browser assumes 100vw and downloads the widest rendition
+         for a thumbnail. #}
+      <img src="{{ cover.src }}"
+           {% if cover.srcset %}srcset="{{ cover.srcset }}"{% endif %}
+           sizes="(max-width: 720px) 20rem, 15rem"
+           alt="" loading="lazy" decoding="async" />
     </a>
   {% endif %}
 

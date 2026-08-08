@@ -15,8 +15,15 @@ def search_page(
     request: Request,
     db: DbSession,
     admin: OptionalAdmin,
-    q: str = Query("", max_length=200),
+    q: str = Query(""),
 ) -> HTMLResponse:
+    """Search results.
+
+    No `max_length` on the parameter on purpose. It made an over-long query a
+    validation failure, and FastAPI answers those with a JSON 422 — to a
+    browser that asked for a page and gets a wall of `{"detail": …}`. The query
+    is truncated instead and the page says so.
+    """
     query = search_service.normalise(q)
     results = (
         search_service.search(db, query, include_hidden=admin is not None)
@@ -31,6 +38,8 @@ def search_page(
             "query": query,
             "results": results,
             "min_length": search_service.MIN_QUERY_LENGTH,
+            "max_length": search_service.MAX_QUERY_LENGTH,
+            "was_truncated": len(" ".join(q.split())) > search_service.MAX_QUERY_LENGTH,
         },
         admin=admin,
     )

@@ -17,6 +17,7 @@
   var image = null;
   var caption = null;
   var counter = null;
+  var announcer = null;
   var closeButton = null;
   var prevButton = null;
   var nextButton = null;
@@ -60,6 +61,14 @@
     counter = document.createElement("p");
     counter.className = "lightbox__counter";
 
+    // The picture, the caption and the counter all change on ←/→ while focus
+    // stays on the same button, so nothing in the dialog is re-read. This is
+    // the only thing that tells a screen-reader user the sheet moved.
+    announcer = document.createElement("p");
+    announcer.className = "visually-hidden";
+    announcer.setAttribute("aria-live", "polite");
+    announcer.setAttribute("aria-atomic", "true");
+
     closeButton = control("lightbox__close", "✕", close);
     prevButton = control("lightbox__prev", "←", function () {
       show(index - 1);
@@ -71,6 +80,7 @@
     overlay.appendChild(backdrop);
     overlay.appendChild(figure);
     overlay.appendChild(counter);
+    overlay.appendChild(announcer);
     overlay.appendChild(prevButton);
     overlay.appendChild(nextButton);
     overlay.appendChild(closeButton);
@@ -151,6 +161,12 @@
       .replace("{index}", String(index + 1))
       .replace("{total}", String(slides.length));
     counter.hidden = slides.length < 2;
+
+    // Position first: where you are matters more than what you are looking at
+    // when you have pressed an arrow, and `alt` is what describes the picture.
+    announcer.textContent = [counter.textContent, image.alt, text]
+      .filter(Boolean)
+      .join(". ");
 
     preload(index + 1);
     preload(index - 1);

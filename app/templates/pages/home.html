@@ -10,7 +10,16 @@
 {% block content %}
   <div class="container">
     <section class="hero">
-      <p class="label hero__eyebrow">Санкт-Петербург · Python · горы</p>
+      {# Editable in place like the paragraph below it (F46). The label styling
+         sits on this wrapper on purpose: every property in `.label` inherits,
+         so it reaches the paragraph the Markdown renderer produces without
+         being restated. `editable.html` is what keeps the key's dot out of the
+         DOM id — the T085 trap. #}
+      <div class="label hero__eyebrow">
+        {% with key = eyebrow_key, html = eyebrow_html %}
+          {% include "partials/editable.html" %}
+        {% endwith %}
+      </div>
 
       <h1 class="hero__statement">
         {% for line in hero_lines %}
@@ -32,7 +41,10 @@
       {% endwith %}
     </section>
 
-    <nav class="entries section" aria-label="{{ t('nav.menu') }}">
+    {# Its own name: the navigation capsule above is also a <nav>, and two
+       landmarks called «Меню» give a screen-reader user no way to tell the
+       list of sections from the site's own navigation. #}
+    <nav class="entries section" aria-label="{{ t('nav.sections') }}">
       {% set entries = [
         ("/photo", t("nav.photo"), t("home.entries.photo_note")),
         ("/dev", t("nav.dev"), t("home.entries.dev_note")),

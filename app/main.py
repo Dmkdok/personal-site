@@ -18,7 +18,7 @@ from app.config import settings
 from app.db import SessionLocal, engine
 from app.routers import auth, blog, pages, photos, projects, search, seo
 from app.security import CSRF_EXEMPT_PATHS, CSRF_HEADER, SAFE_METHODS, csrf_ok, ensure_admin_user
-from app.templating import templates
+from app.templating import templates, translate
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(name)s] %(message)s")
 logger = logging.getLogger("portfolio")
@@ -78,18 +78,19 @@ async def _csrf_guard(request: Request, call_next):
         and request.url.path not in CSRF_EXEMPT_PATHS
         and not csrf_ok(request, request.headers.get(CSRF_HEADER))
     ):
-        return JSONResponse({"detail": "Недействительный CSRF-токен"}, status_code=403)
+        return JSONResponse({"detail": translate("errors.csrf")}, status_code=403)
     return await call_next(request)
 
 
-async def _security_headers(request: Request, call_next):
-    # A per-request nonce lets the pre-paint theme script run under a policy
-    # that otherwise forbids inline script.
-    nonce = secrets.token_urlsafe(16)
-    request.state.csp_nonce = nonce
+def apply_security_headers(response: Response, nonce: str) -> Response:
+    """Stamp the policy onto one response.
 
-    response: Response = await call_next(request)
-
+    A function rather than middleware-only code because an unhandled exception
+    never reaches the middleware on the way out: Starlette's
+    `ServerErrorMiddleware` sits *outside* the user stack, so the 500 it builds
+    used to leave with no CSP and no `X-Frame-Options` at all — the one response
+    most likely to be carrying a stack trace's worth of detail.
+    """
     response.headers["Content-Security-Policy"] = "; ".join(
         [
             "default-src 'self'",
@@ -109,6 +110,16 @@ async def _security_headers(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     return response
+
+
+async def _security_headers(request: Request, call_next):
+    # A per-request nonce lets the pre-paint theme script run under a policy
+    # that otherwise forbids inline script.
+    nonce = secrets.token_urlsafe(16)
+    request.state.csp_nonce = nonce
+
+    response: Response = await call_next(request)
+    return apply_security_headers(response, nonce)
 
 
 def create_app() -> FastAPI:
@@ -170,9 +181,15 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
         logger.exception("unhandled error on %s", request.url.path)
+        nonce = getattr(request.state, "csp_nonce", "")
         if request.headers.get("HX-Request") == "true":
-            return JSONResponse({"detail": "Внутренняя ошибка"}, status_code=500)
-        return templates.TemplateResponse(request, "pages/500.html", status_code=500)
+            response: Response = JSONResponse(
+                {"detail": translate("errors.internal")}, status_code=500
+            )
+        else:
+            response = templates.TemplateResponse(request, "pages/500.html", status_code=500)
+        # This handler runs outside the middleware that would normally do it.
+        return apply_security_headers(response, nonce)
 
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, str]:

@@ -371,7 +371,7 @@ def process_photo(db: Session, photo_id: int) -> None:
     db.commit()
 
     try:
-        stored = images.generate_derivatives(photo.original_path)
+        stored = images.generate_derivatives(photo.original_path, profile=images.PHOTO)
     except (FileNotFoundError, OSError) as exc:
         # A missing original is a different problem from a bad one: say which.
         missing = isinstance(exc, FileNotFoundError)
@@ -391,6 +391,15 @@ def process_photo(db: Session, photo_id: int) -> None:
     photo.status = PhotoStatus.READY
     photo.error = None
     db.add(photo)
+
+    # Hashed from the file rather than carried down from the request: retry and
+    # startup recovery reach this function without the bytes, and the digest has
+    # to mean the same thing however the photo got here.
+    images.record_asset(
+        db,
+        images.file_digest(settings.originals_dir / photo.original_path),
+        stored,
+    )
     db.commit()
 
     _ensure_cover(db, photo)
@@ -604,11 +613,18 @@ def album_move(
     album_id: int,
     direction: str = Form(""),
     view: str = Form("index"),
+    title: str | None = Form(None),
+    caption: str | None = Form(None),
 ) -> HTMLResponse:
     """Keyboard-accessible reordering: the alternative to dragging.
 
     Reachable from both surfaces that show an album's position, so `view` says
     which one to render back — the index board, or the album's own header.
+
+    From the header the buttons sit *inside* the edit form and the swap replaces
+    it, so they send its fields along and the form is rebuilt from what was
+    typed. Rebuilding it from the stored row instead is what made pressing ↑
+    throw away an unsaved title.
     """
     album = _get_album(db, album_id)
     ordered = list(db.scalars(select(Album).order_by(Album.sort_order, Album.id)))
@@ -616,7 +632,8 @@ def album_move(
 
     headers = toast_headers(translate("photo.albums_reordered")) if moved else None
     if view == "album":
-        return _head(request, db, album, admin, form=_edit_form(album), headers=headers)
+        typed = None if title is None else {"title": title, "caption": caption or ""}
+        return _head(request, db, album, admin, form=_edit_form(album, typed), headers=headers)
     return _board(request, db, admin, headers=headers)
 
 
@@ -646,7 +663,9 @@ def album_delete(db: DbSession, admin: CurrentAdmin, album_id: int) -> Response:
     db.commit()
 
     # Only once the rows are gone, so a failed commit cannot orphan the page.
-    images.delete_files(*doomed)
+    # `release` keeps whatever another album or article still points at: with
+    # deduplication a file is no longer owned by whoever uploaded it (F41).
+    images.release(db, *doomed)
 
     return Response(
         status_code=200,
@@ -690,9 +709,32 @@ def photo_upload(
         return JSONResponse({"detail": translate("photo.too_many_files")}, status_code=429)
 
     data = file.file.read()
-    relative: str | None = None
     try:
         mime = images.validate_upload(file.filename, file.content_type, data)
+    except images.ImageRejected as exc:
+        return JSONResponse({"detail": str(exc)}, status_code=422)
+
+    last = db.scalar(select(func.max(Photo.sort_order)).where(Photo.album_id == album.id))
+
+    known = images.find_asset(db, images.content_digest(data))
+    if known is not None:
+        # These exact bytes are already stored and already rendered (F42). The
+        # second copy costs one row: no file is written and the pool is not
+        # asked to redo work whose answer is on disk.
+        photo = Photo(
+            album_id=album.id,
+            original_path=known.original_path,
+            status=PhotoStatus.READY,
+            sort_order=(last or 0) + 1,
+        )
+        _assign_renditions(photo, images.stored_from_asset(known))
+        db.add(photo)
+        db.commit()
+        _ensure_cover(db, photo)
+        return JSONResponse({"id": photo.id, "status": photo.status.value}, status_code=201)
+
+    relative: str | None = None
+    try:
         relative, absolute = images.store_original(
             data, mime, kind=PHOTO_KIND, group=images.group_name(album.id, album.slug)
         )
@@ -702,7 +744,6 @@ def photo_upload(
         images.delete_files(relative)
         return JSONResponse({"detail": str(exc)}, status_code=422)
 
-    last = db.scalar(select(func.max(Photo.sort_order)).where(Photo.album_id == album.id))
     photo = Photo(
         album_id=album.id,
         original_path=relative,
@@ -713,7 +754,7 @@ def photo_upload(
     db.add(photo)
     db.commit()
 
-    # Rendering three WebP sizes of a 25 MB frame does not belong on the
+    # Rendering four WebP sizes of a 50 MB frame does not belong on the
     # request path; the grid picks the result up by polling.
     background.submit_with_session(process_photo, photo.id)
 
@@ -843,7 +884,8 @@ def photo_delete(
         db.commit()
 
     # Only once the row is gone, so a failed commit cannot orphan the page.
-    images.delete_files(*doomed)
+    # `release` keeps a file the same frame elsewhere still uses (F41).
+    images.release(db, *doomed)
 
     return _grid(request, db, album, admin, headers=toast_headers(translate("photo.photo_deleted")))
 

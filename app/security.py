@@ -32,6 +32,11 @@ SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 # the route — reading a body in middleware would consume it for the handler.
 CSRF_EXEMPT_PATHS = frozenset({"/login", "/logout"})
 
+#: How long a login attempt is kept. Far longer than the throttle window, so a
+#: burst is still legible in the table afterwards, and short enough that the row
+#: count cannot grow forever.
+LOGIN_ATTEMPT_RETENTION_DAYS = 1
+
 
 # --------------------------------------------------------------------------
 # Passwords
@@ -150,7 +155,21 @@ def record_login_attempt(db: Session, ip: str, *, success: bool) -> None:
         db.query(LoginAttempt).filter(
             LoginAttempt.ip == ip, LoginAttempt.success.is_(False)
         ).delete()
+    _prune_login_attempts(db)
     db.commit()
+
+
+def _prune_login_attempts(db: Session) -> None:
+    """Drop rows older than the throttle can possibly care about.
+
+    `login_blocked` only ever counts inside `login_window_minutes`, so anything
+    older is dead weight — and the table is written on every failed attempt from
+    anywhere, which is exactly the shape that grows without bound. A day's worth
+    is kept rather than a window's, so the rows are still there to be looked at
+    after an attack rather than swept up during one.
+    """
+    cutoff = datetime.now(UTC) - timedelta(days=LOGIN_ATTEMPT_RETENTION_DAYS)
+    db.query(LoginAttempt).filter(LoginAttempt.attempted_at < cutoff).delete()
 
 
 # --------------------------------------------------------------------------

@@ -34,6 +34,14 @@ def content(db):
             slug="published-project",
             title="Трекер маршрутов Эльбрус",
             summary="Логистика горных походов",
+            body_md="Длинное описание",
+            body_html="<p>Длинное описание</p>",
+            is_published=True,
+        ),
+        Project(
+            slug="cardonly-project",
+            title="Только карточка про Эльбрус",
+            summary="Ссылка ведёт прямо в репозиторий",
             is_published=True,
         ),
         Project(
@@ -106,6 +114,11 @@ def test_sitemap_lists_published_pages_only(client, content):
     assert "hidden-project" not in body
     assert "hidden-album" not in body
 
+    # A published project with no long description has no page: `project_detail`
+    # answers 404 for it, so listing it would advertise a dead URL.
+    assert "cardonly-project" not in body
+    assert client.get("/dev/cardonly-project").status_code == 404
+
 
 def test_every_public_page_has_title_and_canonical(client):
     for path in ("/", "/dev", "/photo", "/blog"):
@@ -113,3 +126,27 @@ def test_every_public_page_has_title_and_canonical(client):
         assert "<title>" in html
         assert 'rel="canonical"' in html
         assert 'property="og:title"' in html
+
+
+def test_a_query_over_the_cap_gets_guidance_not_a_json_422(client):
+    """It used to hit FastAPI's validator, which answers JSON to a browser."""
+    response = client.get("/search", params={"q": "э" * 400})
+
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "Запрос длиннее" in response.text
+
+
+def test_index_pages_carry_a_default_og_image(client):
+    """A page with no picture of its own still previews as something."""
+    for path in ("/", "/dev", "/photo", "/blog"):
+        html = client.get(path).text
+        assert 'property="og:image"' in html, path
+        assert "og-default.png" in html, path
+
+
+def test_an_article_without_a_cover_falls_back_to_the_default(client, content):
+    html = client.get("/blog/published-post").text
+
+    assert 'property="og:image"' in html
+    assert "og-default.png" in html

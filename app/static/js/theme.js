@@ -16,6 +16,25 @@
     return root.dataset.theme || systemTheme();
   }
 
+  /**
+   * Colour the browser chrome to match the page.
+   *
+   * Written from the resolved `--bg` rather than from a hex literal, and driven
+   * from here rather than from a pair of `media`-scoped metas in the head:
+   * those describe what the *system* prefers, which is the wrong answer the
+   * moment the visitor picks a theme the system did not.
+   */
+  function paintChrome() {
+    var meta = document.getElementById("theme-color");
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.id = "theme-color";
+      meta.name = "theme-color";
+      document.head.appendChild(meta);
+    }
+    meta.content = getComputedStyle(root).getPropertyValue("--bg").trim();
+  }
+
   function apply(theme) {
     root.dataset.theme = theme;
     try {
@@ -26,6 +45,7 @@
     document.querySelectorAll("[data-theme-toggle]").forEach(function (button) {
       button.setAttribute("aria-pressed", String(theme === "dark"));
     });
+    paintChrome();
   }
 
   document.addEventListener("click", function (event) {
@@ -44,9 +64,11 @@
       /* ignore */
     }
     if (!stored) delete root.dataset.theme;
+    paintChrome();
   });
 
   document.querySelectorAll("[data-theme-toggle]").forEach(function (button) {
     button.setAttribute("aria-pressed", String(current() === "dark"));
   });
+  paintChrome();
 })();

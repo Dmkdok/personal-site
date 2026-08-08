@@ -27,8 +27,16 @@
     <meta property="og:title" content="{{ self.title() }}" />
     <meta property="og:description" content="{{ self.meta_description() }}" />
     <meta property="og:url" content="{{ self.canonical() }}" />
-    {% block og_image %}{% endblock %}
+    {% block og_image %}{% include "partials/og_image.html" %}{% endblock %}
     <meta name="twitter:card" content="summary_large_image" />
+
+    {# The «Dm» mark. The SVG carries its own light/dark switch; the PNG is for
+       the browsers that will not take an SVG, and `/favicon.ico` at the root is
+       for the ones that never look here at all. All self-hosted, so the CSP is
+       untouched. #}
+    <link rel="icon" href="{{ static_url('icons/favicon.svg') }}" type="image/svg+xml" />
+    <link rel="icon" href="{{ static_url('icons/favicon-32.png') }}" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="{{ static_url('icons/apple-touch-icon.png') }}" />
 
     <link rel="preload" href="{{ static_url('fonts/onest-cyrillic.woff2') }}" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="{{ static_url('css/base.css') }}" />
@@ -61,7 +69,19 @@
       {% include "partials/admin_bar.html" %}
     {% endif %}
 
-    <div class="toast-host" id="toasts" aria-live="polite" aria-atomic="false"></div>
+    {# `ui.js` reads its messages from here. Data attributes rather than an
+       inline script: the CSP forbids one, and this keeps every user-visible
+       string in the catalogue where ADR-007 says it belongs. #}
+    <div
+      class="toast-host"
+      id="toasts"
+      aria-live="polite"
+      aria-atomic="false"
+      data-msg-expired="{{ t('errors.session_expired') }}"
+      data-msg-stale="{{ t('errors.stale_page') }}"
+      data-msg-failed="{{ t('errors.save_failed') }}"
+      data-msg-offline="{{ t('errors.offline') }}"
+    ></div>
 
     <script src="{{ static_url('js/vendor/htmx.min.js') }}" defer></script>
     <script src="{{ static_url('js/theme.js') }}" defer></script>

@@ -18,6 +18,12 @@
       </h1>
     </header>
 
+    {% if was_truncated %}
+      {# Guidance, not a 422. The search still ran — on as much of the query as
+         is useful — and the visitor is told what happened to the rest. #}
+      <p class="search-note" role="status">{{ t("search.too_long", limit=max_length) }}</p>
+    {% endif %}
+
     {% if results is none %}
       {% with title = t("search.prompt_title"), note = t("search.prompt_note") %}
         {% include "partials/empty_state.html" %}

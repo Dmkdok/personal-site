@@ -188,6 +188,9 @@
   /* --- Detail page -------------------------------------------------------- */
   .detail__cover {
     inline-size: 100%;
+    /* The markup carries the intrinsic size to reserve the box; without this
+       the height attribute would also fix the height and squash the picture. */
+    block-size: auto;
     margin-block-end: var(--space-l);
     border-radius: var(--radius-m);
   }

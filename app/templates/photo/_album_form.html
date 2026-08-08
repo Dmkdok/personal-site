@@ -21,7 +21,7 @@
     <label class="field__label" for="{{ form.dom_id }}-title">{{ t("photo.title_label") }}</label>
     <input class="field__input" id="{{ form.dom_id }}-title" name="title" type="text"
            value="{{ form['values']['title'] }}" placeholder="{{ t('photo.title_placeholder') }}"
-           maxlength="200" required autofocus />
+           maxlength="200" required autofocus data-autofocus />
   </div>
 
   <div class="field">
@@ -36,18 +36,26 @@
       <span class="field__label" id="{{ form.dom_id }}-position">
         {{ t("photo.album_position_label") }}
       </span>
+      {# These two swap the whole header, this form included. `hx-include` sends
+         what is currently in the fields so the form comes back holding it:
+         without that, reordering an album silently threw away an unsaved title.
+         The ids let htmx put focus back on the button that was pressed. #}
       <div class="album-form__position" role="group" aria-labelledby="{{ form.dom_id }}-position">
         <button class="button button--quiet photo-icon-button" type="button"
+                id="{{ form.dom_id }}-up"
                 hx-post="/photo/admin/albums/{{ album.id }}/move"
                 hx-vals='{"direction": "up", "view": "album"}'
+                hx-include="closest form"
                 hx-target="#album-head"
                 hx-swap="outerHTML">
           <span aria-hidden="true">↑</span>
           <span class="visually-hidden">{{ t("photo.move_up") }}</span>
         </button>
         <button class="button button--quiet photo-icon-button" type="button"
+                id="{{ form.dom_id }}-down"
                 hx-post="/photo/admin/albums/{{ album.id }}/move"
                 hx-vals='{"direction": "down", "view": "album"}'
+                hx-include="closest form"
                 hx-target="#album-head"
                 hx-swap="outerHTML">
           <span aria-hidden="true">↓</span>

@@ -111,3 +111,37 @@ def test_password_is_never_stored_in_plaintext(db):
     assert user is not None
     assert os.environ["ADMIN_PASSWORD"] not in user.password_hash
     assert user.password_hash.startswith("$argon2")
+
+
+def test_the_csrf_endpoint_hands_back_the_session_token(client):
+    """`ui.js` asks for this after a 403 and retries, instead of losing the text."""
+    token = client.get("/csrf").json()["token"]
+    page_token = client.get("/").text.split('X-CSRF-Token": "')[1].split('"')[0]
+
+    assert token and token == page_token
+
+
+def test_login_attempts_older_than_the_retention_window_are_pruned(client, db):
+    """The table is written on every failure from anywhere; it cannot grow forever."""
+    from datetime import UTC, datetime, timedelta
+
+    from app.models.admin_user import LoginAttempt
+    from app.security import LOGIN_ATTEMPT_RETENTION_DAYS
+
+    stale = LoginAttempt(
+        ip="203.0.113.9",
+        success=False,
+        attempted_at=datetime.now(UTC) - timedelta(days=LOGIN_ATTEMPT_RETENTION_DAYS + 1),
+    )
+    db.add(stale)
+    db.commit()
+    stale_id = stale.id
+
+    _login(client, "wrong-password")
+
+    # Asked of the database, not of `Session.get`: the session still holds the
+    # instance, and `get` on a deleted one raises rather than returning None.
+    db.rollback()
+    assert db.query(LoginAttempt).filter(LoginAttempt.id == stale_id).count() == 0
+    # The attempt just made is still there: pruning is not a reset.
+    assert db.query(LoginAttempt).filter(LoginAttempt.ip == "testclient").count() >= 1

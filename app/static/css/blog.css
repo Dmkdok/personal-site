@@ -160,13 +160,6 @@
     font-size: var(--step--1);
   }
 
-  .article__cover {
-    inline-size: 100%;
-    block-size: auto;
-    margin-block-end: var(--space-xl);
-    border-radius: var(--radius-m);
-  }
-
   .article__admin {
     display: flex;
     flex-wrap: wrap;

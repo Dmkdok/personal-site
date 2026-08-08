@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models.admin_user import AdminUser
 from app.security import current_admin
+from app.templating import translate
 
 DbSession = Annotated[Session, Depends(get_db)]
 
@@ -23,7 +24,9 @@ OptionalAdmin = Annotated[AdminUser | None, Depends(get_admin_optional)]
 def require_admin(admin: OptionalAdmin) -> AdminUser:
     """Guard for every mutating endpoint. Anonymous requests never get through."""
     if admin is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Требуется вход")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=translate("auth.required")
+        )
     return admin
 
 

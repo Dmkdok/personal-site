@@ -22,7 +22,7 @@ DEFAULTS = {
 }
 
 #: A complete, valid submission. Tests override the one field they are about.
-FORM = {**DEFAULTS, "rights": "Дмитрий Богданов"}
+FORM = {**DEFAULTS, "rights": "© 2026 Дмитрий Богданов"}
 
 
 @pytest.fixture(autouse=True)
@@ -61,13 +61,23 @@ def test_defaults_render_in_both_places_without_a_single_stored_row(client, db):
     assert db.query(SiteContent).filter(SiteContent.key.like("footer.%")).count() == 0
 
 
-def test_the_copyright_year_is_automatic_and_only_the_name_is_stored(admin_client, db):
-    _save(admin_client, rights="Кто-то Другой")
+def test_the_whole_copyright_line_is_stored_and_shown_verbatim(admin_client, db):
+    """F45: the symbol and the year are the owner's to edit, not the template's."""
+    line = "© 1998–2031 Кто-то Другой, все права мои"
+    _save(admin_client, rights=line)
+
+    assert line in admin_client.get("/").text
+    db.rollback()
+    assert db.get(SiteContent, ("footer.rights", "ru")).value_md == line
+
+
+def test_nothing_assembles_a_year_around_the_stored_line(admin_client):
+    """The old template printed `© {{ current_year }} {{ rights }}`."""
+    _save(admin_client, rights="Просто строка")
 
     html = admin_client.get("/").text
-    assert f"© {datetime.now(UTC).year} Кто-то Другой" in html
-    db.rollback()
-    assert db.get(SiteContent, ("footer.rights", "ru")).value_md == "Кто-то Другой"
+    assert "Просто строка" in html
+    assert f"© {datetime.now(UTC).year} Просто строка" not in html
 
 
 # ---------------------------------------------------------------------- saving

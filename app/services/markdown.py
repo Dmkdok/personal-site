@@ -31,13 +31,11 @@ from markdown_it.renderer import RendererHTML
 from markdown_it.token import Token
 from mdit_py_plugins.attrs import attrs_plugin
 
-from app.config import settings
-
-# `resolve_inside` is app.services.images' own containment check, made public
-# for this. Importing it rather than writing a second one is deliberate: a
-# crafted `src` must be refused by exactly the rule that guards every other
-# media path.
-from app.services.images import ImageRejected, intrinsic_size, media_url, resolve_inside
+# `renditions_of` is app.services.images' own glob over a stem's renditions.
+# Importing it rather than writing a second one is deliberate: it applies the
+# containment check that guards every other media path, so a crafted `src`
+# pointing outside the media root simply finds nothing.
+from app.services.images import intrinsic_size, media_url, renditions_of
 
 #: The words an author may write inside `{...}` after an image. Everything else
 #: is dropped, so a class attribute can never carry anything we did not choose.
@@ -79,6 +77,11 @@ def _srcset(src: str) -> str:
     Empty for anything that is not one of our own `/media/<stem>_<width>.webp`
     files — a hand-written or foreign URL renders as a plain `<img>` rather
     than as a promise of renditions nobody generated.
+
+    The siblings are found by glob rather than by walking a width tuple: an
+    upload's ladder depends on the profile it came in under and on whether it
+    was deduplicated onto another one's files, so the tuple in force today is
+    not an answer to what is on disk.
     """
     if not src.startswith(_MEDIA_PREFIX):
         return ""
@@ -86,17 +89,7 @@ def _srcset(src: str) -> str:
     if not match:
         return ""
 
-    stem, own_width = match["stem"], int(match["width"])
-    found: list[tuple[int, str]] = []
-    for width in sorted({*settings.derivative_widths, own_width}):
-        relative = f"{stem}_{width}.webp"
-        try:
-            path = resolve_inside(settings.derived_dir, relative)
-        except (ImageRejected, OSError, ValueError):
-            # The URL points outside the media root, or is not a usable path.
-            return ""
-        if path.is_file():
-            found.append((width, relative))
+    found = sorted(renditions_of(match["stem"]).items())
 
     # One rendition is not a choice; saying so only inflates the markup.
     if len(found) < 2:

@@ -69,16 +69,18 @@ new PerformanceObserver((list) => {
 def big_album(playwright: Playwright, base_url: str, admin_storage_state: str) -> Iterator[Album]:
     """A published album of 50 processed photos, torn down afterwards.
 
-    Ten distinct frames cycled five times: generating fifty different noise
-    fields costs more host CPU than it buys in measurement fidelity, and the
-    derivative sizes below are still the real pipeline's output.
+    Fifty *distinct* frames. This used to cycle ten of them five times, to save
+    host CPU on generating noise fields — which stopped being free the moment
+    identical bytes became one stored file (F42): fifty tiles pointed at ten
+    URLs, the browser served forty of them from cache, and the measurement of
+    what a fifty-photograph page costs was measuring a ten-photograph one.
     """
     request = playwright.request.new_context(base_url=base_url, storage_state=admin_storage_state)
     api = AdminApi(request)
     album = api.create_album("E2E перф 50 фото", "Пятьдесят кадров для замера")
     try:
         for index in range(PHOTO_COUNT):
-            api.upload_photo(album, photo_bytes(1800, 1200, seed=index % 10), f"perf-{index}.jpg")
+            api.upload_photo(album, photo_bytes(1800, 1200, seed=index), f"perf-{index}.jpg")
         wait_for_ready(api, album, PHOTO_COUNT, timeout_s=600)
         api.publish_album(album)
         yield album

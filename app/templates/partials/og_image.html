@@ -1,0 +1,8 @@
+{# The picture a link preview shows. `image` is the page's own — a cover, an
+   album's first frame — and may be absent; the site's card stands in when it is.
+   One place decides, because a page with no `og:image` at all gets a blank
+   rectangle in every chat window, which is worse than a generic one. #}
+<meta
+  property="og:image"
+  content="{{ site_url }}{{ image if image else static_url('icons/og-default.png') }}"
+/>

@@ -21,9 +21,6 @@ from app.templating import render, toast_headers, translate
 
 router = APIRouter(prefix="/dev", tags=["dev"])
 
-# A cover is shown at ~300 CSS px in the list and at most ~670 px on the detail
-# page, so a single rendition covers both, retina included.
-COVER_WIDTHS = (960,)
 COVER_KIND = images.PROJECTS
 
 MAX_TITLE = 250
@@ -35,11 +32,6 @@ MAX_STACK_ITEM_LENGTH = 40
 # Only these two schemes ever reach the page; anything else is a phishing or
 # javascript: vector, so it is refused with a message instead of being stored.
 ALLOWED_URL_SCHEMES = ("http://", "https://")
-
-# `images` names a derivative `<stem>_<width>.webp`; the untouched original sits
-# next to it under the same stem with its own extension.
-_DERIVATIVE_SUFFIX = re.compile(r"_\d+\.webp$")
-_ORIGINAL_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp")
 
 _STACK_SEPARATORS = re.compile(r"[,\n;]")
 
@@ -72,6 +64,7 @@ def _context(db: DbSession, admin: Any, form: dict[str, Any] | None = None) -> d
         "projects": _visible(db, admin),
         "form": form,
         "media_url": images.media_url,
+        "cover_sources": images.cover_sources,
     }
 
 
@@ -154,7 +147,7 @@ def _parse(values: dict[str, str]) -> dict[str, Any]:
     }
 
 
-def _store_cover(cover: UploadFile | None, group: str) -> str | None:
+def _store_cover(db: DbSession, cover: UploadFile | None, group: str) -> str | None:
     """Validate and render one cover. Returns the stored derivative's path.
 
     `group` is the project's own directory, so a project's cover sits with the
@@ -167,25 +160,18 @@ def _store_cover(cover: UploadFile | None, group: str) -> str | None:
         return None
     try:
         stored = images.store_and_process(
+            db,
             data,
             cover.filename,
             cover.content_type,
             kind=COVER_KIND,
             group=group,
-            widths=COVER_WIDTHS,
+            profile=images.COVER,
         )
     except images.ImageRejected as exc:
         raise ProjectInvalid(str(exc)) from exc
-    # One width was requested, so there is exactly one rendition to keep.
-    return next(iter(stored.derivatives.values()))
-
-
-def _delete_cover(cover_path: str | None) -> None:
-    """Remove a cover's derivative and the original it was rendered from."""
-    if not cover_path:
-        return
-    stem = _DERIVATIVE_SUFFIX.sub("", cover_path)
-    images.delete_files(cover_path, *(f"{stem}{ext}" for ext in _ORIGINAL_EXTENSIONS))
+    # The widest rendition. The card asks for a narrower one through `srcset`.
+    return stored.derivatives[max(stored.derivatives)]
 
 
 # --------------------------------------------------------------------------
@@ -342,7 +328,7 @@ def project_create(
     db.flush()
 
     try:
-        project.cover_path = _store_cover(cover, images.group_name(project.id, project.slug))
+        project.cover_path = _store_cover(db, cover, images.group_name(project.id, project.slug))
     except ProjectInvalid as exc:
         db.rollback()
         return _form_response(request, admin, _new_form(submitted, str(exc)))
@@ -378,21 +364,23 @@ def project_update(
     )
     try:
         fields = _parse(submitted)
-        new_cover = _store_cover(cover, images.group_name(project.id, project.slug))
+        new_cover = _store_cover(db, cover, images.group_name(project.id, project.slug))
     except ProjectInvalid as exc:
         return _form_response(request, admin, _edit_form(project, submitted, str(exc)))
 
     previous_cover = project.cover_path
+    pictures_before = images.stems_in_text(project.body_md, project.body_html)
     for name, value in fields.items():
         setattr(project, name, value)
     project.body_html = render_markdown(fields["body_md"])
 
+    doomed: list[str | None] = []
     if new_cover:
         project.cover_path = new_cover
-        _delete_cover(previous_cover)
+        doomed.append(previous_cover)
     elif remove_cover:
         project.cover_path = None
-        _delete_cover(previous_cover)
+        doomed.append(previous_cover)
 
     # A published URL stays put; a draft's slug still follows its title.
     if not project.is_published:
@@ -400,6 +388,11 @@ def project_update(
 
     db.add(project)
     db.commit()
+
+    # Only once the row is committed: `release` reads the database to find out
+    # whether anything still points at each file (F41, ADR-013).
+    doomed += pictures_before - images.stems_in_text(project.body_md, project.body_html)
+    images.release(db, *doomed)
 
     return _board(
         request,
@@ -476,11 +469,12 @@ def project_delete(
     request: Request, db: DbSession, admin: CurrentAdmin, project_id: int
 ) -> HTMLResponse:
     project = _get(db, project_id)
-    cover_path = project.cover_path
+    doomed = {project.cover_path, *images.stems_in_text(project.body_md, project.body_html)}
     db.delete(project)
     db.commit()
-    # Only once the row is gone, so a failed commit cannot orphan the page.
-    _delete_cover(cover_path)
+    # Only once the row is gone, so a failed commit cannot orphan the page — and
+    # a file another page shares survives, because `release` asks before it acts.
+    images.release(db, *doomed)
 
     return _board(request, db, admin, headers=toast_headers(translate("dev.toast_deleted")))
 
@@ -514,6 +508,8 @@ def project_detail(
             "active_section": "dev",
             "project": project,
             "media_url": images.media_url,
+            "cover_sources": images.cover_sources,
+            "intrinsic_size": images.intrinsic_size,
             "meta_description": project.summary or excerpt_from(project.body_md, 160),
         },
         admin=admin,

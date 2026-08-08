@@ -4,9 +4,9 @@
 {% block meta_description %}{{ meta_description }}{% endblock %}
 {% block og_type %}article{% endblock %}
 {% block og_image %}
-  {% if og_image %}
-    <meta property="og:image" content="{{ site_url }}{{ og_image }}" />
-  {% endif %}
+  {% with image = og_image %}
+    {% include "partials/og_image.html" %}
+  {% endwith %}
 {% endblock %}
 
 {% block head_extra %}

@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field, ValidationInfo, field_validator
+from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _PLACEHOLDERS = {"change-me", "change-me-to-a-long-random-string"}
@@ -23,15 +23,15 @@ class Settings(BaseSettings):
     site_url: str = "http://localhost:8000"
     media_root: Path = Path("/data/media")
 
-    max_upload_mb: int = 25
+    # The size the owner actually exports at. Peak memory per file rises with
+    # it; `images.MAX_PIXELS` is the backstop, not this.
+    max_upload_mb: int = 50
     max_batch_files: int = 50
     session_max_age_days: int = 30
 
     # Login throttling: this many failures from one IP inside the window blocks further attempts.
     login_max_attempts: int = 5
     login_window_minutes: int = 15
-
-    derivative_widths: tuple[int, ...] = Field(default=(640, 1600, 2560))
 
     @field_validator("secret_key")
     @classmethod

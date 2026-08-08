@@ -9,7 +9,6 @@ The editor's preview and the published page both go through
 what gets stored in `body_html`.
 """
 
-import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, status
@@ -19,12 +18,16 @@ from sqlalchemy import select
 from app.deps import CurrentAdmin, DbSession, OptionalAdmin
 from app.models.post import Post, PostStatus
 from app.services.images import (
+    COVER,
     POSTS,
+    PROSE,
     UNFILED,
     ImageRejected,
-    delete_files,
+    cover_sources,
     group_name,
     media_url,
+    release,
+    stems_in_text,
     store_and_process,
 )
 from app.services.markdown import excerpt_from, render_markdown
@@ -33,12 +36,7 @@ from app.templating import render, toast_headers, translate
 
 router = APIRouter(prefix="/blog", tags=["blog"])
 
-# Covers and in-article pictures never need the 2560 rendition an album photo
-# does: they are displayed inside a text column, not opened full screen.
-IMAGE_WIDTHS = (640, 1600)
 POST_KIND = POSTS
-
-_WIDTH_SUFFIX = re.compile(r"_(\d+)\.webp$")
 
 
 # --------------------------------------------------------------------------
@@ -54,26 +52,6 @@ def ru_date(value: datetime | None) -> str:
 
 def iso_date(value: datetime | None) -> str:
     return value.date().isoformat() if value else ""
-
-
-def cover_sources(cover_path: str | None) -> dict[str, str] | None:
-    """`src` plus a `srcset` for a stored cover derivative.
-
-    `cover_path` points at the widest rendition that was produced. When that is
-    wider than 640 px the 640 rendition exists too, because both come from the
-    same call to `store_and_process`.
-    """
-    if not cover_path:
-        return None
-    url = media_url(cover_path) or ""
-    match = _WIDTH_SUFFIX.search(cover_path)
-    if not match:
-        return {"src": url, "srcset": ""}
-    width = int(match.group(1))
-    if width <= 640:
-        return {"src": url, "srcset": f"{url} {width}w"}
-    small = media_url(_WIDTH_SUFFIX.sub("_640.webp", cover_path)) or ""
-    return {"src": url, "srcset": f"{small} 640w, {url} {width}w"}
 
 
 def _ctx(**values) -> dict:
@@ -262,11 +240,17 @@ def save_post(
 ) -> HTMLResponse:
     post = _get_post(db, post_id)
     slug_before = post.slug
+    pictures_before = stems_in_text(post.body_md, post.body_html)
 
     _apply_form(db, post, title=title, slug=slug, excerpt=excerpt, body_md=body_md)
     db.add(post)
     db.commit()
     db.refresh(post)
+
+    # A picture cut out of the text stops being this article's (F41). Whether it
+    # is anybody else's is `release`'s question, not ours: the same frame may be
+    # this article's cover or another article's picture.
+    release(db, *(pictures_before - stems_in_text(post.body_md, post.body_html)))
 
     headers: dict[str, str] = {}
     if post.slug != slug_before:
@@ -344,11 +328,13 @@ def unpublish_post(
 @router.post("/admin/posts/{post_id}/delete")
 def delete_post(db: DbSession, admin: CurrentAdmin, post_id: int) -> Response:
     post = _get_post(db, post_id)
-    cover = post.cover_path
+    doomed = {post.cover_path, *stems_in_text(post.body_md, post.body_html)}
     db.delete(post)
     db.commit()
-    if cover:
-        _delete_cover_files(cover)
+    # Only once the row is gone. `release` asks the database who still points at
+    # each file, so a row still in flight would read as a live reference — and a
+    # file another article shares is kept either way (F41, ADR-013).
+    release(db, *doomed)
 
     return Response(
         status_code=status.HTTP_204_NO_CONTENT,
@@ -359,14 +345,6 @@ def delete_post(db: DbSession, admin: CurrentAdmin, post_id: int) -> Response:
 # --------------------------------------------------------------------------
 # Admin: images
 # --------------------------------------------------------------------------
-def _delete_cover_files(cover_path: str) -> None:
-    """Remove every rendition of a cover, plus the original it came from."""
-    paths = [cover_path, _WIDTH_SUFFIX.sub("_640.webp", cover_path)]
-    stem = _WIDTH_SUFFIX.sub("", cover_path)
-    paths += [f"{stem}{extension}" for extension in (".jpg", ".png", ".webp")]
-    delete_files(*dict.fromkeys(paths))
-
-
 @router.post("/admin/posts/{post_id}/cover", response_class=HTMLResponse)
 def upload_cover(
     request: Request,
@@ -382,12 +360,13 @@ def upload_cover(
     data = file.file.read()
     try:
         stored = store_and_process(
+            db,
             data,
             file.filename,
             file.content_type,
             kind=POST_KIND,
             group=group_name(post.id, post.slug),
-            widths=IMAGE_WIDTHS,
+            profile=COVER,
         )
     except ImageRejected as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -397,8 +376,7 @@ def upload_cover(
     db.add(post)
     db.commit()
     db.refresh(post)
-    if previous:
-        _delete_cover_files(previous)
+    release(db, previous)
 
     return render(
         request,
@@ -419,8 +397,7 @@ def remove_cover(
     db.add(post)
     db.commit()
     db.refresh(post)
-    if previous:
-        _delete_cover_files(previous)
+    release(db, previous)
 
     return render(
         request,
@@ -454,15 +431,20 @@ def upload_inline_image(
     data = file.file.read()
     try:
         stored = store_and_process(
+            db,
             data,
             file.filename,
             file.content_type,
             kind=POST_KIND,
             group=group,
-            widths=IMAGE_WIDTHS,
+            profile=PROSE,
         )
     except ImageRejected as exc:
         return JSONResponse({"error": str(exc)}, status_code=400)
+
+    # Nothing else in this request writes, so the asset row wants its own
+    # commit: without it the next upload of the same frame stores it again.
+    db.commit()
 
     url = media_url(stored.derivatives[max(stored.derivatives)])
     return JSONResponse({"url": url, "markdown": f"![{translate('blog.md.ph_alt')}]({url})"})

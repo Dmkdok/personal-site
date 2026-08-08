@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 COMPOSE := docker compose
 
-.PHONY: help up down restart logs build migrate revision shell psql test e2e lint fmt backup restore-check clean
+.PHONY: help up down restart logs build migrate revision shell psql test e2e lint fmt backup restore-check media-orphans media-prune clean
 
 help:            ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -54,6 +54,12 @@ backup:          ## Dump the database and archive media into ./data/backups
 
 restore-check:   ## Rehearse a restore into a scratch database (touches nothing live)
 	@bash scripts/restore-check.sh
+
+media-orphans:   ## List media files nothing on the site references (deletes nothing)
+	$(COMPOSE) exec web python scripts/media_orphans.py
+
+media-prune:     ## Delete those orphans after printing what will go
+	$(COMPOSE) exec web python scripts/media_orphans.py --prune
 
 clean:           ## Stop and remove the database volume (media is NOT deleted)
 	$(COMPOSE) down -v

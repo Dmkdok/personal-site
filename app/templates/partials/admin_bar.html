@@ -1,10 +1,10 @@
 {# Rendered only for a signed-in admin. Anonymous HTML contains none of this. #}
-<div class="admin-bar" role="region" aria-label="Режим редактирования">
+<div class="admin-bar" role="region" aria-label="{{ t('auth.admin_mode') }}">
   <span class="admin-bar__dot" aria-hidden="true"></span>
-  <span class="admin-bar__text">Режим редактирования</span>
+  <span class="admin-bar__text">{{ t("auth.admin_mode") }}</span>
   <span class="admin-bar__spacer"></span>
   <form method="post" action="/logout">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
-    <button class="button button--quiet" type="submit">Выйти</button>
+    <button class="button button--quiet" type="submit">{{ t("auth.logout") }}</button>
   </form>
 </div>

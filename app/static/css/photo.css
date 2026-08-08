@@ -609,7 +609,11 @@
     font-family: var(--font-mono);
     font-size: var(--step--1);
     letter-spacing: var(--tracking-label);
-    color: var(--text-faint);
+    /* Not --text-faint: the light backdrop is a pale grey, and #646c77 over it
+       measures 4.28:1 — under AA. --text-muted measures 5.48:1 there and stays
+       quieter than the caption's surroundings, which is all the faint step was
+       buying. */
+    color: var(--text-muted);
   }
 
   .lightbox__control {

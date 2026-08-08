@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Dm">
+  <!-- The mark sits on its own filled badge rather than being drawn in the
+       page's ink, so it reads against light and dark browser chrome alike; the
+       two ambers below are the site's own accent on each side of light-dark().
+       An SVG's internal <style> is not governed by the page's CSP: the icon is
+       fetched as an image, not parsed as part of the document. -->
+  <style>
+    .badge { fill: #c0762a; }
+    .mark { fill: #14171a; }
+    @media (prefers-color-scheme: dark) {
+      .badge { fill: #e0954a; }
+      .mark { fill: #1c1f23; }
+    }
+  </style>
+  <rect class="badge" width="32" height="32" rx="7.5" />
+  <text
+    class="mark"
+    x="16"
+    y="16"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+    font-size="14"
+    font-weight="700"
+    letter-spacing="-0.6"
+  >Dm</text>
+</svg>

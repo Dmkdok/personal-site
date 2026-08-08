@@ -5,9 +5,9 @@
 {% block og_type %}article{% endblock %}
 {% block og_image %}
   {% set cover = cover_sources(post.cover_path) %}
-  {% if cover %}
-    <meta property="og:image" content="{{ site_url }}{{ cover.src }}" />
-  {% endif %}
+  {% with image = cover.src if cover else none %}
+    {% include "partials/og_image.html" %}
+  {% endwith %}
 {% endblock %}
 
 {% block head_extra %}
@@ -19,7 +19,6 @@
 {% endblock %}
 
 {% block content %}
-  {% set cover = cover_sources(post.cover_path) %}
   <article class="container container--prose article">
     <header class="article__head">
       <p class="label"><a href="/blog">{{ t("blog.all_posts") }}</a></p>
@@ -37,16 +36,11 @@
       {% endif %}
     </header>
 
-    {% if cover %}
-      <img
-        class="article__cover"
-        src="{{ cover.src }}"
-        {% if cover.srcset %}srcset="{{ cover.srcset }}"{% endif %}
-        sizes="(min-width: 46rem) 42rem, 92vw"
-        alt="{{ t('blog.cover_alt') }}"
-        decoding="async"
-      />
-    {% endif %}
+    {# No cover here on purpose (F47). A cover is what the index card and the
+       Open Graph image show; opening the article and meeting the same picture
+       again, full width, before a word of the text, is not what it is for.
+       The `og:image` block above is now the only thing keeping it honest,
+       which is why the test asserts that block rather than this one. #}
 
     {# Sanitised at write time by app.services.markdown — the same call the
        editor's preview goes through, so the two cannot diverge (F31). #}

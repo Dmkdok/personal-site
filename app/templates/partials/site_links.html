@@ -3,10 +3,11 @@
    `site_contacts.html`: one source, two presentations.
 
    Context: `links` is a list of {slug, label, url}, already vetted server-side,
-   and `rights` is the name after the ©. A link the owner cleared is simply not
-   in `links`, so it disappears from both places at once. #}
+   and `rights` is the whole copyright line — symbol, year and name — because
+   nothing about it is assembled here any more (ADR-015). A link the owner
+   cleared is simply not in `links`, so it disappears from both places at once. #}
 <div class="site-links" id="site-links">
-  <p class="site-links__rights">© {{ current_year }} {{ rights }}</p>
+  <p class="site-links__rights">{{ rights }}</p>
 
   {% if links %}
     <ul class="site-footer__links" role="list">

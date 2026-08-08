@@ -94,3 +94,33 @@ def test_a_javascript_url_is_refused_and_the_stored_link_survives(admin_page: Pa
     admin_page.goto("/")
     expect(admin_page.locator(f'{BLOCK} a[href="{original}"]')).to_be_visible()
     expect(admin_page.locator('a[href^="javascript:"]')).to_have_count(0)
+
+
+def test_the_owner_edits_the_whole_copyright_line(admin_page: Page, page: Page) -> None:
+    """F45 — symbol, year and name are one editable value (ADR-015).
+
+    The template used to print `© {{ current_year }} {{ rights }}`, so the year
+    advanced by itself and could not be changed; the assertion that matters is
+    that what the owner typed is what the visitor reads, character for character.
+    """
+    line = f"© 2019—2026 Дмитрий Богданов · {token()}"
+
+    admin_page.goto("/")
+    _open_the_editor(admin_page)
+    field = admin_page.get_by_label(ru("footer.rights_label"), exact=True)
+    original = field.input_value()
+
+    try:
+        field.fill(line)
+        _save(admin_page)
+
+        expect(admin_page.locator(f"{BLOCK} .site-links__rights")).to_have_text(line)
+
+        page.goto("/")
+        expect(page.locator(f"{BLOCK} .site-links__rights")).to_have_text(line)
+    finally:
+        admin_page.goto("/")
+        _open_the_editor(admin_page)
+        admin_page.get_by_label(ru("footer.rights_label"), exact=True).fill(original)
+        _save(admin_page)
+        expect(admin_page.locator(f"{BLOCK} .site-links__rights")).to_have_text(original)

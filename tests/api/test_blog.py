@@ -5,14 +5,18 @@ that does not exist for a visitor, a preview that cannot diverge from the page �
 are properties of the responses, not of the model.
 """
 
+import itertools
 from datetime import UTC, datetime, timedelta
 from io import BytesIO
+from pathlib import Path
 
 import pytest
 from PIL import Image
 from sqlalchemy import select
 
+from app.config import settings
 from app.models.post import Post, PostStatus
+from app.services.images import group_name, release
 from app.services.markdown import render_markdown
 from app.services.slugs import make_slug
 
@@ -69,13 +73,14 @@ def make_post(db):
         published: bool = True,
         published_at: datetime | None = None,
         cover_path: str | None = None,
+        body_html: str | None = None,
     ) -> Post:
         post = Post(
             slug=slug,
             title=title,
             excerpt=excerpt,
             body_md=body_md,
-            body_html=render_markdown(body_md),
+            body_html=render_markdown(body_md) if body_html is None else body_html,
             cover_path=cover_path,
             status=PostStatus.PUBLISHED if published else PostStatus.DRAFT,
             published_at=(published_at or datetime.now(UTC)) if published else None,
@@ -88,11 +93,48 @@ def make_post(db):
     return make
 
 
-def png_bytes(size: tuple[int, int] = (1800, 1200)) -> bytes:
-    """Wide enough that both the 640 and the 1600 rendition are produced."""
+_DISTINCT = itertools.count(1)
+
+
+def png_bytes(size: tuple[int, int] = (1800, 1200), *, seed: int | None = None) -> bytes:
+    """Wide enough that both the 640 and the 1600 rendition are produced.
+
+    Every call differs by one pixel unless `seed` says otherwise: identical
+    bytes are stored once (F42), so a shared frame would put one test's cover in
+    another test's directory, under whatever ladder that one asked for. Pass a
+    fixed `seed` when deduplication is what is being tested.
+    """
+    image = Image.new("RGB", size, (38, 52, 70))
+    mark = next(_DISTINCT) if seed is None else seed
+    image.putpixel((0, 0), (mark % 251, (mark // 251) % 251, 17))
+
     buffer = BytesIO()
-    Image.new("RGB", size, (38, 52, 70)).save(buffer, "PNG")
+    image.save(buffer, "PNG")
     return buffer.getvalue()
+
+
+@pytest.fixture
+def renditions_on_disk():
+    """Put real `<stem>_<width>.webp` files under the media root, then remove them.
+
+    Needed because the card's `srcset` is built by globbing what exists rather
+    than by naming widths: a fabricated `cover_path` with nothing behind it now
+    honestly offers no alternatives.
+    """
+    written: list[Path] = []
+
+    def place(stem: str, *widths: int) -> str:
+        for width in widths:
+            path = settings.derived_dir / f"{stem}_{width}.webp"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            Image.new("RGB", (width, round(width * 2 / 3)), (70, 52, 38)).save(path, "WEBP")
+            written.append(path)
+        return f"{stem}_{max(widths)}.webp"
+
+    yield place
+
+    for path in written:
+        path.unlink(missing_ok=True)
 
 
 def create_draft(client, db, title: str) -> Post:
@@ -135,7 +177,8 @@ def test_index_lists_published_articles_newest_first(client, make_post):
     assert html.index("/blog/newer-post") < html.index("/blog/older-post")
 
 
-def test_index_card_shows_cover_title_excerpt_and_date(client, make_post):
+def test_index_card_shows_cover_title_excerpt_and_date(client, make_post, renditions_on_disk):
+    renditions_on_disk("posts/7-statia/abc", 640, 1600)
     make_post(
         slug="card-post",
         title="Ночёвка на плато",
@@ -151,9 +194,25 @@ def test_index_card_shows_cover_title_excerpt_and_date(client, make_post):
     assert "4 августа 2026" in html
     assert 'datetime="2026-08-04"' in html
     assert "/media/posts/7-statia/abc_1600.webp" in html
-    # The 640 rendition comes from the same store_and_process call, so the card
-    # can offer it without a second database column.
+    # The narrower rendition is offered too, and it is offered because it is on
+    # disk: the card globs for siblings rather than assuming a ladder, so a
+    # cover deduplicated onto another profile's files still advertises the truth.
     assert "/media/posts/7-statia/abc_640.webp" in html
+
+
+def test_a_card_offers_no_srcset_when_there_is_only_one_rendition(
+    client, make_post, renditions_on_disk
+):
+    """The other half of the same rule: one rendition is not a choice."""
+    renditions_on_disk("posts/8-odna/solo", 900)
+    make_post(slug="solo-cover", title="Одна ширина", cover_path="posts/8-odna/solo_900.webp")
+
+    html = client.get("/blog").text
+
+    assert "/media/posts/8-odna/solo_900.webp" in html
+    # Not an empty attribute — none at all. The card is the only picture on the
+    # page, so nothing else can be supplying one.
+    assert "srcset" not in html
 
 
 def test_index_carries_no_tags_reading_time_or_counters(client, make_post):
@@ -531,3 +590,176 @@ def test_new_form_endpoints_require_a_session(client, path):
     response = client.get(path, follow_redirects=False)
 
     assert response.status_code in (303, 401, 403)
+
+
+# --------------------------------------------------------------------------
+# F41 / F42 — media lifecycle: stored once, deleted only when nobody uses it
+# --------------------------------------------------------------------------
+def files_under(post: Post) -> list[Path]:
+    """Every file in this article's own media directory, originals and derived."""
+    group = group_name(post.id, post.slug)
+    found: list[Path] = []
+    for root in (settings.originals_dir, settings.derived_dir):
+        directory = root / "posts" / group
+        if directory.is_dir():
+            found += [path for path in directory.iterdir() if path.is_file()]
+    return found
+
+
+def upload_cover(client, post: Post, data: bytes):
+    return client.post(
+        f"/blog/admin/posts/{post.id}/cover", files={"file": ("frame.png", data, "image/png")}
+    )
+
+
+def upload_into_body(client, post: Post, data: bytes):
+    return client.post(
+        "/blog/admin/images",
+        files={"file": ("frame.png", data, "image/png")},
+        data={"post_id": str(post.id)},
+    )
+
+
+def test_the_same_frame_as_cover_and_in_the_body_is_stored_once(admin_client, db):
+    """F42, in the shape the owner will meet it: one frame, two places."""
+    post = create_draft(admin_client, db, "Один кадр дважды")
+    frame = png_bytes(seed=4242)
+
+    assert upload_cover(admin_client, post, frame).status_code == 200
+    inline = upload_into_body(admin_client, post, frame)
+    assert inline.status_code == 200
+
+    db.expire_all()
+    stored = db.get(Post, post.id)
+
+    # Same URL from both routes, and one original behind it.
+    assert inline.json()["url"] == f"/media/{stored.cover_path}"
+    originals = [path for path in files_under(stored) if ".webp" not in path.name]
+    assert len(originals) == 1, originals
+
+    release(db, stored.cover_path)
+
+
+def test_a_second_upload_of_known_bytes_generates_no_new_renditions(admin_client, db):
+    """The dedup hit skips rendering, not just storage."""
+    post = create_draft(admin_client, db, "Без второй обработки")
+    frame = png_bytes(seed=4343)
+
+    assert upload_cover(admin_client, post, frame).status_code == 200
+    db.expire_all()
+    after_first = sorted(path.name for path in files_under(db.get(Post, post.id)))
+
+    assert upload_into_body(admin_client, post, frame).status_code == 200
+    db.expire_all()
+    stored = db.get(Post, post.id)
+
+    assert sorted(path.name for path in files_under(stored)) == after_first
+    release(db, stored.cover_path)
+
+
+def test_deleting_one_article_keeps_a_cover_the_other_still_uses(admin_client, client, db):
+    """The failure this design exists to prevent (F41, ADR-013)."""
+    frame = png_bytes(seed=5150)
+    first = create_draft(admin_client, db, "Первая с общей обложкой")
+    second = create_draft(admin_client, db, "Вторая с общей обложкой")
+
+    assert upload_cover(admin_client, first, frame).status_code == 200
+    assert upload_cover(admin_client, second, frame).status_code == 200
+
+    db.expire_all()
+    shared = db.get(Post, first.id).cover_path
+    assert shared and db.get(Post, second.id).cover_path == shared
+
+    assert admin_client.post(f"/blog/admin/posts/{first.id}/delete").status_code == 204
+
+    db.expire_all()
+    assert (settings.derived_dir / shared).is_file()
+    client.cookies.clear()
+    assert client.get(f"/media/{shared}").status_code == 200
+
+    # And the other way round: with the last article gone, so is the file. A
+    # deletion test that only proves nothing was deleted proves nothing.
+    assert admin_client.post(f"/blog/admin/posts/{second.id}/delete").status_code == 204
+    assert not (settings.derived_dir / shared).exists()
+
+
+def test_deleting_an_article_removes_every_rendition_and_the_directory(admin_client, db):
+    """Found by glob: no width is reconstructed, so none is missed."""
+    post = create_draft(admin_client, db, "Со всеми размерами")
+    assert upload_cover(admin_client, post, png_bytes(seed=5151)).status_code == 200
+
+    db.expire_all()
+    stored = db.get(Post, post.id)
+    group = group_name(stored.id, stored.slug)
+    written = files_under(stored)
+    assert len(written) >= 3  # the original plus the 640 and 1600 renditions
+
+    assert admin_client.post(f"/blog/admin/posts/{post.id}/delete").status_code == 204
+
+    assert not any(path.exists() for path in written)
+    for root in (settings.originals_dir, settings.derived_dir):
+        assert not (root / "posts" / group).exists()
+
+
+def test_a_picture_cut_from_the_text_is_released_on_save(admin_client, db):
+    """F41 for in-article pictures (T092)."""
+    post = create_draft(admin_client, db, "С картинкой в тексте")
+    inline = upload_into_body(admin_client, post, png_bytes(seed=6060))
+    url = inline.json()["url"]
+    relative = url[len("/media/") :]
+
+    saved = admin_client.post(
+        f"/blog/admin/posts/{post.id}", data=fields(post, body_md=f"Текст.\n\n![вид]({url})\n")
+    )
+    assert saved.status_code == 200
+    assert (settings.derived_dir / relative).is_file()
+
+    db.expire_all()
+    post = db.get(Post, post.id)
+    assert (
+        admin_client.post(
+            f"/blog/admin/posts/{post.id}", data=fields(post, body_md="Текст без картинки.")
+        ).status_code
+        == 200
+    )
+
+    assert not (settings.derived_dir / relative).exists()
+
+
+def test_a_picture_still_used_by_another_article_survives_the_cut(admin_client, db, make_post):
+    """And the reference check reads `body_html`, not only `body_md`.
+
+    The other article here holds the URL in its rendered HTML alone. That is the
+    trap T083 recorded: `body_html` is written once, at save, and keeps its own
+    copy of every `/media/…` URL, so a check that reads only the Markdown
+    deletes pictures that are still on a published page.
+    """
+    post = create_draft(admin_client, db, "Отдаёт картинку")
+    url = upload_into_body(admin_client, post, png_bytes(seed=6161)).json()["url"]
+    relative = url[len("/media/") :]
+
+    assert (
+        admin_client.post(
+            f"/blog/admin/posts/{post.id}", data=fields(post, body_md=f"![вид]({url})")
+        ).status_code
+        == 200
+    )
+
+    make_post(
+        slug="tolko-v-html",
+        title="Только в HTML",
+        body_md="Текст без ссылки на файл.",
+        body_html=f'<p><img src="{url}" alt="вид" /></p>',
+    )
+
+    db.expire_all()
+    post = db.get(Post, post.id)
+    assert (
+        admin_client.post(
+            f"/blog/admin/posts/{post.id}", data=fields(post, body_md="Уже без картинки.")
+        ).status_code
+        == 200
+    )
+
+    assert (settings.derived_dir / relative).is_file()
+    release(db, relative)

@@ -1,7 +1,6 @@
 """Jinja2 environment: template globals, translations, asset URLs."""
 
 import json
-from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -67,7 +66,6 @@ templates.env.globals.update(
     static_url=static_url,
     site_url=settings.site_url,
     lang=DEFAULT_LANG,
-    current_year=datetime.now(UTC).year,
     # Safe defaults so every template can be rendered from any route; routes
     # override these per request.
     active_section=None,

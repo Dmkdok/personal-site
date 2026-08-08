@@ -159,8 +159,10 @@ def test_a_sized_picture_reaches_the_visitor(
     expect(first).to_have_attribute("loading", "lazy")
     expect(first).to_have_attribute("decoding", "async")
     expect(first).to_have_attribute("alt", "Вид с перевала")
+    # The `PROSE` ladder: 640 / 1280 / 1920, and no 2560 — a picture in a column
+    # of text has nothing to do with what a photograph gets (ADR-014).
     srcset = first.get_attribute("srcset") or ""
-    assert "640w" in srcset and "1600w" in srcset, f"thin srcset: {srcset!r}"
+    assert "640w" in srcset and "1920w" in srcset, f"thin srcset: {srcset!r}"
 
     # The picture is really served, not just referenced.
     assert page.request.get(url).status == 200
@@ -185,3 +187,52 @@ def test_a_sized_picture_reaches_the_visitor(
     assert narrow["normal"] == pytest.approx(narrow["wide"], abs=1), narrow
     assert narrow["wide"] == pytest.approx(narrow["full"], abs=1), narrow
     assert narrow["scroll"] <= narrow["page"] + 1, f"the page scrolls sideways: {narrow}"
+
+
+# --------------------------------------------------------------------------
+# F47 — a cover is a cover, not the first picture in the article
+# --------------------------------------------------------------------------
+def test_the_cover_shows_on_the_card_and_in_og_but_not_in_the_article(
+    admin_page: Page, page: Page, admin_api: AdminApi, trash: Trash, run_token: str
+) -> None:
+    """Both halves matter.
+
+    Removing the picture from the body is easy; keeping it where it earns its
+    place is the part a regression would quietly undo, and `og:image` has no
+    other coverage — nothing else on the site reads `post.cover_path` for a
+    link preview.
+    """
+    post = trash.post(admin_api.create_post(f"E2E обложка {run_token}"))
+
+    # `csrf_of` reads the token out of the page the tab is on, so it has to be
+    # on one.
+    admin_page.goto("/blog")
+    upload = admin_page.request.post(
+        f"/blog/admin/posts/{post.id}/cover",
+        multipart={
+            "file": {
+                "name": f"cover-{run_token}.jpg",
+                "mimeType": "image/jpeg",
+                "buffer": photo_bytes(seed=11),
+            }
+        },
+        headers={"X-CSRF-Token": csrf_of(admin_page)},
+    )
+    assert upload.status == 200, f"cover upload → {upload.status}: {upload.text()[:300]}"
+
+    admin_api.publish_post(post, body_md="Текст статьи без единой картинки.\n")
+
+    # -- the article itself: no cover in the body -------------------------
+    page.goto(f"/blog/{post.slug}")
+    expect(page.locator("article img")).to_have_count(0)
+
+    # -- but it is still the link preview ---------------------------------
+    og_image = page.locator('meta[property="og:image"]').get_attribute("content")
+    assert og_image, "the article lost its og:image with the cover"
+    assert page.request.get(og_image).status == 200, f"og:image 404s: {og_image}"
+
+    # -- and still the card on the index -----------------------------------
+    page.goto("/blog")
+    card_image = page.get_by_role("link", name=post.title).locator("img")
+    expect(card_image).to_have_count(1)
+    assert (card_image.get_attribute("src") or "") in og_image

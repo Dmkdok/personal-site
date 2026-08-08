@@ -1,14 +1,16 @@
 """Login and logout. Not linked from public navigation."""
 
 from fastapi import APIRouter, Form, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import select
 
+from app.config import settings
 from app.deps import DbSession, OptionalAdmin
 from app.models.admin_user import AdminUser
 from app.security import (
     client_ip,
     csrf_ok,
+    csrf_token,
     end_session,
     hash_password,
     login_blocked,
@@ -17,14 +19,15 @@ from app.security import (
     start_session,
     verify_password,
 )
-from app.templating import render
+from app.templating import render, translate
 
 router = APIRouter(tags=["auth"])
 
 # One message for every failure mode: an unknown username and a wrong password
 # must be indistinguishable.
-GENERIC_ERROR = "Неверный логин или пароль."
-THROTTLED_ERROR = "Слишком много попыток входа. Попробуйте через 15 минут."
+GENERIC_ERROR = translate("auth.invalid")
+#: The window is configuration, so the message reads it rather than restating it.
+THROTTLED_ERROR = translate("auth.throttled", minutes=settings.login_window_minutes)
 
 
 def _safe_next(value: str | None) -> str:
@@ -32,6 +35,19 @@ def _safe_next(value: str | None) -> str:
     if not value or not value.startswith("/") or value.startswith("//"):
         return "/"
     return value
+
+
+@router.get("/csrf")
+def csrf(request: Request) -> JSONResponse:
+    """The current session's CSRF token, for a client whose copy went stale.
+
+    `ui.js` asks for one when a save comes back 403 and retries it once, rather
+    than telling the owner to reload a page that still holds unsaved text (SPEC
+    edge case 5). Not a secret being handed out: it is this session's own token,
+    reachable only with this session's cookie, and the same-origin policy stops
+    another site from reading the answer.
+    """
+    return JSONResponse({"token": csrf_token(request)})
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -62,7 +78,7 @@ def login(
         )
 
     if not csrf_ok(request, csrf_token):
-        return fail("Форма устарела. Обновите страницу и попробуйте снова.", 403)
+        return fail(translate("auth.stale_form"), 403)
 
     if login_blocked(db, ip):
         return fail(THROTTLED_ERROR, status.HTTP_429_TOO_MANY_REQUESTS)

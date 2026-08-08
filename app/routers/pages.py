@@ -26,6 +26,7 @@ RIGHTS_KEY = "footer.rights"
 
 # Blocks the owner can edit in place, with the copy shipped as a starting point.
 CONTENT_KEYS = {
+    "home.eyebrow": "home.eyebrow_default",
     "home.intro": "home.intro_default",
     RIGHTS_KEY: RIGHTS_KEY,
     **{key: f"{key}_default" for key in LINK_KEYS},
@@ -52,6 +53,7 @@ def _get_block(db: DbSession, key: str) -> SiteContent:
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request, db: DbSession, admin: OptionalAdmin) -> HTMLResponse:
     hero = translate("home.hero_default")
+    eyebrow = _get_block(db, "home.eyebrow")
     intro = _get_block(db, "home.intro")
     return render(
         request,
@@ -59,6 +61,8 @@ def home(request: Request, db: DbSession, admin: OptionalAdmin) -> HTMLResponse:
         {
             "active_section": "home",
             "hero_lines": [line for line in hero.split("\n") if line.strip()],
+            "eyebrow_key": "home.eyebrow",
+            "eyebrow_html": eyebrow.value_html,
             "intro_key": "home.intro",
             "intro_html": intro.value_html,
         },

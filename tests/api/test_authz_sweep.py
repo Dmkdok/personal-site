@@ -120,3 +120,31 @@ def test_anonymous_html_contains_no_admin_markup(client):
     html = client.get("/").text
     for marker in ("admin-bar", "editable__edit", "/admin/content/"):
         assert marker not in html, f"admin markup leaked to anonymous visitor: {marker}"
+
+
+def test_every_response_carries_the_security_headers_including_a_500(_schema):
+    """The 500 is the one that used to leave without them.
+
+    Starlette builds it in `ServerErrorMiddleware`, which sits *outside* the
+    user middleware stack, so the middleware that stamps the policy never runs
+    on the way out — on precisely the response most likely to be carrying
+    detail nobody meant to publish.
+    """
+    from starlette.testclient import TestClient
+
+    from app.main import create_app
+
+    app = create_app()
+
+    @app.get("/boom-for-tests")
+    def boom() -> None:
+        raise RuntimeError("deliberate")
+
+    with_errors = TestClient(app, raise_server_exceptions=False)
+
+    for path, expected in (("/", 200), ("/boom-for-tests", 500)):
+        response = with_errors.get(path)
+        assert response.status_code == expected, path
+        assert "Content-Security-Policy" in response.headers, path
+        assert response.headers["X-Frame-Options"] == "DENY", path
+        assert response.headers["X-Content-Type-Options"] == "nosniff", path

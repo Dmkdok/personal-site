@@ -43,18 +43,32 @@ def make_image(
 
 
 @pytest.fixture
-def pipeline():
-    """Run the pipeline and clean every file it wrote, pass or fail."""
+def pipeline(db):
+    """Run the pipeline and clean every file it wrote, pass or fail.
+
+    Torn down with `release` rather than `delete_files`, so the `media_asset`
+    row goes with the files: two tests generating the same gradient produce the
+    same bytes, and a row left behind would deduplicate the second onto files
+    the first has already deleted.
+    """
     written: list[str] = []
 
-    def run(data: bytes, filename: str = "shot.jpg", content_type: str = "image/jpeg"):
-        stored = images.store_and_process(data, filename, content_type, kind=KIND)
+    def run(
+        data: bytes,
+        filename: str = "shot.jpg",
+        content_type: str = "image/jpeg",
+        profile: images.Profile = images.PHOTO,
+    ):
+        stored = images.store_and_process(
+            db, data, filename, content_type, kind=KIND, profile=profile
+        )
+        db.commit()
         written.append(stored.original_path)
         written.extend(stored.derivatives.values())
         return stored
 
     yield run
-    images.delete_files(*written)
+    images.release(db, *written)
 
 
 def derived(relative: str) -> Path:
@@ -76,23 +90,35 @@ def size_of(relative: str) -> tuple[int, int]:
 def test_landscape_gets_every_target_width(pipeline):
     stored = pipeline(make_image(3000, 2000))
 
-    assert sorted(stored.derivatives) == [640, 1600, 2560]
+    # The ladder plus the source's own width: `PHOTO` is the profile that has to
+    # be able to show the owner's frame at the size he prepared it (ADR-014).
+    assert sorted(stored.derivatives) == [640, 1600, 2560, 3000]
     assert (stored.width, stored.height) == (3000, 2000)
     for width in (640, 1600, 2560):
         assert size_of(stored.derivatives[width]) == (width, round(2000 * width / 3000))
+    assert size_of(stored.derivatives[3000]) == (3000, 2000)
+
+
+def test_a_prose_picture_stops_at_1920(pipeline):
+    """`PROSE` has no native rung: more pixels than 1920 buy nothing in a column."""
+    stored = pipeline(make_image(3000, 2000), profile=images.PROSE)
+
+    assert sorted(stored.derivatives) == [640, 1280, 1920]
 
 
 def test_portrait_keeps_its_aspect_ratio(pipeline):
     stored = pipeline(make_image(1200, 1800))
 
-    # 1600 and 2560 are wider than the original, so they are simply not made.
-    assert sorted(stored.derivatives) == [640]
+    # 1600 and 2560 are wider than the original, so they are simply not made;
+    # 1200 is the native rendition.
+    assert sorted(stored.derivatives) == [640, 1200]
     assert (stored.width, stored.height) == (1200, 1800)
     assert size_of(stored.derivatives[640]) == (640, 960)
+    assert size_of(stored.derivatives[1200]) == (1200, 1800)
 
 
 def test_an_image_smaller_than_the_smallest_target_is_not_upscaled(pipeline):
-    stored = pipeline(make_image(400, 300))
+    stored = pipeline(make_image(400, 300), profile=images.COVER)
 
     # There is still something servable, but it is the original size — never more.
     assert sorted(stored.derivatives) == [400]
@@ -197,7 +223,7 @@ def test_rejects_a_decompression_bomb(tmp_path, monkeypatch):
         images.verify_decodable(path)
 
 
-def test_an_oversized_image_leaves_nothing_behind(monkeypatch):
+def test_an_oversized_image_leaves_nothing_behind(db, monkeypatch):
     """Whatever the reason for rejection, the stored original goes with it."""
     monkeypatch.setattr(images, "MAX_PIXELS", 64)
     bucket = settings.originals_dir / KIND
@@ -207,12 +233,12 @@ def test_an_oversized_image_leaves_nothing_behind(monkeypatch):
 
     before = files()
     with pytest.raises(images.ImageRejected):
-        images.store_and_process(make_image(200, 200), "big.jpg", "image/jpeg", kind=KIND)
+        images.store_and_process(db, make_image(200, 200), "big.jpg", "image/jpeg", kind=KIND)
 
     assert files() == before
 
 
-def test_a_rejected_upload_leaves_nothing_behind():
+def test_a_rejected_upload_leaves_nothing_behind(db):
     """The original is written before it can be decoded, so it has to be undone."""
     corrupt = b"\xff\xd8\xff" + b"\x9c\x1f" * 512
     bucket = settings.originals_dir / KIND
@@ -222,7 +248,7 @@ def test_a_rejected_upload_leaves_nothing_behind():
 
     before = files()
     with pytest.raises(images.ImageRejected):
-        images.store_and_process(corrupt, "broken.jpg", "image/jpeg", kind=KIND)
+        images.store_and_process(db, corrupt, "broken.jpg", "image/jpeg", kind=KIND)
 
     assert files() == before
 
@@ -230,8 +256,8 @@ def test_a_rejected_upload_leaves_nothing_behind():
 # --------------------------------------------------------------------------
 # Removal
 # --------------------------------------------------------------------------
-def test_delete_files_removes_the_original_and_every_rendition():
-    stored = images.store_and_process(make_image(2000, 1500), "shot.jpg", "image/jpeg", kind=KIND)
+def test_delete_files_removes_the_original_and_every_rendition(pipeline):
+    stored = pipeline(make_image(2000, 1500))
     paths = [original(stored.original_path)] + [
         derived(relative) for relative in stored.derivatives.values()
     ]
@@ -267,21 +293,23 @@ def test_files_are_filed_under_the_thing_they_belong_to():
     images.delete_files(relative)
 
 
-def test_a_rendition_lands_beside_its_own_original():
+def test_a_rendition_lands_beside_its_own_original(db):
     group = images.group_name(3, "zametka")
     stored = images.store_and_process(
+        db,
         make_image(900, 600),
         "shot.jpg",
         "image/jpeg",
         kind=images.POSTS,
         group=group,
-        widths=(640,),
+        profile=images.COVER,
     )
+    db.commit()
 
     original = Path(stored.original_path)
     for rendition in stored.derivatives.values():
         assert Path(rendition).parent == original.parent
-    images.delete_files(stored.original_path, *stored.derivatives.values())
+    images.release(db, stored.original_path)
 
 
 @pytest.mark.parametrize(

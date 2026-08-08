@@ -6,6 +6,7 @@ pipeline rather than reaching past it.
 """
 
 import io
+import itertools
 import time
 
 import pytest
@@ -23,11 +24,24 @@ PROCESS_TIMEOUT = 30.0
 # --------------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------------
-def make_jpeg(width: int = 1800, height: int = 1200) -> bytes:
+_DISTINCT = itertools.count(1)
+
+
+def make_jpeg(width: int = 1800, height: int = 1200, *, seed: int | None = None) -> bytes:
+    """A gradient that differs from every other one unless `seed` says otherwise.
+
+    Identical bytes are stored once (F42), so two tests sharing a frame would
+    share a file — the second upload landing in the first album's directory and
+    skipping the pipeline. Pass a fixed `seed` when that is the point of the test.
+    """
     band = Image.linear_gradient("L")
     image = Image.merge("RGB", (band, band.transpose(Image.Transpose.ROTATE_90), band))
+    image = image.resize((width, height), Image.Resampling.BILINEAR)
+    mark = next(_DISTINCT) if seed is None else seed
+    image.putpixel((0, 0), (mark % 251, (mark // 251) % 251, 17))
+
     buffer = io.BytesIO()
-    image.resize((width, height), Image.Resampling.BILINEAR).save(buffer, "JPEG", quality=90)
+    image.save(buffer, "JPEG", quality=90)
     return buffer.getvalue()
 
 
@@ -431,3 +445,55 @@ def test_no_tags_reading_time_or_counters_anywhere(client, admin_client, db, alb
     for html in (client.get("/photo").text, client.get(f"/photo/{album.slug}").text):
         for banned in ("Теги", "тег", "мин чтения", "просмотр", "фотографий:"):
             assert banned not in html
+
+
+# --------------------------------------------------------------------------
+# F41 / F42 — one file per frame, and it goes when nobody wants it
+# --------------------------------------------------------------------------
+def test_the_same_frame_uploaded_twice_is_stored_once(admin_client, db, album):
+    frame = make_jpeg(seed=8801)
+
+    first = settled(db, upload(admin_client, album.id, frame, "a.jpg", "image/jpeg").json()["id"])
+    second_id = upload(admin_client, album.id, frame, "b.jpg", "image/jpeg").json()["id"]
+
+    db.rollback()
+    second = db.get(Photo, second_id)
+
+    # No pipeline run at all for the second one: the renditions already exist,
+    # so it is ready in the response rather than after a poll.
+    assert second.status is PhotoStatus.READY
+    assert second.original_path == first.original_path
+    assert (second.thumb_path, second.large_path) == (first.thumb_path, first.large_path)
+    assert all(path.is_file() for path in files_of(second))
+
+
+def test_deleting_one_of_two_photos_sharing_a_file_keeps_the_file(admin_client, db, album):
+    frame = make_jpeg(seed=8802)
+
+    first = settled(db, upload(admin_client, album.id, frame, "a.jpg", "image/jpeg").json()["id"])
+    second_id = upload(admin_client, album.id, frame, "b.jpg", "image/jpeg").json()["id"]
+
+    assert admin_client.delete(f"/photo/admin/photos/{first.id}").status_code == 200
+
+    db.rollback()
+    second = db.get(Photo, second_id)
+    assert all(path.is_file() for path in files_of(second))
+
+    # And once the last row referring to them is gone, so are the files.
+    doomed = files_of(second)
+    assert admin_client.delete(f"/photo/admin/photos/{second_id}").status_code == 200
+    assert not any(path.exists() for path in doomed)
+
+
+def test_a_photo_is_rendered_at_its_own_width_too(admin_client, db, album):
+    """ADR-014: the photography profile has to be able to show the frame as shot."""
+    photo = settled(
+        db,
+        upload(admin_client, album.id, make_jpeg(1800, 1200), "shot.jpg", "image/jpeg").json()[
+            "id"
+        ],
+    )
+
+    assert photo.large_path.endswith("_1800.webp")
+    with Image.open(settings.derived_dir / photo.large_path) as rendition:
+        assert rendition.size == (1800, 1200)

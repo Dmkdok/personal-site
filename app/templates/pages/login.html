@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Вход — {{ t("site.name") }}{% endblock %}
-{% block meta_description %}Вход для администратора сайта.{% endblock %}
+{% block title %}{{ t("auth.login_title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ t("auth.login_meta") }}{% endblock %}
 
 {% block head_extra %}
   <meta name="robots" content="noindex, nofollow" />
@@ -11,8 +11,8 @@
 {% block content %}
   <div class="container container--prose">
     <div class="login">
-      <p class="label">Служебный вход</p>
-      <h1 class="login__title">Вход</h1>
+      <p class="label">{{ t("auth.login_eyebrow") }}</p>
+      <h1 class="login__title">{{ t("auth.login_title") }}</h1>
 
       {% if error %}
         <p class="login__error" role="alert">{{ error }}</p>
@@ -23,7 +23,7 @@
         <input type="hidden" name="next" value="{{ next }}" />
 
         <div class="field">
-          <label class="field__label" for="username">Логин</label>
+          <label class="field__label" for="username">{{ t("auth.field_username") }}</label>
           <input
             class="field__input"
             id="username"
@@ -37,7 +37,7 @@
         </div>
 
         <div class="field">
-          <label class="field__label" for="password">Пароль</label>
+          <label class="field__label" for="password">{{ t("auth.field_password") }}</label>
           <input
             class="field__input"
             id="password"
@@ -48,7 +48,7 @@
           />
         </div>
 
-        <button class="button button--primary" type="submit">Войти</button>
+        <button class="button button--primary" type="submit">{{ t("auth.submit") }}</button>
       </form>
     </div>
   </div>

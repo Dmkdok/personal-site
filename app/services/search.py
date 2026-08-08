@@ -14,6 +14,13 @@ from app.models.post import Post, PostStatus
 from app.models.project import Project
 
 MIN_QUERY_LENGTH = 2
+
+#: Longer than any real search and short enough that the index never sees an
+#: essay. Enforced by truncating rather than by refusing: a query that arrives
+#: over the limit used to hit FastAPI's validator and answer a JSON 422 to a
+#: browser asking for an HTML page.
+MAX_QUERY_LENGTH = 200
+
 DEFAULT_LIMIT = 12
 
 
@@ -43,7 +50,7 @@ class SearchResults:
 
 
 def normalise(query: str | None) -> str:
-    return " ".join((query or "").split())[:200]
+    return " ".join((query or "").split())[:MAX_QUERY_LENGTH]
 
 
 def is_searchable(query: str) -> bool:
