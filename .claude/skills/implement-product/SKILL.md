@@ -49,3 +49,8 @@ When unsure about APIs, fetch official documentation. Prefer stable patterns fro
 ## Subagent handoffs
 
 Use implementer subagent(s) with English prompts listing owned paths and DoD. Parent merges and keeps the tree coherent.
+
+The `implementer` agent is pinned to Sonnet, which is the right default for a task with owned paths
+and a written DoD. Raise it per call with the Task/Agent `model` parameter when the task is one
+where a subtle mistake survives the tests — migrations, auth, concurrency, anything the reviewer
+would have to reason hard about.

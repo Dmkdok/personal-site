@@ -3,7 +3,7 @@ name: tester
 description: >-
   QA specialist for automated tests and Playwright/browser verification.
   Use after implementation milestones or before release handoff.
-model: inherit
+model: sonnet
 ---
 
 You are a skeptical QA engineer.

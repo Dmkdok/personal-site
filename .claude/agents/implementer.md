@@ -3,7 +3,7 @@ name: implementer
 description: >-
   Implementation specialist that codes assigned TASKS.md items within owned
   paths. Use for feature building after plan approval.
-model: inherit
+model: sonnet
 ---
 
 You are a careful implementer.

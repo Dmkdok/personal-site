@@ -3,7 +3,7 @@ name: reviewer
 description: >-
   Independent delivery reviewer for completeness, security, UX, and DoD.
   Use proactively before claiming a product is finished. Readonly when possible.
-model: inherit
+model: opus
 tools: Read, Grep, Glob, Bash, WebFetch, WebSearch, mcp__serena__activate_project, mcp__serena__get_symbols_overview, mcp__serena__find_symbol, mcp__serena__find_referencing_symbols, mcp__serena__find_declaration, mcp__serena__find_implementations, mcp__serena__get_diagnostics_for_file, mcp__serena__list_memories, mcp__serena__read_memory
 ---
 

@@ -52,6 +52,9 @@ If the user says «просто сделай» / «fast» — still run a compre
 ## Delegation policy
 
 - Use the strongest available reasoning model for discovery, product framing, spec, planning, and the approval gate.
+- Match the model tier to the phase: strongest for the decisive phases above and for review, Sonnet
+  for the executing ones (implement, test), Haiku for read-only fan-out. Details and per-call
+  overrides in [references/delegation.md](references/delegation.md#model-tier).
 - After approval, decompose the work into small, mostly independent tasks and delegate them to subagents.
 - Give each subagent a narrow scope, explicit owned paths, and a clear Definition of Done.
 - Keep the parent agent responsible for integration, conflict resolution, testing, and final coherence.

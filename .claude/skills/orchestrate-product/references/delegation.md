@@ -4,15 +4,39 @@ Use Cursor Task tool / Claude subagents. Each subagent gets a **self-contained E
 
 ## Subagents (project)
 
-| Agent file | When | Model hint |
-|------------|------|------------|
-| `product-planner` | Phases 1–2 | strongest reasoning available / inherit high |
-| `architect` | Phase 3 | strongest reasoning |
-| `implementer` | Phase 4 | inherit |
-| `tester` | Phase 5 | inherit |
-| `reviewer` | Phase 6 | inherit; tool-restricted (no Edit/Write/NotebookEdit) |
+| Agent file | When | Model |
+|------------|------|-------|
+| `product-planner` | Phases 1–2 | inherit — run these phases on the strongest model available |
+| `architect` | Phase 3 | inherit — same |
+| `implementer` | Phase 4 | `sonnet` (pinned) |
+| `tester` | Phase 5 | `sonnet` (pinned) |
+| `reviewer` | Phase 6 | `opus` (pinned); tool-restricted (no Edit/Write/NotebookEdit) |
 
 Fallback if custom agents missing: builtin `Explore` (read-only research) and `general-purpose` agent types + skills.
+
+## Model tier
+
+Two different costs are in play. Everything else on this page cuts the **number** of tokens; this
+section cuts the **price** of each one. Both are worth doing, and neither substitutes for the other.
+
+The rule: pay for reasoning where a wrong answer is expensive and hard to notice; use a cheaper tier
+where the task is bounded and something else checks the result.
+
+- **Decisive work — keep it strong.** Product framing, spec, architecture, and review. A weak model
+  here does not fail loudly; it produces a plausible plan with a hole in it, or returns "looks good"
+  on code that isn't. Review especially: the whole point of the phase is catching what the
+  implementer missed, so it is the last place to save money.
+- **Executing work — Sonnet.** An implementer with owned paths and a written DoD, or a tester
+  running an existing suite. The scope is narrow, and tests and the reviewer catch the misses.
+- **Fan-out reading — Haiku.** Sweeping the tree for "where is X" via `Explore`.
+
+The pinned tiers above are defaults, not a ceiling. Override per call with the Task/Agent `model`
+parameter (`sonnet`, `opus`, `haiku`), which beats the agent's frontmatter — send the same
+`implementer` to Sonnet for a routine task and to Opus for a migration or a concurrency bug.
+
+Note what the pins buy over `model: inherit`: `inherit` couples every subagent to whatever the
+parent happens to be running, so a session started on a cheap model silently gets a cheap reviewer.
+Pinning decides the tier per role instead of per session.
 
 ## Context budget for a subagent
 

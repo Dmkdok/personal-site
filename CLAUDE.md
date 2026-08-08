@@ -21,3 +21,10 @@ For greenfield sites/apps, use skill `orchestrate-product`.
 - Give subagents only their own SPEC/TASKS sections plus `docs/CONVENTIONS.md`, never the full docs.
 <!-- product-factory:end -->
 
+## Git
+
+- Commits and PR bodies carry no co-author or attribution trailer. The owner is the sole author of
+  record; the history was rewritten once to strip it, so re-adding it would undo that on the next commit.
+  Enforced by `attribution.commit` in `.claude/settings.json` — the older `includeCoAuthoredBy` key is
+  deprecated, don't reintroduce it.
+
