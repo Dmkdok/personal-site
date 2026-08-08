@@ -38,6 +38,55 @@ Note what the pins buy over `model: inherit`: `inherit` couples every subagent t
 parent happens to be running, so a session started on a cheap model silently gets a cheap reviewer.
 Pinning decides the tier per role instead of per session.
 
+## What the parent must not hold
+
+The parent's window is the one that cannot be replaced: it carries the conversation with the user
+and every decision made in it. A subagent's window is disposable — it is discarded the moment the
+agent returns. So the question for any noisy operation is not "can the parent do this?" but "who
+should be paying for the output afterwards?"
+
+Delegate on output volume, not on difficulty. Anything that reliably prints more than ~100 lines
+goes to a subagent even when the parent could do it in one tool call:
+
+| Operation | Why it must not land in the parent |
+|-----------|-------------------------------------|
+| Diagnosing a failure | The read-fix-rerun loop deposits a traceback per round |
+| Tree-wide search | Dozens of hits, of which two mattered |
+| Reading a module to learn its shape | Exploratory reading is open-ended by nature |
+| A review pass | Reviewer output is long by design |
+| Screenshots | The single most expensive thing that can enter a context window |
+
+What the parent keeps: the user conversation, product decisions, subagent summaries, its own
+`docs/STATUS.md` and `docs/TASKS.md` edits, targeted reads that settle a specific integration
+question, and **running the suite at gate points** — see below. If the parent finds itself three
+rounds into a debug loop, that loop was delegated wrong: stop, hand the whole loop to one agent,
+take the verdict.
+
+### The suite is the exception — the parent still runs it
+
+Delegating the *run* would save nothing and cost the thing the whole pipeline rests on. A green run
+with compact output is about ten lines; it is a red one that is expensive. And this project has
+twice been burned by believing a report instead of the runner: an e2e flake that the tester's own
+three consecutive runs never surfaced, and a milestone recorded from a subagent's self-report while
+the tree said otherwise. **A subagent's "tests green" is a claim, not a result.**
+
+So: the parent runs the suite itself before closing a milestone, before a gate, and at pause —
+compact output, never piped. If it comes back red, the parent does not read the tracebacks; it hands
+the whole diagnosis to one agent and waits for a verdict, then **re-runs the suite itself** to
+confirm the fix. Two cheap runs by the parent beat one expensive one plus trust.
+
+## Debug loops belong to one agent
+
+Never ping-pong a failure through the parent: run in the subagent, read the failure in the parent,
+send a fix back down. Every round deposits another traceback upstairs and re-explains the same
+context downstairs.
+
+Hand the entire loop to a single agent instead: *reproduce → diagnose → fix → re-run → repeat, up to
+4 rounds; if it is still red, stop and return the diagnosis rather than another attempt.* The bound
+matters — an unbounded agent will keep trying variations long past the point where the parent should
+have made a call. What comes back is the final state: fixed and green, or red with a named root
+cause and what was ruled out.
+
 ## Context budget for a subagent
 
 A subagent that reads `SPEC.md` + `PLAN.md` + `TASKS.md` in full burns ~15k tokens before writing a
@@ -72,8 +121,10 @@ Goal: <one paragraph>
 Constraints: <stack, a11y, etc.>
 DoD:
 - [ ] ...
-Return: files changed, how to verify, open risks. Summaries only —
-never paste file contents back.
+Return, in 250 words or fewer:
+  Status / Files / Verify / Risks / DoD
+Never paste file contents, diffs or logs. Anything longer than that
+goes into a file and you return the path.
 ```
 
 ## Good delegation heuristics
@@ -119,9 +170,25 @@ collide across a machine.
 
 ## Reporting back
 
-Subagents return **summaries**: files changed, how to verify, open risks. Never paste file
-contents, full diffs or full test logs into the return value — the parent pays for all of it.
-For a failing suite, return the counts plus the shortest failing case, not the whole traceback.
+"Summaries only" without a number produces two-thousand-token summaries. The budget is **250 words,
+in this shape:**
+
+```text
+Status: done | blocked | red
+Files: <paths, one line>
+Verify: <the exact command or URL>
+Risks: <one line each, or "none">
+DoD: <which boxes are met, which are not>
+```
+
+Nothing else crosses the boundary. No file contents, no diffs, no test logs, no reasoning about how
+the agent got there. Detail that genuinely needs to survive gets **written to a file** — evidence to
+`docs/qa/`, a root cause worth an hour to the next session to `docs/STATUS.md` `## Notes` — and the
+report names the path. A path costs five tokens; the content it points at costs thousands, and the
+parent usually never needs to read it.
+
+For a failing suite: counts, the name of the shortest failing case, and the root cause in one
+sentence. Not the traceback.
 
 ## Screenshots
 

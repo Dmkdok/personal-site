@@ -60,6 +60,43 @@ If the user says «просто сделай» / «fast» — still run a compre
 - Keep the parent agent responsible for integration, conflict resolution, testing, and final coherence.
 - Avoid assigning overlapping file ownership to multiple subagents in the same milestone.
 
+## Context checkpoints
+
+A delivery does not fit in one context window, and auto-compaction is the worst way to discover
+that: it fires at an arbitrary point, keeps an arbitrary half, and the loss stays invisible until an
+agent contradicts a decision made an hour earlier. `docs/STATUS.md` exists precisely so a session
+can be discarded without losing anything — so discard sessions **deliberately, at points you pick**.
+
+**Milestone boundaries are the only place a cut is free** — STATUS is current, the tree is
+committed, nothing in the chat is load-bearing. Cutting elsewhere means writing a handoff for a
+half-finished task, so at a boundary the question is *whether* to cut, never *where*. Mid-task is
+the exception you take only when the alternative is auto-compaction, which is worse.
+
+Cut at:
+
+- **the GATE**, always, once the plan is approved. Everything the build needs is now in `docs/`; the
+  discovery dialogue behind you is dead weight.
+- **a milestone boundary, when the window is meaningfully spent** — roughly half gone, or the next
+  milestone is large. A fresh window costs a few thousand tokens to prime from `docs/`, so cutting
+  after a two-task milestone that barely dented the context is a net loss.
+- **any point where context is running low**, boundary or not. Do not open one more task hoping it
+  fits: a summarised half-milestone is the worst artifact this pipeline can produce.
+
+At a cut point, in this order: finish or revert the edit in flight → run the suite → update
+`docs/STATUS.md` and tick `docs/TASKS.md` → commit → tell the user in Russian that the milestone is
+closed and the next one wants a fresh session (`/clear`, then «продолжай по docs/STATUS.md»). The
+`pause` skill is this same sequence and can be invoked directly.
+
+Between cuts, keep the parent's window cheap. The parent holds the conversation, the decisions,
+subagent summaries, its own STATUS edits, and the suite runs that gate a milestone. Anything else
+that prints in bulk — diagnosing a red run, a tree-wide search, exploratory reading, a review pass —
+goes to a subagent **even when the parent could do it in a single call**: the parent pays for that
+output for the rest of the session, a subagent pays for it once.
+
+The suite itself is deliberately not on that list. A green run is ten lines, and delegating it would
+mean closing milestones on a subagent's word — the one mistake this project has already made twice.
+See [references/delegation.md](references/delegation.md#what-the-parent-must-not-hold).
+
 ## Pipeline
 
 ```
@@ -127,7 +164,9 @@ Present in Russian:
 4. Risks / assumptions
 5. Ask: **«Утверждаете план? Напишите: утверждаю»**
 
-On approval, write `docs/STATUS.md` → `phase: implement` and proceed.
+On approval, write `docs/STATUS.md` → `phase: implement`, commit the docs, and **cut the session**
+before Phase 4 — see [Context checkpoints](#context-checkpoints). Implementation starts in a fresh
+window reading `docs/`, never in the window that ran the interview.
 On change requests, update docs and re-ask. Never skip the gate.
 
 ### Phase 4 — Implement (`implement-product` + `coding-discipline` + subagents)
@@ -139,7 +178,10 @@ Parent agent:
 - Keeps `docs/STATUS.md` updated **as each milestone lands, not at the end** — an unrecorded
   milestone is lost work when the session runs out of context
 - Merges results; resolves conflicts
-- Verifies each milestone before starting the next
+- Verifies each milestone before starting the next by **running the suite itself** with compact
+  output — a subagent's "green" is a claim, not a result, and this project has been burned by the
+  difference twice. What it delegates is the *diagnosis* of a red run, then re-runs to confirm
+- Treats each milestone boundary as a session cut point: STATUS, tick, commit, offer a fresh window
 - Does not dump entire codebase into chat — summarize (or activate `concise-mode` if the user asked)
 - Reads code through Serena's symbol tools, not whole files (see
   [references/delegation.md](references/delegation.md#reading-code-serena))
@@ -153,6 +195,10 @@ Run automated checks + Playwright / browser verification. Fix failures before cl
 ### Phase 6 — Review (`review-product` + `web-design-guidelines` + `secure-review`)
 
 Independent verification (verifier mindset). Critical functional **or** security issues must be fixed.
+
+The reviewer writes `docs/REVIEW.md` and returns a verdict plus counts, not the review. **Read that
+file before closing the phase** — Mediums never travel in a summary, and an unread Medium is one
+that never becomes a task.
 
 ### Phase 7 — Handoff
 
@@ -193,3 +239,6 @@ Copy into `docs/STATUS.md` and tick:
 - Auto-running `ui-quality-audit` on every delivery (optional skill — only on explicit request)
 - Claiming tests green from TASKS checkboxes or chat memory without running the suite
 - Dumping all of `docs/` into every subagent prompt
+- Letting auto-compaction decide where the session ends instead of cutting at a milestone
+- Running a debug loop or a tree-wide search in the parent's window when a subagent could return
+  the verdict (the suite run itself stays with the parent — see delegation.md)

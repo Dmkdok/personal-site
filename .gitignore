@@ -18,6 +18,10 @@ test-results/
 playwright-report/
 .playwright/
 
+# Scratch for full test logs an agent greps instead of reading.
+# Evidence that should survive belongs in docs/qa/, which is committed.
+.test-runs/
+
 # Editors / OS
 .DS_Store
 Thumbs.db

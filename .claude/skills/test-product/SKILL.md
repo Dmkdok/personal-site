@@ -87,6 +87,27 @@ Or TypeScript `@playwright/test` if the repo is JS/TS-first — match the stack.
   the usual culprit, and fixing it turns the whole block green at once.
 - Screenshots are expensive. One per visual claim, scoped to the element, one theme unless the
   behaviour is theme-specific.
+- **Send long runs to a file, then read what you need out of it.** Redirect to
+  `.test-runs/last.txt` (`> file 2>&1`, never through a pipe — the exit code must stay the
+  runner's), then `Grep` for the failing names. The whole log stays available at zero context cost.
+  That path is scratch and gitignored, deliberately: `docs/qa/` is committed evidence, and a
+  transient log dropped there is either commit noise or a dirty tree at pause time. Evidence that
+  should survive — a perf JSON, a screenshot backing a claim — still goes to `docs/qa/`.
+
+## The fix loop stays in this session
+
+Reproduce → diagnose → fix → re-run belongs entirely to whoever is running it. Do not hand a
+traceback back up and wait for a fix to come down: every round costs the caller another log and
+costs you another re-explanation of the same state.
+
+Bound it at **four rounds per root cause** — that is what workflow step 6's "re-run until green"
+means in practice. Four attempts at one cause without turning it green means the cause is not
+understood, and a fifth guess is worth less than telling the caller what you ruled out. Report the
+diagnosis and stop. A *new* cause found on the way is a new budget, not a continuation of the old
+one; say so rather than quietly restarting the count.
+
+When several tests go red together, treat them as one cause until proven otherwise — process-wide
+state torn down by the first test is the usual answer, and one fix turns the block green.
 
 ## Reading code under test
 

@@ -19,6 +19,13 @@ Rebuild only after changing dependencies.
 
 **Do not run pytest on the Windows host** — Starlette's test client hangs there.
 The `tests` compose service exists for this reason and is also what the VPS runs.
+It drops and recreates its **own** database, so it cannot touch the dev data. The
+e2e suite is the opposite: it runs on the host against `make up` and writes into
+the dev database, so its fixtures have to clean up after themselves.
+
+Never pipe a test run through `tail`, `head` or `grep` — you get the pipe's exit
+code, and a red suite reads as green. Redirect to `.test-runs/last.txt`
+(gitignored) and grep the file instead.
 
 ## Language
 
@@ -115,6 +122,11 @@ resolves collisions with a numeric suffix.
 - **Cards carry no tags, no reading time and no counters.** That absence is a
   requirement from the brief, not an oversight.
 - Motion stays under 250 ms and must be disabled under `prefers-reduced-motion`.
+- **A measure cap goes on the text, never on its container.** `ch` resolves
+  against the element's own font, so `--measure` on a wrapper inherits the larger
+  body font and the line runs far past the intended count.
+- **The fixed admin bar swallows taps on the footer at ≤640 px.** Anything added
+  down there needs clearance above it.
 
 ## Editing in place
 
@@ -122,6 +134,18 @@ There is no separate admin area. Editing happens on the public page: htmx swaps
 a read-only partial for an edit partial and back. `partials/editable.html` and
 `partials/editable_form.html` are the reference implementation, wired up in
 `app/routers/pages.py`.
+
+Two traps that swapping has already cost time here:
+
+- **A swapped form is visible and focusable before it is settled, and only a
+  settled form has its submit intercepted.** Typing into it and submitting
+  immediately gets the browser's native GET — a race a human cannot hit and
+  synthetic keystrokes hit about one run in three. Wait for `htmx:afterSettle`
+  rather than for visibility.
+- **A block key that becomes part of a DOM id must have its dots normalised
+  out**, in the id and in every `hx-target` naming it. `id="content-home.intro"`
+  parses as «#content-home with class intro»: htmx matches nothing, logs
+  `htmx:targetError` and sends no request, so the button looks dead.
 
 ## Jinja traps that have already cost time here
 

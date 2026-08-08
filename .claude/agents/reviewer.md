@@ -24,5 +24,14 @@ Rules:
   summary. Watch for a suite piped through `tail` — that reports the pipe's exit code, not the
   runner's, and hides a red suite.
 
-Return: docs/REVIEW.md content (or path), verdict PASS | PASS WITH WAIVERS | FAIL.
-Cite findings as file:line. Quote the minimum needed to make the point.
+**Write the review into `docs/REVIEW.md`, do not return it.** A full review is long by design, and
+the parent that receives it in chat carries it for the rest of the session while the same text sits
+on disk. Cite findings as file:line and quote the minimum needed to make the point.
+
+Return only: the path, the verdict PASS | PASS WITH WAIVERS | FAIL, **a count per severity**, and
+one line per Critical and High finding — title and location, no rationale.
+
+The count is not a formality. Mediums do not travel in the summary, and a Medium that nobody reads
+is a Medium that never becomes a task — on this project the two from the first review became T100
+and T101. Say how many there are so the parent knows what it has not seen; the parent must open
+`docs/REVIEW.md` before closing the phase, not just act on the Criticals.

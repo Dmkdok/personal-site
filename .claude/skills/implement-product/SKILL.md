@@ -28,6 +28,24 @@ If gate not approved → stop and return to orchestrate-product.
    **before starting the next one**. A milestone that is finished but unrecorded is indistinguishable
    from one that was never started, and the next session will redo it.
 
+### Milestone boundaries are session boundaries
+
+A closed milestone is the cheapest place to end a session: STATUS describes the tree completely and
+nothing in the chat history is load-bearing. Once STATUS is written, TASKS ticked and the work
+committed, decide whether to continue — and judge it by **how much window is left, not by how small
+the next task looks**. Past roughly half spent, or with a large milestone next, say so in Russian
+and offer a fresh window (`/clear`, then «продолжай по docs/STATUS.md»). Below that, keep going:
+priming a new session from `docs/` costs a few thousand tokens, so cutting after a two-task
+milestone loses more than it saves.
+
+Starting a milestone with a crowded window is the case to avoid — auto-compaction then lands
+somewhere inside it, and a summarised half-milestone is the worst artifact this pipeline can
+produce. When the estimate is close, cut.
+
+While the milestone runs, keep the bulk out of this window: failure diagnosis, tree-wide searches
+and exploratory reading belong to subagents that return a verdict. Run the suite yourself, though —
+a green run is ten lines, and a subagent's "green" is a claim, not a result.
+
 ### Verification loop
 
 Prefer TDD when SPEC/PLAN requires tests: failing check → implement → pass. For bugs: repro first.
