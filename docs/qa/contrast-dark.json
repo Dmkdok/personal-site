@@ -5,7 +5,7 @@
   "unmeasurable": [],
   "worst": [
     {
-      "selector": "p.label.hero__eyebrow",
+      "selector": "p",
       "text": "Санкт-Петербург · Python · горы",
       "color": "rgb(138, 147, 158)",
       "backdrop": [

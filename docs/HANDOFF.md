@@ -49,6 +49,8 @@ navigation.
 | Lint + format check | `make lint` |
 | Autofix + format | `make fmt` |
 | Backup | `make backup` |
+| List unreferenced media | `make media-orphans` |
+| Delete unreferenced media | `make media-prune` |
 | Drop the database volume (media survives) | `make clean` |
 
 On Windows, `run.ps1` wraps the same targets for PowerShell.
@@ -168,6 +170,27 @@ in the archive — the check that catches a database and a media archive taken f
 runs, which is the failure mode that matters. The scratch database is dropped afterwards.
 
 > Rehearsed 2026-08-07 and passed: 13 rows restored, 44 files, nothing missing (T086).
+
+### Media maintenance
+
+Deleting an article, a project, an album or a photograph now deletes the files that went with it,
+and saving an article deletes the pictures you took out of the text. Nothing that another page
+still uses is removed — the check reads the same rows the pages are built from (ADR-013). The same
+frame uploaded twice is stored once, so a picture used by two articles is one file on disk.
+
+Two consequences worth knowing before editing the media tree by hand:
+
+* a deduplicated file physically lives in the directory of whatever uploaded it **first**, so
+  `tar`-ing one article's directory can carry a file another article needs;
+* the application will never delete a file something still references, but that guarantee does not
+  extend to `rm`.
+
+```bash
+make media-orphans     # what nothing references, and what is shared. Deletes nothing.
+make media-prune       # deletes exactly what the report listed
+```
+
+Both are safe to run repeatedly, and `--prune` re-checks the database before it unlinks anything.
 
 ---
 
