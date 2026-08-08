@@ -69,29 +69,6 @@ If the suite is red, still commit — but say so in the commit body.
 Then `docs/TASKS.md`: tick only what its DoD actually meets, and write the open half of a partly
 done task into the task line itself.
 
-### Rotate before you append
-
-`STATUS.md` is the one file every session reads in full, and `## Notes` only grows. An append-only
-handoff eventually costs more to read than it saves. Hold the file to **≤150 lines**, and when the
-append would break that, rotate before writing:
-
-- `## Resume here` — **≤40 lines.** Rewritten each time, never appended to. It describes the tree as
-  it is now; last session's version has no historical value. Being over the line means the next
-  actions are carrying explanation that belongs in `## Notes`, not that the cap is wrong.
-- `## Notes` — keep entries from the **current milestone only**. Older ones move by kind: a trap or
-  root cause to `docs/notes/<YYYY-MM>.md`, a choice with a rationale to `docs/DECISIONS.md`. Neither
-  is read on resume, and both stay greppable.
-- `## Test report` — one entry per suite, current run only. A superseded run is noise.
-
-Rotation is a move, not a delete: nothing is dropped, it just stops being loaded on every resume.
-Leave a one-line pointer to the archive file so the next session knows the history exists.
-
-**Promote before you archive.** Read each entry on its way out and ask whether it is history or a
-live trap. A trap that will bite the *next* person to touch that code belongs in
-`docs/CONVENTIONS.md`, which every code-touching agent reads — the archive is only for the record of
-how the project got here. Getting this backwards is the one way rotation can actually cost
-something: the entry is still greppable, but nobody knows to grep for a trap they have not hit yet.
-
 Re-read what you wrote against the tree. A "Resume here" that says the tree is dirty after you
 committed it is worse than no handoff.
 

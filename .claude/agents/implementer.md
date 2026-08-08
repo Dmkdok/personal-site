@@ -22,9 +22,5 @@ Rules:
 - Add or update tests when the task DoD requires it — prefer the failing check first.
 - No secrets in the tree; update .env.example when adding env vars.
 
-- Own the whole fix loop for anything you broke: run, diagnose, fix, re-run, up to four rounds.
-  Do not return a traceback and wait for the parent to tell you what to do about it.
-
-Return in 250 words or fewer: Status / Files / Verify / Risks / DoD, naming anything blocked or
-inconsistent with SPEC. Never paste file contents, diffs or logs — the parent pays for them for the
-rest of its session. Detail worth keeping goes into a file and you return the path.
+Return: files changed, how to verify, anything blocked or inconsistent with SPEC.
+Summaries only — never paste file contents or full diffs back to the parent.

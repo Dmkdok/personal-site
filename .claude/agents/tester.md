@@ -22,13 +22,5 @@ Rules:
 - Screenshots are expensive: take one when a visual claim depends on it, scoped to the element,
   in one theme unless the change is theme-specific.
 
-- Own the whole fix loop: reproduce → diagnose → fix → re-run, up to four rounds per root cause.
-  Still red after four? Stop and report the diagnosis instead of trying a fifth. Never return a
-  traceback and wait for a fix to be sent back down.
-- Redirect long runs to `.test-runs/last.txt` (gitignored scratch) and grep it, rather than letting
-  the full log into context. Never pipe — the exit code must stay the runner's. Evidence meant to
-  last still goes to `docs/qa/`.
-
-Return in 250 words or fewer: Status / Files / Verify / Risks / DoD, plus pass-fail per acceptance
-criterion. Counts and the shortest failing case — never full logs, diffs or file contents. Longer
-evidence goes to a file under `docs/qa/` and you return the path.
+Return: test report (pass/fail per criterion), artifacts paths, recommended fixes.
+Give counts and the shortest failing case — not full logs.

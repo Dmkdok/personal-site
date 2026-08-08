@@ -156,6 +156,15 @@
     {
       "path": "/photo",
       "tag": "a",
+      "label": "Осень",
+      "width": 56,
+      "height": 25,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo",
+      "tag": "a",
       "label": "GitHub",
       "width": 40,
       "height": 17,
