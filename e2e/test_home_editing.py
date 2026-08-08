@@ -34,6 +34,12 @@ def _open_the_editor(page: Page, block: str) -> None:
     )
     page.locator(block).get_by_role("button", name=ru("editable.edit")).click()
     page.wait_for_function("() => window.__settled === true")
+    # The caret lands in the field with no further clicking. The fragment
+    # carries `data-autofocus` and nothing else since T101 — `autofocus` went
+    # because the spec lets a browser ignore it on markup inserted after parse
+    # — so this assertion is the only thing keeping the handler in `ui.js`
+    # honest for the in-place editor.
+    expect(page.locator(block).get_by_label(ru("editable.field_label"))).to_be_focused()
 
 
 def _save(page: Page, block: str, text: str) -> None:

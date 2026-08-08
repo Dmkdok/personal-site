@@ -112,18 +112,40 @@
     }
   });
 
+  /**
+   * The markup an htmx swap event is actually about.
+   *
+   * `event.detail.target` is htmx's *original* target, and for an `outerHTML`
+   * swap — which is what every fragment here uses, because the read-only and
+   * the editing partial swap places — that element has been removed from the
+   * document by the time the event fires. Reading it finds the markup that was
+   * replaced, never the markup that replaced it. htmx dispatches on the
+   * element that is now in the page, so `event.target` is the one to read.
+   *
+   * Taking whichever candidate is still in the document covers both: an
+   * `innerHTML` swap keeps its target, an `outerHTML` swap does not.
+   */
+  function swappedScope(event) {
+    var candidates = [event.target, event.detail && event.detail.target];
+    for (var i = 0; i < candidates.length; i++) {
+      var elt = candidates[i];
+      if (elt && elt.querySelector && document.contains(elt)) return elt;
+    }
+    return null;
+  }
+
   // A rejected save comes back as a re-rendered form with status 200, so
   // htmx:responseError never fires. The swap then destroys the submit button
   // and focus falls to <body> — for the footer form, that is the very bottom
   // of the page. Put the caret on the field that caused it instead, or on
   // whatever the fragment nominated.
   document.body.addEventListener("htmx:afterSwap", function (event) {
-    var target = event.detail && event.detail.target;
-    if (!target || !target.querySelector) return;
+    var scope = swappedScope(event);
+    if (!scope) return;
 
     var invalid =
-      (target.matches && target.matches("[aria-invalid='true']") && target) ||
-      target.querySelector("[aria-invalid='true']");
+      (scope.matches && scope.matches("[aria-invalid='true']") && scope) ||
+      scope.querySelector("[aria-invalid='true']");
     if (invalid) invalid.focus();
   });
 
@@ -132,7 +154,9 @@
    *
    * `autofocus` itself is only guaranteed when the element is parsed as part of
    * the document; the HTML spec lets a browser ignore it on anything inserted
-   * afterwards, which is every htmx swap.
+   * afterwards, which is every htmx swap. htmx patches over that in its own
+   * `processFocus`, so removing the attribute means this handler is the whole
+   * mechanism, not a second belt.
    *
    * On `afterSettle`, not `afterSwap`: htmx restores focus by id during the
    * swap, and when the fragment carries the same id as the control that
@@ -141,16 +165,15 @@
    * straight back off the field.
    */
   document.body.addEventListener("htmx:afterSettle", function (event) {
-    // `event.target` rather than `event.detail.target`: htmx dispatches settle
-    // on the swapped element itself and does not put it in the detail, so
-    // reading the detail here finds nothing to focus.
-    var target = (event.detail && event.detail.target) || event.target;
-    if (!target || !target.querySelector) return;
-    if (target.querySelector("[aria-invalid='true']")) return;
+    var scope = swappedScope(event);
+    if (!scope) return;
+    // A rejected save is the afterSwap handler's business: it has already put
+    // the caret on the field that caused the rejection.
+    if (scope.querySelector("[aria-invalid='true']")) return;
 
     var wanted =
-      (target.matches && target.matches("[data-autofocus]") && target) ||
-      target.querySelector("[data-autofocus]");
+      (scope.matches && scope.matches("[data-autofocus]") && scope) ||
+      scope.querySelector("[data-autofocus]");
     if (wanted && wanted !== document.activeElement) wanted.focus();
   });
 

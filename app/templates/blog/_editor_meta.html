@@ -44,7 +44,7 @@
         hx-include="#post-form"
         hx-target="#editor-meta"
         hx-swap="outerHTML"
-        {% if focus_action %}autofocus data-autofocus{% endif %}
+        {% if focus_action %}data-autofocus{% endif %}
       >{{ t("blog.unpublish") }}</button>
     {% else %}
       <button
@@ -54,7 +54,7 @@
         hx-include="#post-form"
         hx-target="#editor-meta"
         hx-swap="outerHTML"
-        {% if focus_action %}autofocus data-autofocus{% endif %}
+        {% if focus_action %}data-autofocus{% endif %}
       >{{ t("blog.publish") }}</button>
     {% endif %}
   </div>
