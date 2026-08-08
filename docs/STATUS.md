@@ -6,51 +6,46 @@ approved_at: 2026-08-04
 
 ## Resume here
 
-**Branch `session/2026-08-06-m3-fixes-and-e2e`, tree clean, nothing running.** No remote; merging
-into `main` is the owner's call. The dev stack is up (`db`, `web`) — `make down` stops it.
+**Branch `session/2026-08-06-m3-fixes-and-e2e`, tree clean, nothing running but the dev stack
+(`db`, `web`) — `docker compose down` stops it.** No remote; merging into `main` is the owner's
+call.
 
-**M9 is 11 tasks of 12 done. The session did not end mid-task: every gate is green and every
-change is committed.** T090–T098 and T100/T101 are implemented, tested and ticked. **T099 is the
-only thing left in the milestone**, and it is the same half it was: `README.md` and
-`scripts/screenshots.py` exist and work, the media section and the screenshots do not.
-
-M0–M8 are complete and Phase 6 is closed (`docs/REVIEW.md`, PASS at `a0c2835`). The review's two
-Medium findings became T100/T101 and are now fixed.
+**The build is finished. M9 is complete — all twelve tasks — and Phase 6 has been re-run against
+it and passes.** Every milestone M0–M9 is done and ticked, every gate is green (unit/API 224, e2e
+40, launch flows 6, lint and format clean), and `docs/TASKS.md` now has no unticked line at all.
+What remains is not code.
 
 ### Next three actions, in order
 
-1. **Finish T099 — the last open task in M9.** Two halves, both now unblocked. (a) `make up`, then
-   `uv run python scripts/screenshots.py` — the eight shots under `docs/qa/screenshots/` predate
-   the favicon (T095) and still show a cover opening an article (T098), so they are wrong on both
-   counts. (b) Put the «Обслуживание медиа» section back into `README.md`: it was cut because it
-   documented `make media-orphans`, `make media-prune` and the deduplication guarantee, none of
-   which existed then and all of which do now. `docs/HANDOFF.md` §5 «Media maintenance» is the
-   English source to translate — the README is Russian, unlike everything under `docs/`.
-2. **Re-run Phase 6 against M9.** The review that passed was against `a0c2835`; M9 has since
-   rewritten the media lifecycle, the upload limit, the CSRF failure path and the security headers
-   on a 500. `docs/REVIEW.md` is the format. Two things in this milestone are worth a reviewer's
-   attention specifically: `images.release` is the only thing standing between "the owner deleted
-   an article" and "the owner broke another article's cover", and `ui.js` now retries a 403 once
-   after fetching a fresh token — a retry loop would be a denial of service against our own site,
-   so the one-shot guard (`data-csrf-retried`) is the thing to read twice.
-3. **`data-autofocus` is belt-and-braces, not a replacement — finish it.** T101 asked for the
-   `autofocus` attribute to go, because the HTML spec lets a browser drop it on markup inserted
-   after parse. The `[data-autofocus]` handler in `ui.js` is written and both attributes are on the
-   five swapped fragments, so behaviour is at least what it was — but with `autofocus` removed,
-   `test_an_article_can_be_written_and_published_without_a_mouse` goes red: the handler does not
-   fire for the «Новая статья» form. Reproduce it by deleting `autofocus` from
-   `blog/_new_form.html` and running `uv run pytest e2e/test_a11y.py`. Suspect the settle event's
-   shape before suspecting the selector — `htmx:afterSettle` was tried on both `event.detail.target`
-   and `event.target` and neither focused the field, which points at the listener not running at
-   all rather than at the wrong element.
+1. **The owner's own unaided pass through all three publishing flows.** This is the single open
+   item on the launch checklist in `docs/SPEC.md`, and it is his by definition — an acceptance
+   step no test can stand in for. Sit down at the running site, publish an article, upload an
+   album, add a project, without touching code. Tick that line when it is done.
+2. **Deploy, and check on the server the three things nothing local can reach.** T074 is ticked,
+   but its DoD was only «config validates; not deployed in this run» — the deploy itself was never
+   a task, by the owner's choice. On the first run: **(a)** upload a file between 30 and 50 MB.
+   The `Caddyfile` capped bodies at 30MB while the app allowed 50 until this session, and there is
+   no test that can catch that class — dev has no proxy. **(b)** Confirm the login throttle still
+   fires behind the real Caddy, where `X-Forwarded-For` is finally somebody else's to write.
+   **(c)** Run `make restore-check` on the server, against server artefacts.
+3. **Merge the branch into `main`** once (1) and (2) are done. Nothing is pushed and no remote
+   exists, so this is a local decision and nobody else is waiting on it.
 
-**Waiting on the owner:** nothing blocking. **T074, the production deploy, is deliberately not
-happening inside a working session** — the owner will run it himself once the site is finished.
-That is still the only unticked item on the launch checklist.
+**Waiting on the owner:** nothing blocking, and nothing in flight. Both open items above are his,
+not the next session's.
+
+**Two things about this machine that cost time today.** `make` is **not on PATH** here, in either
+shell, although `README.md` and `docs/CONVENTIONS.md` document every command as `make …` — run the
+`Makefile`'s body directly (`docker compose up --build -d`, `docker compose run --rm tests`). And
+**Docker Desktop was not running** at the start of the session; `docker compose` fails with a
+named-pipe error until it is started and the daemon answers `docker version`.
 
 **Decided by the owner on 2026-08-08:** «блог» and «статьи» mean the same thing, so one rule for
 pictures in text — 1920 px — and it covers project descriptions too; he exports files up to
-**50 MB**, so the cap is now 50; `README.md` is **Russian**, unlike everything under `docs/`.
+**50 MB**, so the cap is 50 (and the proxy is now 55); `README.md` is **Russian**, unlike
+everything under `docs/`. And, put to him during this session's review: when deduplication hands
+back a ladder narrower than the profile asks for, **top the ladder up** rather than refuse to
+deduplicate.
 
 ## Checklist
 - [x] Phase 0 intake
@@ -58,14 +53,13 @@ pictures in text — 1920 px — and it covers project descriptions too; he expo
 - [x] Phase 2 SPEC.md
 - [x] Phase 3 PLAN.md + TASKS.md
 - [x] GATE user approved
-- [x] Phase 4 implementation (M0–M8 done)
-- [x] Phase 5 tests green (unit/API 222/222; e2e 40/40; lint and format clean)
-- [x] Phase 6 review clean (`docs/REVIEW.md`, PASS at `a0c2835`; Critical + 6 High fixed, Mediums scheduled as T100/T101)
+- [x] Phase 4 implementation (M0–M9 done)
+- [x] Phase 5 tests green (unit/API 224/224; e2e 40/40; lint and format clean)
+- [x] Phase 6 review clean (`docs/REVIEW.md` run 1, PASS at `a0c2835`; Critical + 6 High fixed, Mediums scheduled as T100/T101)
 - [x] Phase 7 handoff (`docs/HANDOFF.md`; the production deploy stays open by the owner's choice)
 - [x] **GATE — M9 approved 2026-08-08 («утверждаю»)**
-- [x] M9 implementation — T090–T098, T100, T101 done and ticked
-- [ ] **T099** — the last open task in M9: the README media section and regenerated screenshots
-- [ ] Phase 6 re-run against M9 (the passing review was against `a0c2835`)
+- [x] **M9 complete — T090–T101, all twelve done and ticked**
+- [x] **Phase 6 re-run against M9** (`docs/REVIEW.md` run 2, PASS; 2 High + 2 Medium found and fixed in the same session)
 
 ## Test report
 
@@ -73,30 +67,28 @@ All five gates run 2026-08-08 at the end of the session, on the tree as committe
 
 | Gate | Command | Result |
 |---|---|---|
-| Unit + API | `docker compose run --rm tests` | **222 passed**, exit 0 |
+| Unit + API | `docker compose run --rm tests` | **224 passed**, 4 skipped, exit 0 |
 | End-to-end | `uv run pytest e2e` | **40 passed**, exit 0 |
 | Six launch flows | `uv run pytest e2e -m launch_flow` | **6 passed**, exit 0 |
 | Lint | `uv run ruff check .` | clean, exit 0 |
 | Format | `uv run ruff format --check .` | clean, exit 0 |
 
-No failing tests. The suite grew 204 → 222 unit/API and 37 → 40 e2e this session: deduplication of
-one frame used twice, deletion of an article that shares a cover with another (asserted in **both**
-directions — the survivor keeps its picture, and the last article to go takes the file with it),
-release of a picture cut out of an article's text, the `body_html` half of the reference scan, the
-whole copyright line, the second editable block on the home page, the cover leaving the article
-body while `og:image` and the index card keep it, a query over the 200-character cap, the default
-`og:image`, the `/csrf` endpoint, login-attempt pruning and the security headers on a 500.
+No failing tests. The suite grew 222 → 224 this session, both from the review's second High: a
+cover reused as a photograph gains its native-width rung, and a cover reused in prose gains the
+1280 rung while the original stays one file.
 
-**Three of the new tests were checked in both directions**, by breaking the fix and watching them go
-red: the `body_html` scan, the reference-aware deletion, and the security headers on a 500. A
-regression test that cannot fail is the mistake this project has already made twice.
+**All three fixes this session were checked in both directions** — by breaking the fix and watching
+the tests go red — which is the only kind of regression test worth having here. Six tests between
+them: the `data-autofocus` handler took four e2e tests with it when reverted, and the two rung
+top-ups one each. One of those two **replaced a test that was asserting the defect**:
+`test_a_second_upload_of_known_bytes_generates_no_new_renditions` demanded that a deduplication hit
+render nothing at all, which is not what F42 promises.
 
 `-q` is set twice, so a passing run prints dots and no summary line. **Read the exit code.** Never
 pipe a test run through `tail` or `grep`: you get the pipe's status and a red suite reads as green.
 
-**Nothing is known bad.** The one thing not finished is written into "Resume here" as action 3, and
-it is a hardening step whose fallback (`autofocus`, still on all five fragments) is what shipped
-before.
+**Nothing is known bad.** Every task in every milestone is done and ticked; the only unticked item
+anywhere is T074, the production deploy, which the owner has chosen to run himself.
 
 ## Notes
 - 2026-08-04 — Intake: personal multi-section portfolio site (Главная / Разработка / Фото / Блог) for Dmitriy Bogdanov. Classified as marketing/portfolio site with an authenticated authoring surface.
@@ -162,3 +154,11 @@ before.
 - 2026-08-08 — **`autofocus` is still on all five swapped fragments and that is not the finished state.** T101 wanted it replaced by a `[data-autofocus]` handler, because the spec lets a browser ignore the attribute on markup inserted after parse. The handler is written and both attributes are present, so nothing regressed — but with `autofocus` deleted the keyboard publish flow fails: the handler does not focus the «Новая статья» field. Tried on `htmx:afterSettle` reading both `event.detail.target` and `event.target`; neither worked, which points at the listener not firing rather than at the wrong element. Written into "Resume here" as action 3.
 - 2026-08-08 — **`make media-orphans` / `make media-prune` exist, and the first prune deleted 29 orphaned uploads (33.2 MB) and 174 empty directories from the dev media root.** Eight of those files were the residue `scripts/migrate_media.py` reported after T083; the rest were e2e albums and abandoned uploads from before deletion released anything. Both targets are idempotent — a second run reported nothing to do — and `--prune` re-asks the database before it unlinks, so it cannot delete a file a row written since the listing now claims.
 - 2026-08-08 — Two environment traps confirmed again, and one new one. The **i18n catalogue is cached at import**, so `app/i18n/ru/*.json` needs `docker compose restart web`; a **container older than a compose-file change does not have that change's bind mount** — `web` was three days old and had no `/app/scripts`, which read as "the script does not exist" until `docker compose up -d web` recreated it. And **Git Bash rewrites a leading `/app/...` into a Windows path** when it is an argument to `docker compose exec`; use the PowerShell tool for those.
+- **2026-08-08 (session 3) — M9 closed, Phase 6 re-run against it, and every one of the three fixes checked in both directions.** T099 finished, T101 actually finished, the review found two Highs and two Mediums and all four are fixed. Nothing is left mid-edit and nothing is scheduled.
+- 2026-08-08 — **`data-autofocus` never fired, and both recorded hypotheses were wrong.** The listener *does* run and *does* reach `document.body`; the selector was right. `event.detail.target` is htmx's **original** target, and every fragment here swaps `outerHTML`, so by the time the event fires that element has been removed from the document — the handler was searching the markup that was replaced. `(event.detail && event.detail.target) || event.target` therefore never reached the fallback, because the first operand is always truthy. Diagnosed in ten seconds by setting `htmx.logger` and printing, for every event, the element it fired on and `document.contains(elt)` — worth doing *first* next time an htmx handler looks dead. `swappedScope(event)` now takes whichever candidate is still in the document. **The same defect was two lines above**, in the handler that focuses a rejected save's invalid field; it had been doing nothing on these fragments.
+- 2026-08-08 — **htmx's own `processFocus` implements `[autofocus]` on swapped content.** That is why the attribute appeared to work where the HTML spec says it need not, and why removing it did not degrade to "browser decides" but to nothing at all. Anything relying on `autofocus` inside an htmx swap is relying on htmx, not on the platform.
+- 2026-08-08 — **The `Caddyfile` capped request bodies at 30MB while `MAX_UPLOAD_MB` was 50**, under a comment claiming the two matched, and `docs/HANDOFF.md` quoted «25 MB and 30 MB» — stale on both numbers. In production every upload between 30 and 50 MB would have been refused by the proxy before the application saw it: no Russian message, no hint which file. **No test can catch this class** — dev runs without the proxy, and the deploy is deliberately never run inside a session — so the only defence is that the two numbers now name each other in both files. Same shape as the review's original Critical: a control that is green everywhere except where it is load-bearing.
+- 2026-08-08 — **Deduplication is keyed on bytes, not on what the bytes were wanted for, and that quietly capped photographs.** A frame first stored as a cover carries `COVER`'s ladder — 640/1600 at quality 85, never the frame's own width — and adding it to an album reused those renditions and marked the photo `READY` on the spot. The lightbox would have served 1600 px at q85 for a 4000 px original, forever, with nothing to revisit it: ADR-014's one property that must not fail, lost to a cache hit. **`COVER` and `PROSE` are subsets of neither**, so the same trap existed between a cover and an in-article picture. `images.missing_rungs` names what a profile wants and the disk lacks — by glob, because the profile a file came in under is recorded nowhere — and `images.top_up` renders exactly those onto the one stored copy. F42 asks for one file behind one URL; it does not ask for a rung to go unrendered.
+- 2026-08-08 — **One of the tests was asserting the defect.** `test_a_second_upload_of_known_bytes_generates_no_new_renditions` demanded that a deduplication hit render *nothing* — it passed for the whole of M9 and was the reason the cap looked intentional. A test that encodes an implementation detail as a requirement will defend a bug against the person trying to fix it. It now asserts what F42 actually promises: one stored original, no second copy.
+- 2026-08-08 — **`make` is not on PATH on this machine**, in Git Bash or PowerShell, although `README.md` and `docs/CONVENTIONS.md` document every command as `make …`. Run the `Makefile`'s body directly. Docker Desktop also needs starting before anything: `docker compose` fails with a named-pipe error until `docker version` answers.
+- 2026-08-08 — The owner committed `eec956a` himself, mid-session, reverting most of an earlier tooling commit: the numeric thresholds (report-length budget, debug-round cap, STATUS line caps, the rotation of old notes into `docs/notes/`, `.test-runs/`) went, the SessionStart hook and the practices from Claude Code's own guidance stayed. Consequence worth knowing: **`.test-runs/` is not gitignored** — put long test logs in the session scratchpad, not in the tree.
