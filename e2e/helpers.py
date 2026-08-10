@@ -222,6 +222,26 @@ class AdminApi:
     def delete_post(self, post_id: int) -> None:
         self._request.post(f"/blog/admin/posts/{post_id}/delete", headers=self._headers())
 
+    # -- projects ---------------------------------------------------------
+    def create_project(self, title: str) -> int:
+        """Create a project and return its id, read back from the board it renders.
+
+        The endpoint answers with the whole board rather than the row, so the id
+        is the last one on it — a new project takes the highest `sort_order`.
+        """
+        response = self._request.post(
+            "/dev/admin/projects", form={"title": title}, headers=self._headers()
+        )
+        assert response.status == 200, (
+            f"create_project → {response.status}: {response.text()[:300]}"
+        )
+        ids = re.findall(r'data-project-id="(\d+)"', response.text())
+        assert ids, "the board came back with no project on it — not signed in?"
+        return int(ids[-1])
+
+    def delete_project(self, project_id: int) -> None:
+        self._request.delete(f"/dev/admin/projects/{project_id}", headers=self._headers())
+
 
 # ------------------------------------------------------------------ page utils
 def csrf_of(page: Page) -> str:

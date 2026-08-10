@@ -138,6 +138,7 @@ class Trash:
         self.api = api
         self.albums: list[int] = []
         self.posts: list[int] = []
+        self.projects: list[int] = []
 
     def album(self, album: Album) -> Album:
         self.albums.append(album.id)
@@ -155,13 +156,20 @@ class Trash:
         self.posts.append(post_id)
         return post_id
 
+    def project_id(self, project_id: int) -> int:
+        self.projects.append(project_id)
+        return project_id
+
     def empty(self) -> None:
         for album_id in self.albums:
             self.api.delete_album(album_id)
         for post_id in self.posts:
             self.api.delete_post(post_id)
+        for project_id in self.projects:
+            self.api.delete_project(project_id)
         self.albums.clear()
         self.posts.clear()
+        self.projects.clear()
 
 
 @pytest.fixture
@@ -210,6 +218,25 @@ def published_album(admin_api: AdminApi, trash: Trash, run_token: str) -> Album:
     wait_for_ready(admin_api, album, 4)
     admin_api.publish_album(album)
     return album
+
+
+@pytest.fixture
+def admin_surfaces(
+    admin_api: AdminApi, trash: Trash, run_token: str, published_album: Album
+) -> list[str]:
+    """The four signed-in screens, as paths, for the accessibility sweeps.
+
+    Every gate in `test_a11y.py` used to run against anonymous pages, so the
+    editor, the photo tile tools, the upload queue and the admin bar — the
+    surfaces the product exists to provide — had never been contrast-checked,
+    focus-swept or target-measured (UI-AUDIT F-001).
+
+    The album is published rather than draft so the same fixture serves the
+    anonymous sweeps; what makes these paths *admin* is the session they are
+    opened in, not the state of the content.
+    """
+    post = trash.post(admin_api.create_post(f"E2E админ-свип {run_token}"))
+    return ["/", "/dev", f"/photo/{published_album.slug}", f"/blog/{post.slug}/edit"]
 
 
 @pytest.fixture(scope="session")

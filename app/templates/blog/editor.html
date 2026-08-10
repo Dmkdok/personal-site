@@ -10,11 +10,16 @@
 {% endblock %}
 
 {% block content %}
+  {% set limits = upload_limits() %}
   <div
     class="editor"
+    data-max-bytes="{{ limits.max_bytes }}"
+    data-accept="{{ limits.accept }}"
     data-msg-uploading="{{ t('blog.image_uploading') }}"
     data-msg-done="{{ t('blog.image_done') }}"
     data-msg-failed="{{ t('blog.image_failed') }}"
+    data-msg-too-big="{{ t('blog.image_too_big') }}"
+    data-msg-wrong-type="{{ t('blog.image_wrong_type') }}"
   >
     <header class="editor__head">
       <p class="label"><a href="/blog">{{ t("blog.editor_back") }}</a></p>
@@ -177,7 +182,7 @@
       class="visually-hidden"
       id="blog-image-input"
       type="file"
-      accept="image/jpeg,image/png,image/webp"
+      accept="{{ limits.accept }}"
       multiple
       tabindex="-1"
       aria-hidden="true"

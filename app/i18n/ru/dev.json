@@ -47,6 +47,8 @@
     "toast_deleted": "Проект удалён",
     "toast_published": "Проект опубликован",
     "toast_unpublished": "Проект снят с публикации",
-    "toast_order": "Порядок обновлён"
+    "toast_order": "Порядок обновлён",
+    "already_first": "Проект уже первый",
+    "already_last": "Проект уже последний"
   }
 }

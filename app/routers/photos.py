@@ -474,15 +474,34 @@ def _reorder_from_ids(db: Session, rows: list[Any], wanted: str) -> None:
     _renumber(db, ordered)
 
 
-def _swap(db: Session, rows: list[Any], row: Any, direction: str) -> bool:
+def _swap(db: Session, rows: list[Any], row: Any, direction: str) -> str:
+    """Move `row` one place among `rows`. Returns "moved", "first" or "last".
+
+    The end of the list is no longer a silent no-op. The move buttons are never
+    disabled (ADR-016), so the caller turns "first"/"last" into the message that
+    says why the board did not change — without it the owner cannot tell a
+    refused move from a failed request. `direction` only ever arrives from
+    `hx-vals`; anything else is a malformed request and answers as an end.
+    """
+    up = direction == "up"
     index = rows.index(row)
-    target = index - 1 if direction == "up" else index + 1
-    if direction not in ("up", "down") or not 0 <= target < len(rows):
-        # Already at the end of the list: nothing to do, nothing to apologise for.
-        return False
-    rows[index], rows[target] = rows[target], rows[index]
-    _renumber(db, rows)
-    return True
+    target = index - 1 if up else index + 1
+    if direction in ("up", "down") and 0 <= target < len(rows):
+        rows[index], rows[target] = rows[target], rows[index]
+        _renumber(db, rows)
+        return "moved"
+    return "first" if up else "last"
+
+
+def _move_headers(outcome: str, kind: str) -> dict[str, str]:
+    """Headers for a reorder, including the one that could not happen.
+
+    `kind` is "album" or "photo"; the catalogue carries both the success and the
+    two refusals, because no Russian belongs in a router (ADR-007).
+    """
+    if outcome == "moved":
+        return toast_headers(translate(f"photo.{kind}s_reordered"))
+    return toast_headers(translate(f"photo.{kind}_already_{outcome}"), "info")
 
 
 # ==========================================================================
@@ -628,9 +647,7 @@ def album_move(
     """
     album = _get_album(db, album_id)
     ordered = list(db.scalars(select(Album).order_by(Album.sort_order, Album.id)))
-    moved = _swap(db, ordered, album, direction)
-
-    headers = toast_headers(translate("photo.albums_reordered")) if moved else None
+    headers = _move_headers(_swap(db, ordered, album, direction), "album")
     if view == "album":
         typed = None if title is None else {"title": title, "caption": caption or ""}
         return _head(request, db, album, admin, form=_edit_form(album, typed), headers=headers)
@@ -800,6 +817,14 @@ def photo_set_cover(
 ) -> HTMLResponse:
     photo = _get_photo(db, photo_id)
     album = _get_album(db, photo.album_id)
+
+    # The ★ button is rendered for the current cover too, so that pressing it
+    # cannot delete the element htmx restores focus to (ADR-016). Pressing it
+    # there is a no-op that says so rather than a swap that says nothing.
+    if album.cover_photo_id == photo.id:
+        headers = toast_headers(translate("photo.already_cover"), "info")
+        return _grid(request, db, album, admin, headers=headers)
+
     album.cover_photo_id = photo.id
     db.add(album)
     db.commit()
@@ -839,15 +864,9 @@ def photo_move(
             select(Photo).where(Photo.album_id == album.id).order_by(Photo.sort_order, Photo.id)
         )
     )
-    moved = _swap(db, ordered, photo, direction)
+    outcome = _swap(db, ordered, photo, direction)
 
-    return _grid(
-        request,
-        db,
-        album,
-        admin,
-        headers=toast_headers(translate("photo.photos_reordered")) if moved else None,
-    )
+    return _grid(request, db, album, admin, headers=_move_headers(outcome, "photo"))
 
 
 @router.post("/admin/albums/{album_id}/photo-order", response_class=HTMLResponse)

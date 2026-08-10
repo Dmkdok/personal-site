@@ -77,7 +77,7 @@
       </label>
     {% endif %}
     <input class="field__input" id="{{ form.dom_id }}-cover" name="cover" type="file"
-           accept="image/jpeg,image/png,image/webp" />
+           accept="{{ upload_limits().accept }}" />
   </div>
 
   <div class="project-form__actions">

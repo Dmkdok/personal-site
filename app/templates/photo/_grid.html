@@ -30,8 +30,6 @@
       data-lightbox-position="{{ t('photo.lightbox_position') }}"
     >
       {% for photo in photos %}
-        {% set is_first = loop.first %}
-        {% set is_last = loop.last %}
         {% include "photo/_photo_tile.html" %}
       {% endfor %}
     </ul>

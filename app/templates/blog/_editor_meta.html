@@ -6,6 +6,9 @@
    would be re-serialised on every autosave — so the buttons that need the
    typed text pull it in with hx-include. #}
 {% set cover = cover_sources(post.cover_path) %}
+{# Looked up here rather than inherited from `editor.html`: this fragment is
+   returned on its own by publish, unpublish and both cover routes. #}
+{% set limits = upload_limits() %}
 {% set published = post.status.value == "published" %}
 <aside class="editor-meta" id="editor-meta" aria-labelledby="editor-meta-heading">
   <h2 class="label" id="editor-meta-heading">{{ t("blog.panel_title") }}</h2>
@@ -21,6 +24,7 @@
     aria-live="polite"
     data-dirty="{{ t('blog.not_saved') }}"
     data-saving="{{ t('blog.saving') }}"
+    data-failed="{{ t('blog.save_failed') }}"
   >
     {% include "blog/_save_state.html" %}
   </div>
@@ -86,7 +90,7 @@
         id="cover-file"
         name="file"
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="{{ limits.accept }}"
         aria-describedby="cover-hint"
       />
       <p class="field__hint" id="cover-hint">{{ t("blog.cover_hint") }}</p>

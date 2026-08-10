@@ -1,0 +1,201 @@
+{
+  "theme": "dark",
+  "samples": 81,
+  "failures": [],
+  "unmeasurable": [],
+  "worst": [
+    {
+      "selector": "p.field__hint",
+      "text": "![описание](адрес)\n                  — по ширине текста",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "code",
+      "text": "![описание](адрес)",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "h2#pane-preview",
+      "text": "Предпросмотр",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "p.editor__placeholder",
+      "text": "Здесь появится статья такой, какой её увидят читатели.",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "label.field__label",
+      "text": "Описание для карточки",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "p#post-excerpt-hint",
+      "text": "Оставьте пустым — соберу первые строки текста.",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "p#post-slug-hint",
+      "text": "Очистите поле, чтобы собрать адрес из заголовка.",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "h2#editor-meta-heading",
+      "text": "Публикация",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "h3#cover-heading",
+      "text": "Обложка",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "p#cover-hint",
+      "text": "JPEG, PNG или WebP. Загрузится сразу после выбора файла.",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "label.field__label",
+      "text": "Файлы для загрузки",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "color(srgb 0.141176 0.156863 0.176471 / 0.6)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/photo/e2e-galereia-wlfbaqnvy",
+      "theme": "dark",
+      "ratio": 4.99,
+      "required": 4.5
+    },
+    {
+      "selector": "p",
+      "text": "Фотография · Python · горы",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/",
+      "theme": "dark",
+      "ratio": 5.31,
+      "required": 4.5
+    }
+  ]
+}

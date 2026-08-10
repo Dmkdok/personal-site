@@ -100,6 +100,26 @@ COLLECT_TEXT_COLOURS = """
 
 PAGES = ["/", "/dev", "/photo", "/blog", "/search?q=", "/login", "/does-not-exist"]
 
+# The owner's controls rest at `opacity: 0` until their block is hovered, and
+# every walker below skips a fully transparent element — so an unrevealed admin
+# sweep would measure everything except the markup it was extended to measure
+# (F-001). Revealed through the CSSOM rather than an injected <style>: the CSP
+# is `style-src 'self'`, which drops a style tag silently, and a sweep that
+# silently measures nothing is worse than no sweep at all. The count comes back
+# so a test can fail when it reveals nothing.
+REVEAL_ADMIN_AFFORDANCES = """
+() => {
+  let revealed = 0;
+  for (const selector of ['.editable__edit', '.site-links__edit', '.photo-item__admin']) {
+    for (const el of document.querySelectorAll(selector)) {
+      el.style.opacity = '1';
+      revealed += 1;
+    }
+  }
+  return revealed;
+}
+"""
+
 
 def _threshold(sample: dict) -> float:
     """WCAG 1.4.3: 3:1 for large text (≥24px, or ≥18.66px at 700+), else 4.5:1."""
@@ -109,41 +129,55 @@ def _threshold(sample: dict) -> float:
     return 3.0 if large else 4.5
 
 
-@pytest.mark.parametrize("theme", ["light", "dark"])
-def test_text_meets_aa_contrast_in_both_themes(
-    browser: Browser, base_url: str, qa_dir: Path, theme: str, published_album: Album
-) -> None:
-    context = browser.new_context(
-        base_url=base_url, color_scheme="dark" if theme == "dark" else "light"
-    )
+def _sweep_contrast(
+    context, paths: list[str], theme: str, *, reveal: bool
+) -> tuple[list[dict], list[dict], list[dict], int]:
+    """Walk `paths` in `theme` and return (measured, failures, unmeasurable, revealed).
+
+    One walker and one `_threshold` for the anonymous and the signed-in sweep
+    alike: the moment the admin side gets its own thresholds, it stops being
+    measured and starts being asserted.
+    """
     measured: list[dict] = []
     failures: list[dict] = []
     unmeasurable: list[dict] = []
-    try:
-        page = context.new_page()
-        page.goto("/")
-        page.evaluate("(t) => localStorage.setItem('theme', t)", theme)
+    revealed = 0
 
-        for path in [*PAGES, f"/photo/{published_album.slug}"]:
-            page.goto(path)
-            for sample in page.evaluate(COLLECT_TEXT_COLOURS):
-                fg = flatten(sample["color"], sample["backdrop"])
-                bg = composite(sample["backdrop"])
-                sample |= {
-                    "page": path,
-                    "theme": theme,
-                    "ratio": round(contrast_ratio(fg, bg), 2),
-                    "required": _threshold(sample),
-                }
-                measured.append(sample)
-                if sample["onImage"]:
-                    unmeasurable.append(sample)
-                elif sample["ratio"] < sample["required"]:
-                    failures.append(sample)
-    finally:
-        context.close()
+    page = context.new_page()
+    page.goto("/")
+    page.evaluate("(t) => localStorage.setItem('theme', t)", theme)
 
-    (qa_dir / f"contrast-{theme}.json").write_text(
+    for path in paths:
+        page.goto(path)
+        if reveal:
+            revealed += page.evaluate(REVEAL_ADMIN_AFFORDANCES)
+        for sample in page.evaluate(COLLECT_TEXT_COLOURS):
+            fg = flatten(sample["color"], sample["backdrop"])
+            bg = composite(sample["backdrop"])
+            sample |= {
+                "page": path,
+                "theme": theme,
+                "ratio": round(contrast_ratio(fg, bg), 2),
+                "required": _threshold(sample),
+            }
+            measured.append(sample)
+            if sample["onImage"]:
+                unmeasurable.append(sample)
+            elif sample["ratio"] < sample["required"]:
+                failures.append(sample)
+
+    return measured, failures, unmeasurable, revealed
+
+
+def _write_contrast(
+    qa_dir: Path,
+    name: str,
+    theme: str,
+    measured: list[dict],
+    failures: list[dict],
+    unmeasurable: list[dict],
+) -> None:
+    (qa_dir / name).write_text(
         json.dumps(
             {
                 "theme": theme,
@@ -158,33 +192,100 @@ def test_text_meets_aa_contrast_in_both_themes(
         encoding="utf-8",
     )
 
-    assert measured, "collected nothing — the walker is broken, not the site"
-    assert not failures, "\n".join(
+
+def _contrast_report(failures: list[dict]) -> str:
+    return "\n".join(
         f"{f['page']} {f['selector']} {f['ratio']}:1 < {f['required']}:1 "
         f"({f['color']} on {f['background']}) — {f['text']!r}"
         for f in failures
     )
 
 
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_text_meets_aa_contrast_in_both_themes(
+    browser: Browser, base_url: str, qa_dir: Path, theme: str, published_album: Album
+) -> None:
+    context = browser.new_context(
+        base_url=base_url, color_scheme="dark" if theme == "dark" else "light"
+    )
+    try:
+        measured, failures, unmeasurable, _ = _sweep_contrast(
+            context, [*PAGES, f"/photo/{published_album.slug}"], theme, reveal=False
+        )
+    finally:
+        context.close()
+
+    _write_contrast(qa_dir, f"contrast-{theme}.json", theme, measured, failures, unmeasurable)
+
+    assert measured, "collected nothing — the walker is broken, not the site"
+    assert not failures, _contrast_report(failures)
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_admin_text_meets_aa_contrast_in_both_themes(
+    browser: Browser,
+    base_url: str,
+    qa_dir: Path,
+    theme: str,
+    admin_storage_state: str,
+    admin_surfaces: list[str],
+) -> None:
+    """F-001: the surfaces the product exists to provide, on the same walker.
+
+    Every gate in this file used to run anonymously, so the editor, the photo
+    tile tools, the upload queue and the admin bar had never been measured at
+    all — the four screens the owner actually lives in.
+    """
+    context = browser.new_context(
+        base_url=base_url,
+        color_scheme="dark" if theme == "dark" else "light",
+        storage_state=admin_storage_state,
+    )
+    try:
+        measured, failures, unmeasurable, revealed = _sweep_contrast(
+            context, admin_surfaces, theme, reveal=True
+        )
+    finally:
+        context.close()
+
+    _write_contrast(qa_dir, f"contrast-admin-{theme}.json", theme, measured, failures, unmeasurable)
+
+    assert measured, "collected nothing — the walker is broken, not the site"
+    assert revealed, "no hover-only affordance was revealed; this swept the public page"
+    assert not failures, _contrast_report(failures)
+
+
+COLLECT_UNDESCRIBED_IMAGES = """
+(path) => Array.from(document.images).flatMap((img) => {
+  const alt = img.getAttribute('alt');
+  if (alt === null) return [{ path, src: img.currentSrc, why: 'no alt attribute' }];
+  if (alt.trim() === '' && !img.closest('[aria-hidden="true"]')) {
+    return [{ path, src: img.currentSrc, why: 'empty alt but still in the a11y tree' }];
+  }
+  return [];
+})
+"""
+
+
+def _sweep_alt_text(page: Page, paths: list[str]) -> list[dict]:
+    offenders: list[dict] = []
+    for path in paths:
+        page.goto(path)
+        offenders += page.evaluate(COLLECT_UNDESCRIBED_IMAGES, path)
+    return offenders
+
+
 def test_every_image_is_described_or_marked_decorative(page: Page, published_album: Album) -> None:
     """Alt on content images; decorative ones empty *and* out of the tree."""
-    offenders = []
-    for path in ["/", "/photo", "/blog", f"/photo/{published_album.slug}"]:
-        page.goto(path)
-        offenders += page.evaluate(
-            """
-            (path) => Array.from(document.images).flatMap((img) => {
-              const alt = img.getAttribute('alt');
-              if (alt === null) return [{ path, src: img.currentSrc, why: 'no alt attribute' }];
-              if (alt.trim() === '' && !img.closest('[aria-hidden="true"]')) {
-                return [{ path, src: img.currentSrc, why: 'empty alt but still in the a11y tree' }];
-              }
-              return [];
-            })
-            """,
-            path,
-        )
+    offenders = _sweep_alt_text(page, ["/", "/photo", "/blog", f"/photo/{published_album.slug}"])
     assert not offenders, offenders
+
+
+def test_every_admin_image_is_described_or_marked_decorative(
+    admin_page: Page, admin_surfaces: list[str]
+) -> None:
+    """F-001: the editor's cover and the tile thumbnails were never swept."""
+    assert not _sweep_alt_text(admin_page, admin_surfaces)
 
 
 def test_reduced_motion_removes_transitions(browser: Browser, base_url: str) -> None:
@@ -220,6 +321,46 @@ def test_motion_stays_under_250ms_by_default(page: Page) -> None:
         """
     )
     assert slowest <= 250, f"slowest transition/animation is {slowest} ms"
+
+
+def test_a_disabled_button_looks_disabled(page: Page) -> None:
+    """UI-AUDIT F-005: unavailable must not look identical to available.
+
+    `.button` sets `color` explicitly, so the browser's own greying never
+    applied and a disabled control was pixel-identical to a working one. The
+    treatment now lives once, in `components.css`. Measured against the shipped
+    stylesheet rather than read out of it — a grep would pass on a rule that the
+    cascade never reaches.
+    """
+    page.goto("/")
+    measured = page.evaluate(
+        """
+        () => {
+          const make = (disabled) => {
+            const el = document.createElement('button');
+            el.className = 'button button--quiet';
+            el.textContent = 'x';
+            el.disabled = disabled;
+            document.body.appendChild(el);
+            return el;
+          };
+          const live = make(false);
+          const dead = make(true);
+          const style = getComputedStyle(dead);
+          const result = {
+            live: getComputedStyle(live).opacity,
+            dead: style.opacity,
+            cursor: style.cursor
+          };
+          live.remove();
+          dead.remove();
+          return result;
+        }
+        """
+    )
+    assert measured["live"] == "1", measured
+    assert float(measured["dead"]) < 1, measured
+    assert measured["cursor"] == "not-allowed", measured
 
 
 # WCAG 2.4.7 is "the indicator is visible", not "the element has an outline":
@@ -259,14 +400,18 @@ SNAPSHOT_RESTING = """
 """
 
 
-def test_every_focus_stop_shows_a_visible_indicator(
-    page: Page, qa_dir: Path, published_album: Album
-) -> None:
-    """Focus must be visible everywhere; the Tab sweep proves the order too."""
-    invisible = []
-    swept = []
-    for path in ["/", "/photo", "/blog", "/search?q=", f"/photo/{published_album.slug}"]:
+def _sweep_focus(
+    page: Page, paths: list[str], *, reveal: bool
+) -> tuple[list[dict], list[dict], int]:
+    """Tab through each page and return (stops, stops without an indicator, revealed)."""
+    invisible: list[dict] = []
+    swept: list[dict] = []
+    revealed = 0
+
+    for path in paths:
         page.goto(path)
+        if reveal:
+            revealed += page.evaluate(REVEAL_ADMIN_AFFORDANCES)
         page.evaluate("() => document.body.focus()")
         for _ in range(60):
             page.keyboard.press("Tab")
@@ -288,12 +433,38 @@ def test_every_focus_stop_shows_a_visible_indicator(
             if state["visible"] and not any(changed):
                 invisible.append(record | {"focused": state["focused"], "resting": resting})
 
-    (qa_dir / "focus-sweep.json").write_text(
+    return swept, invisible, revealed
+
+
+def _write_focus(qa_dir: Path, name: str, swept: list[dict], invisible: list[dict]) -> None:
+    (qa_dir / name).write_text(
         json.dumps(
             {"stops": swept, "without_a_focus_indicator": invisible}, ensure_ascii=False, indent=2
         ),
         encoding="utf-8",
     )
+
+
+def test_every_focus_stop_shows_a_visible_indicator(
+    page: Page, qa_dir: Path, published_album: Album
+) -> None:
+    """Focus must be visible everywhere; the Tab sweep proves the order too."""
+    swept, invisible, _ = _sweep_focus(
+        page,
+        ["/", "/photo", "/blog", "/search?q=", f"/photo/{published_album.slug}"],
+        reveal=False,
+    )
+    _write_focus(qa_dir, "focus-sweep.json", swept, invisible)
+    assert not invisible, json.dumps(invisible, ensure_ascii=False, indent=2)
+
+
+def test_every_admin_focus_stop_shows_a_visible_indicator(
+    admin_page: Page, qa_dir: Path, admin_surfaces: list[str]
+) -> None:
+    """F-001: the editor, the tile toolbar and the admin bar, never swept before."""
+    swept, invisible, revealed = _sweep_focus(admin_page, admin_surfaces, reveal=True)
+    _write_focus(qa_dir, "focus-sweep-admin.json", swept, invisible)
+    assert revealed, "no hover-only affordance was revealed; this swept the public page"
     assert not invisible, json.dumps(invisible, ensure_ascii=False, indent=2)
 
 
@@ -453,6 +624,37 @@ MEASURE_TARGETS = """
 """
 
 
+def _sweep_targets(context, paths: list[str], *, reveal: bool) -> tuple[list[dict], int]:
+    page = context.new_page()
+    small: list[dict] = []
+    revealed = 0
+    for path in paths:
+        page.goto(path)
+        if reveal:
+            revealed += page.evaluate(REVEAL_ADMIN_AFFORDANCES)
+        small += page.evaluate(MEASURE_TARGETS, path)
+    return small, revealed
+
+
+def _under_wcag_258(small: list[dict]) -> list[dict]:
+    return [
+        s
+        for s in small
+        if min(s["width"], s["height"]) < 24 and not s["inlineInProse"] and s["crowded"]
+    ]
+
+
+def _write_targets(qa_dir: Path, name: str, small: list[dict], aa_failures: list[dict]) -> None:
+    (qa_dir / name).write_text(
+        json.dumps(
+            {"under_44px_spec_f12": small, "under_wcag_2_5_8": aa_failures},
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_target_sizes_at_360px(browser: Browser, base_url: str, qa_dir: Path) -> None:
     """Two different bars, measured separately at the narrowest supported width.
 
@@ -462,28 +664,42 @@ def test_target_sizes_at_360px(browser: Browser, base_url: str, qa_dir: Path) ->
     """
     context = browser.new_context(base_url=base_url, viewport={"width": 360, "height": 780})
     try:
-        page = context.new_page()
-        small = []
-        for path in ["/", "/photo", "/blog", "/dev", "/login"]:
-            page.goto(path)
-            small += page.evaluate(MEASURE_TARGETS, path)
-
-        aa_failures = [
-            s
-            for s in small
-            if min(s["width"], s["height"]) < 24 and not s["inlineInProse"] and s["crowded"]
-        ]
-        (qa_dir / "target-size-360px.json").write_text(
-            json.dumps(
-                {"under_44px_spec_f12": small, "under_wcag_2_5_8": aa_failures},
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-        assert not aa_failures, json.dumps(aa_failures, ensure_ascii=False, indent=2)
+        small, _ = _sweep_targets(context, ["/", "/photo", "/blog", "/dev", "/login"], reveal=False)
     finally:
         context.close()
+
+    aa_failures = _under_wcag_258(small)
+    _write_targets(qa_dir, "target-size-360px.json", small, aa_failures)
+    assert not aa_failures, json.dumps(aa_failures, ensure_ascii=False, indent=2)
+
+
+def test_admin_target_sizes_at_360px(
+    browser: Browser,
+    base_url: str,
+    qa_dir: Path,
+    admin_storage_state: str,
+    admin_surfaces: list[str],
+) -> None:
+    """F-001: the owner's controls at the narrowest width, measured for the first time.
+
+    The same two bars as the anonymous sweep — 2.5.8 fails, F12 is recorded —
+    because an admin control is not entitled to a smaller target than a
+    visitor's one.
+    """
+    context = browser.new_context(
+        base_url=base_url,
+        viewport={"width": 360, "height": 780},
+        storage_state=admin_storage_state,
+    )
+    try:
+        small, revealed = _sweep_targets(context, admin_surfaces, reveal=True)
+    finally:
+        context.close()
+
+    aa_failures = _under_wcag_258(small)
+    _write_targets(qa_dir, "target-size-360px-admin.json", small, aa_failures)
+    assert revealed, "no hover-only affordance was revealed; this measured the public page"
+    assert not aa_failures, json.dumps(aa_failures, ensure_ascii=False, indent=2)
 
 
 def test_no_console_errors_or_failed_requests_on_the_public_pages(

@@ -1,11 +1,22 @@
 {# Batch upload. Each file rides its own XMLHttpRequest, so progress is real
-   and one rejection cannot disturb the rest of the drop. Admin-only. #}
+   and one rejection cannot disturb the rest of the drop. Admin-only.
+
+   `data-max-bytes` and `data-accept` come from the same constants the server
+   validates against, so the ceiling cannot be published as one number and
+   enforced as another. They are what lets a file that cannot succeed be
+   refused before a byte is sent — `accept` on the input does not apply to a
+   drop at all, so a 60 MB TIFF used to upload in full and reach 100 % before
+   being told it was never going to work. The server checks again regardless;
+   this is an earlier gate, not a replacement. #}
+{% set limits = upload_limits() %}
 <section class="upload" aria-labelledby="upload-heading">
   <div
     class="upload-zone"
     id="upload-zone"
     data-upload-url="/photo/admin/albums/{{ album.id }}/photos"
     data-max-files="50"
+    data-max-bytes="{{ limits.max_bytes }}"
+    data-accept="{{ limits.accept }}"
     data-state-uploading="{{ t('photo.state_uploading') }}"
     data-state-processing="{{ t('photo.state_processing') }}"
     data-state-ready="{{ t('photo.state_ready') }}"
@@ -13,6 +24,10 @@
     data-error-too-many="{{ t('photo.too_many_files') }}"
     data-error-upload="{{ t('photo.upload_failed') }}"
     data-error-network="{{ t('photo.upload_network_failed') }}"
+    data-error-cancelled="{{ t('photo.upload_cancelled') }}"
+    data-error-too-big="{{ t('photo.file_too_big') }}"
+    data-error-wrong-type="{{ t('photo.file_wrong_type') }}"
+    data-retry-label="{{ t('photo.retry_upload') }}"
     data-progress-label="{{ t('photo.upload_progress_label') }}"
     data-summary="{{ t('photo.upload_summary') }}"
     data-summary-failed="{{ t('photo.upload_summary_failed') }}"
@@ -27,7 +42,7 @@
         id="upload-input"
         type="file"
         multiple
-        accept="image/jpeg,image/png,image/webp"
+        accept="{{ limits.accept }}"
       />
     </div>
   </div>
@@ -42,9 +57,16 @@
   <div class="upload-queue-wrap" id="upload-queue-wrap" hidden>
     <div class="upload-queue__head">
       <p class="label">{{ t("photo.queue_label") }}</p>
-      <button class="button button--quiet" type="button" id="upload-queue-clear">
-        {{ t("photo.clear_queue") }}
-      </button>
+      <div class="upload-queue__controls">
+        {# Hidden until there is something to stop; `uploader.js` moves the
+           caret off it before hiding it, the way the clear button already does. #}
+        <button class="button button--quiet" type="button" id="upload-queue-cancel" hidden>
+          {{ t("photo.cancel_queue") }}
+        </button>
+        <button class="button button--quiet" type="button" id="upload-queue-clear">
+          {{ t("photo.clear_queue") }}
+        </button>
+      </div>
     </div>
     <ul class="upload-queue" id="upload-queue" role="list" aria-live="off"></ul>
   </div>

@@ -32,6 +32,9 @@
   // The element is replaced by htmx on every save, so it is looked up fresh and
   // its labels are read from the markup rather than held in a variable.
   // ==========================================================================
+  var dirty = false;
+  var failed = false;
+
   function setStatus(name) {
     var box = document.getElementById("save-state");
     if (!box) return;
@@ -39,16 +42,61 @@
     if (text) text.textContent = box.getAttribute("data-" + name) || "";
   }
 
+  /** Requests that write the article's text — not every request on the page.
+   *
+   * «Опубликовать» and «Снять с публикации» carry `hx-include="#post-form"`,
+   * so they save the typed text on their way through and must clear the guard;
+   * the cover upload, which is its own multipart form, must not.
+   */
+  function savesTheArticle(elt) {
+    if (!elt || !elt.getAttribute) return false;
+    return (
+      elt === form ||
+      elt.getAttribute("data-role") === "save" ||
+      elt.getAttribute("hx-include") === "#post-form"
+    );
+  }
+
+  function sourceOf(event) {
+    return (event.detail.requestConfig || {}).elt || event.detail.elt;
+  }
+
   form.addEventListener("input", function () {
-    setStatus("dirty");
+    dirty = true;
+    // A failure outranks «не сохранено»: typing more does not make it untrue,
+    // and the debounce will try again in 2.5 s regardless.
+    setStatus(failed ? "failed" : "dirty");
   });
 
   document.body.addEventListener("htmx:beforeRequest", function (event) {
-    var elt = event.detail.elt;
-    if (!elt) return;
-    if (elt === form || (elt.getAttribute && elt.getAttribute("data-role") === "save")) {
-      setStatus("saving");
-    }
+    if (savesTheArticle(event.detail.elt)) setStatus("saving");
+  });
+
+  document.body.addEventListener("htmx:afterRequest", function (event) {
+    if (!savesTheArticle(sourceOf(event)) || !event.detail.successful) return;
+    dirty = false;
+    failed = false;
+  });
+
+  // A failed autosave used to surface only as a toast that removed itself after
+  // four seconds, leaving the page sitting there looking normal with unsaved
+  // text in it. This state stays until a save actually succeeds.
+  ["htmx:responseError", "htmx:sendError"].forEach(function (name) {
+    document.body.addEventListener(name, function (event) {
+      if (!savesTheArticle(sourceOf(event))) return;
+      failed = true;
+      setStatus("failed");
+    });
+  });
+
+  // The last line of defence: the browser's own confirmation. Autosave fires
+  // 2.5 s after the last keystroke, so closing the tab inside that window — or
+  // following the «Открыть статью» link — used to lose the text silently. No
+  // custom message: every browser ignores the string and shows its own.
+  window.addEventListener("beforeunload", function (event) {
+    if (!dirty) return;
+    event.preventDefault();
+    event.returnValue = "";
   });
 
   // ==========================================================================
@@ -290,10 +338,40 @@
       });
   }
 
+  var maxBytes = parseInt(root.getAttribute("data-max-bytes"), 10) || 0;
+  var accept = (root.getAttribute("data-accept") || "").split(",").filter(Boolean);
+
+  /** Why this picture cannot succeed, or "" if it can — checked before sending.
+   *
+   * The same gate the album uploader applies, for the same reason: a drop
+   * ignores the input's `accept` entirely, so an oversized frame or a HEIC used
+   * to travel the whole way up before being refused. The server checks again.
+   */
+  function rejection(file) {
+    if (maxBytes && file.size > maxBytes) {
+      return (root.getAttribute("data-msg-too-big") || "")
+        .replace("{name}", file.name)
+        .replace("{limit}", Math.round(maxBytes / (1024 * 1024)));
+    }
+    if (file.type && accept.length && accept.indexOf(file.type) === -1) {
+      return (root.getAttribute("data-msg-wrong-type") || "").replace("{name}", file.name);
+    }
+    return "";
+  }
+
   function upload(files) {
     var images = Array.prototype.filter.call(files || [], function (file) {
       return file && file.type && file.type.indexOf("image/") === 0;
     });
+    if (!images.length) return;
+
+    var refused = [];
+    images = images.filter(function (file) {
+      var why = rejection(file);
+      if (why) refused.push(why);
+      return !why;
+    });
+    if (refused.length) toast(refused.join(" "), "error");
     if (!images.length) return;
 
     toast(root.getAttribute("data-msg-uploading"));

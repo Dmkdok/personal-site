@@ -64,11 +64,6 @@
     justify-content: center;
   }
 
-  .photo-icon-button:disabled {
-    opacity: 0.35;
-    cursor: not-allowed;
-  }
-
   .photo-icon-button--danger:hover {
     color: var(--danger-ink);
   }
@@ -247,6 +242,11 @@
     border-block-end: 1px solid var(--line);
   }
 
+  .upload-queue__controls {
+    display: flex;
+    gap: var(--space-2xs);
+  }
+
   .upload-queue {
     list-style: none;
     padding: 0;
@@ -313,6 +313,13 @@
     grid-column: 1 / -1;
     color: var(--danger-ink);
     font-size: var(--step--1);
+  }
+
+  /* Its own row, like the message above it: the two grid columns belong to the
+     file name and its state, and a button squeezed into either truncates one. */
+  .upload-item__retry {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 
   /* ==========================================================================

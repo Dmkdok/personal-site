@@ -72,19 +72,64 @@ Two, and both are behaviour changes wearing a test's clothes.
 
 ## Exit criteria
 
-- [ ] The four a11y sweeps in `e2e/test_a11y.py` run over an authenticated session; each either
+- [x] The four a11y sweeps in `e2e/test_a11y.py` run over an authenticated session; each either
       passes or carries an argued, recorded exception in `docs/qa/`. No threshold was moved.
-- [ ] Pressing ↑ on the first project, the first album and the first photo leaves focus on the
+- [x] Pressing ↑ on the first project, the first album and the first photo leaves focus on the
       button that was pressed — never `<body>` — and produces a visible message.
-- [ ] The ★ button exists on every ready photo, including the current cover, and pressing it on the
+- [x] The ★ button exists on every ready photo, including the current cover, and pressing it on the
       cover reports that it already is one.
-- [ ] Navigating away from an editor with unsaved text raises the browser's own confirmation; doing
+- [x] Navigating away from an editor with unsaved text raises the browser's own confirmation; doing
       so after a successful save does not.
-- [ ] A failed autosave shows a distinct «не удалось сохранить» state that persists until the next
+- [x] A failed autosave shows a distinct «не удалось сохранить» state that persists until the next
       successful save.
-- [ ] A 60 MB file and a `.tiff` are each refused with their own message before any byte is sent —
+- [x] A 60 MB file and a `.tiff` are each refused with their own message before any byte is sent —
       asserted by counting requests to the upload URL, not by reading the screen.
-- [ ] A running batch can be cancelled, and a failed row can be retried without re-picking the file.
-- [ ] `#upload-zone`'s `data-max-bytes` equals `settings.max_upload_bytes`, asserted by a test.
-- [ ] `.button:disabled` exists once, in `components.css`; `photo.css` no longer defines its own.
-- [ ] Baseline suites green at their Phase 0 counts or better: unit/API ≥ 224, e2e ≥ 40, lint clean.
+- [x] A running batch can be cancelled, and a failed row can be retried without re-picking the file.
+- [x] `#upload-zone`'s `data-max-bytes` equals `settings.max_upload_bytes`, asserted by a test.
+- [x] `.button:disabled` exists once, in `components.css`; `photo.css` no longer defines its own.
+- [x] Baseline suites green at their Phase 0 counts or better: unit/API ≥ 224, e2e ≥ 40, lint clean.
+
+## Outcome — closed 2026-08-10
+
+**Gates:** unit/API **226 passed** (baseline 224), e2e **57 passed** (baseline 40), lint and format
+clean over 118 files. Every suite run in this session, none through a pipe.
+
+**The prediction that mattered held.** No existing test was edited, and none broke. `grep disabled`
+had found no assertion on the old end-of-list behaviour, so removing it was invisible to the suite;
+and the `beforeunload` guard disturbed nothing, because no existing test navigates away from a dirty
+editor. Both risks named at the gate came to nothing, and both were checked rather than assumed.
+
+**F-001 found no failures.** This is the notable result. The audit expected the admin sweeps to
+surface real contrast problems on the tile overlay, and possibly to confirm F-016's clipped controls
+with numbers. Neither happened: 83 contrast samples per theme with **zero failures and zero
+unmeasurable**, 120 focus stops with **zero** missing an indicator, and **zero** targets under WCAG
+2.5.8 at 360 px. No exception needed to be argued in `docs/qa/`, and no threshold was moved. The
+admin surface now measures as well as the public one — it simply had never been asked.
+
+The reason the overlay produced nothing to measure is worth writing down, because the next reader
+will wonder whether the sweep is really looking: the text inside `.photo-item__admin` is either
+`aria-hidden` glyphs or `.visually-hidden` labels, both of which the walker correctly skips, and an
+`<input>`'s value is not a child text node. F-016 therefore remains an open *comfort* question about
+the 44 px bar, not a conformance one — exactly where ADR-010 already put it.
+
+**One real defect found by the new tests.** `.button` sets `display: inline-flex`, which outranks the
+user agent's `[hidden] { display: none }` — so the new «Отменить» control stayed on screen while
+carrying `hidden=""`. Latent since the button component was written, and caught within a minute by
+`test_a_running_batch_can_be_stopped`. Fixed in `components.css`.
+
+**Five files were touched beyond the task list**, all named here because the tasks did not name them:
+
+- `dev/_board.html`, `photo/_board.html`, `photo/_grid.html` — carried the `is_first`/`is_last`
+  plumbing that existed solely to drive the `disabled` attribute this iteration removes. Leaving it
+  would have left dead variables and a comment describing behaviour that no longer exists.
+- `dev/_project_form.html`, `blog/_editor_meta.html` — held the third and fourth hardcoded copies of
+  the accepted MIME list. A list written down four times is one that eventually disagrees with
+  itself, which is the exact failure F-004 exists to prevent. Both now read `upload_limits()`, and
+  `_editor_meta.html` looks it up itself rather than inheriting it, because publish, unpublish and
+  both cover routes return that fragment standalone.
+
+**Left undone, deliberately:** the two cover forms still have no *size* pre-check. They are plain
+htmx multipart forms with no script behind them, so a 60 MB cover still travels the whole way up
+before the server refuses it. F-004's target state named the album uploader and in-article images;
+both are done. Extending the gate to the cover forms means giving them JavaScript they do not have,
+and that is its own task.

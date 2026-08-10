@@ -1,6 +1,11 @@
 {# One photo. `photo` and `album` come from the enclosing grid.
-   `is_first` / `is_last` are set by the loop; a single-tile swap (an alt save)
-   has neither, and the move endpoint treats an impossible move as a no-op. #}
+
+   None of the owner's controls is ever `disabled` or withheld, including ← on
+   the first tile and ★ on the photo that is already the cover: htmx restores
+   focus after a swap by looking the button up by `id`, and a disabled or
+   deleted element cannot take it, so the caret fell to <body> and the next Tab
+   restarted at the skip link. The endpoint answers an impossible action with a
+   message instead (ADR-016). #}
 {% set ready = photo.status.value == "ready" %}
 {% set is_cover = album.cover_photo_id == photo.id %}
 <li
@@ -69,8 +74,7 @@
                 id="photo-{{ photo.id }}-up"
                 hx-vals='{"direction": "up"}'
                 hx-target="#photo-grid"
-                hx-swap="outerHTML"
-                {% if is_first|default(false) %}disabled{% endif %}>
+                hx-swap="outerHTML">
           <span aria-hidden="true">←</span>
           <span class="visually-hidden">{{ t("photo.move_up") }}</span>
         </button>
@@ -80,13 +84,12 @@
                 id="photo-{{ photo.id }}-down"
                 hx-vals='{"direction": "down"}'
                 hx-target="#photo-grid"
-                hx-swap="outerHTML"
-                {% if is_last|default(false) %}disabled{% endif %}>
+                hx-swap="outerHTML">
           <span aria-hidden="true">→</span>
           <span class="visually-hidden">{{ t("photo.move_down") }}</span>
         </button>
 
-        {% if ready and not is_cover %}
+        {% if ready %}
           <button class="button button--quiet photo-icon-button" type="button"
                   id="photo-{{ photo.id }}-cover"
                   hx-post="/photo/admin/photos/{{ photo.id }}/cover"

@@ -79,8 +79,7 @@
                 id="project-{{ project.id }}-up"
                 hx-vals='{"direction": "up"}'
                 hx-target="#project-board"
-                hx-swap="outerHTML"
-                {% if is_first %}disabled{% endif %}>
+                hx-swap="outerHTML">
           <span aria-hidden="true">↑</span>
           <span class="visually-hidden">{{ t("dev.move_up") }}</span>
         </button>
@@ -90,8 +89,7 @@
                 id="project-{{ project.id }}-down"
                 hx-vals='{"direction": "down"}'
                 hx-target="#project-board"
-                hx-swap="outerHTML"
-                {% if is_last %}disabled{% endif %}>
+                hx-swap="outerHTML">
           <span aria-hidden="true">↓</span>
           <span class="visually-hidden">{{ t("dev.move_down") }}</span>
         </button>

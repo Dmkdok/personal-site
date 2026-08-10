@@ -1,5 +1,5 @@
 {# The whole editable surface. Every mutation returns this element, so the
-   order and the first/last state of the move buttons can never drift. #}
+   rendered order can never drift from the stored one. #}
 <div id="project-board">
   {% if is_admin and not form %}
     <div class="board-actions">
@@ -23,10 +23,7 @@
   {% if projects %}
     <ul class="project-list" id="project-list" role="list">
       {% for project in projects %}
-        {# `loop` is not visible inside an include, so the position is passed on. #}
-        {% with is_first = loop.first, is_last = loop.last %}
-          {% include "dev/_project_card.html" %}
-        {% endwith %}
+        {% include "dev/_project_card.html" %}
       {% endfor %}
     </ul>
   {% elif not form %}

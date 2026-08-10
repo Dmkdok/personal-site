@@ -17,6 +17,7 @@ from app.config import settings
 from app.models.album import Album
 from app.models.photo import Photo, PhotoStatus
 from app.routers.photos import recover_stuck_photos
+from app.services import images
 
 PROCESS_TIMEOUT = 30.0
 
@@ -153,6 +154,20 @@ def test_missing_album_is_404(client):
 
 def test_an_empty_album_shows_an_empty_state(client, album):
     assert "В альбоме пока нет фотографий" in client.get(f"/photo/{album.slug}").text
+
+
+def test_the_upload_zone_publishes_the_servers_own_limits(admin_client, album):
+    """F24: the browser refuses what the server would, using the server's numbers.
+
+    Two places disagreeing about the ceiling is exactly how the proxy came to
+    cap request bodies at 30 MB while the application accepted 50. If this ever
+    fails, the client is enforcing a limit nobody set.
+    """
+    page = admin_client.get(f"/photo/{album.slug}").text
+
+    assert f'data-max-bytes="{settings.max_upload_bytes}"' in page
+    for content_type in images.ALLOWED_CONTENT_TYPES:
+        assert content_type in page
 
 
 # --------------------------------------------------------------------------

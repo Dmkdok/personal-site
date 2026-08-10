@@ -426,16 +426,20 @@ def project_move(
     """Keyboard-accessible reordering: the alternative to dragging."""
     project = _get(db, project_id)
     ordered = list(db.scalars(select(Project).order_by(Project.sort_order, Project.id)))
+    up = direction == "up"
     index = ordered.index(project)
-    target = index - 1 if direction == "up" else index + 1
+    target = index - 1 if up else index + 1
 
     if direction in ("up", "down") and 0 <= target < len(ordered):
         ordered[index], ordered[target] = ordered[target], ordered[index]
         _renumber(db, ordered)
         return _board(request, db, admin, headers=toast_headers(translate("dev.toast_order")))
 
-    # Already at the end of the list: nothing to do, and nothing to apologise for.
-    return _board(request, db, admin)
+    # Already at the end of the list. The buttons are never disabled (ADR-016),
+    # so this branch is what tells the owner why the board did not move — a
+    # silent identical swap reads as a request that failed.
+    key = "dev.already_first" if up else "dev.already_last"
+    return _board(request, db, admin, headers=toast_headers(translate(key), "info"))
 
 
 @router.post("/admin/order", response_class=HTMLResponse)

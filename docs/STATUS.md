@@ -6,32 +6,40 @@ approved_at: 2026-08-04
 
 ## Resume here
 
-**Branch `session/2026-08-06-m3-fixes-and-e2e`. Iteration I1 is approved and M10 is in progress.**
-No remote; merging into `main` is the owner's call.
+**Branch `session/2026-08-06-m3-fixes-and-e2e`, tree clean, nothing running but the dev stack
+(`db`, `web`) — `docker compose down` stops it.** No remote; merging into `main` is the owner's call.
 
-**M0–M9 are done and every gate was green at the I1 baseline below.** What is being built now is
-not new product: it is Phase A of `docs/UI-AUDIT.md` — the four P1 findings, plus F-006 which the
-same change closes and F-005 which it half-orphans. The intake, the impact map, the ordering
-constraints and the exit criteria are one page: **`docs/iterations/I1-ui-audit-p1.md`**. Read that
-before touching M10, not this section.
+**M10 is complete and iteration I1 is closed.** Phase A of `docs/UI-AUDIT.md` — the four P1 findings
+plus F-005 and F-006 — is built, tested and reviewed. Gates: unit/API **226**, e2e **57**, lint and
+format clean, all run on the final tree. `docs/TASKS.md` has no unticked line. The one page that
+explains what was taken, what was refused and what it cost is
+**`docs/iterations/I1-ui-audit-p1.md`**; the review is run 3 in `docs/REVIEW.md`.
 
-### Next actions, in order — this is the binding order, not a suggestion
+**The audit is not finished, and that is deliberate.** Thirteen P2 findings (F-007…F-018) and seven
+P3 (F-019…F-026) are deferred by **ADR-017**, not dropped. `docs/UI-AUDIT.md` is the backlog and is
+still accurate, with two corrections I1 earned: F-001 found **no** admin accessibility failures at
+all, and F-016's clipped tile controls are not a 2.5.8 conformance problem — zero targets failed at
+360 px as admin. Both are comfort questions the audit itself already routed to ADR-010.
 
-1. **T102** — one `.button:disabled` in `components.css`. Shared primitive: lands **alone and
-   first**, because every page renders through that sheet.
-2. **T106** — extend the four a11y sweeps in `e2e/test_a11y.py` to an admin session. Before the
-   fixes it measures. Test-only, so it can reveal but cannot break. If it surfaces findings outside
-   I1's scope — F-016's clipped tile controls at 360 px is the likely one — **ask the owner before
-   widening scope**; record the exception in `docs/qa/` with an allow-list keyed by selector, and
-   never by moving `_threshold()`.
-3. **T103** — the ↑/↓/★ controls stop being `disabled` and the no-op branch answers (ADR-016).
-4. **T104**, then **T105** — both edit `app/static/js/editor.js`, so they are **serial**.
+### Next three actions, in order
 
-Still open and still the owner's, unchanged by this iteration: his own unaided pass through the
-three publishing flows (the last unticked line on the launch checklist in `docs/SPEC.md`); the
-deploy, with the three server-only checks recorded under `## Notes`; and the merge into `main`.
+1. **The owner's own unaided pass through all three publishing flows.** Still the single open item
+   on the launch checklist in `docs/SPEC.md`, and still his by definition. Worth doing *now* rather
+   than before: the editor no longer loses text silently, and a bad file is refused before it
+   uploads, so the flows are less annoying than they were this morning.
+2. **Deploy, and check on the server the three things nothing local can reach** — (a) upload a file
+   between 30 and 50 MB, (b) confirm the login throttle fires behind the real Caddy, (c) run
+   `make restore-check` against server artefacts. Unchanged by I1, except that (a) now also exercises
+   the new client-side gate, which reads the same `MAX_UPLOAD_MB` the server does.
+3. **Merge the branch into `main`** once (1) and (2) are done. Local decision; nobody is waiting.
 
-**Waiting on the owner:** nothing blocking. He approved the I1 delta on 2026-08-10 («утверждаю»).
+**If instead the next session is more UI work:** open `docs/UI-AUDIT.md` at «Phase B», run
+`iterate-product` again as I2, and take the cheap end first — F-011 (`position: relative` on
+`.nav__capsule`), F-012 (named scroll regions), F-015 (admin bar clearance), F-023 (`:active`, which
+now has the `:disabled` rule it depended on). The consolidations — F-009, F-010 — touch shared
+primitives and want a milestone of their own.
+
+**Waiting on the owner:** nothing blocking, and nothing in flight. Both open items above are his.
 
 **Two things about this machine that cost time today.** `make` is **not on PATH** here, in either
 shell, although `README.md` and `docs/CONVENTIONS.md` document every command as `make …` — run the
@@ -62,16 +70,16 @@ Two environment facts, unchanged from the last session and paid for again today:
 PATH** here, so the `Makefile`'s bodies are run directly; and Docker Desktop was not running at the
 start, so `docker compose` failed with a named-pipe error until it was started.
 
-## Iteration I1 progress
+## Iteration I1 progress — closed
 - [x] 0 baseline recorded (branch, suite result, timestamp)
 - [x] 1 delta intake agreed (in / out / deferred)
 - [x] 2 impact map written
 - [x] 3 docs amended (SPEC F24/F49/F50, ADR-016/017, TASKS M10)
 - [x] **GATE approved by the owner 2026-08-10 («утверждаю»)**
-- [ ] 4 implementation
-- [ ] 5 verification green, baseline suites still green
-- [ ] 6 review clean or waived
-- [ ] 7 closed (STATUS rewritten, milestone ticked)
+- [x] 4 implementation — T102–T106, all five
+- [x] 5 verification green (226 / 57 / lint clean), baseline suites still green
+- [x] 6 review clean (`docs/REVIEW.md` run 3, PASS; no Critical/High/Medium)
+- [x] 7 closed (STATUS rewritten, M10 ticked)
 
 ## Checklist
 - [x] Phase 0 intake
@@ -86,35 +94,42 @@ start, so `docker compose` failed with a named-pipe error until it was started.
 - [x] **GATE — M9 approved 2026-08-08 («утверждаю»)**
 - [x] **M9 complete — T090–T101, all twelve done and ticked**
 - [x] **Phase 6 re-run against M9** (`docs/REVIEW.md` run 2, PASS; 2 High + 2 Medium found and fixed in the same session)
+- [x] **GATE — I1 delta approved 2026-08-10 («утверждаю»)**
+- [x] **M10 complete — T102–T106, all five done and ticked**
+- [x] **Phase 6 against M10** (`docs/REVIEW.md` run 3, PASS; no Critical/High/Medium, one latent CSS defect found by the new tests and fixed)
 
 ## Test report
 
-All five gates run 2026-08-08 at the end of the session, on the tree as committed.
+Each gate below carries its own last-run timestamp and the command that produced it.
 
-| Gate | Command | Result |
-|---|---|---|
-| Unit + API | `docker compose run --rm tests` | **224 passed**, 4 skipped, exit 0 |
-| End-to-end | `uv run pytest e2e` | **40 passed**, exit 0 |
-| Six launch flows | `uv run pytest e2e -m launch_flow` | **6 passed**, exit 0 |
-| Lint | `uv run ruff check .` | clean, exit 0 |
-| Format | `uv run ruff format --check .` | clean, exit 0 |
+| Gate | Command | Last run | Result |
+|---|---|---|---|
+| Unit + API | `docker compose run --rm tests` | 2026-08-10, end of I1 | **226 passed**, exit 0 |
+| End-to-end | `uv run pytest e2e -q` | 2026-08-10, end of I1 | **57 passed**, exit 0 |
+| Six launch flows | `uv run pytest e2e -m launch_flow` | 2026-08-08 | **6 passed**, exit 0 |
+| Lint | `uv run ruff check .` | 2026-08-10, end of I1 | clean, exit 0 |
+| Format | `uv run ruff format --check .` | 2026-08-10, end of I1 | clean, 118 files |
 
-No failing tests. The suite grew 222 → 224 this session, both from the review's second High: a
-cover reused as a photograph gains its native-width rung, and a cover reused in prose gains the
-1280 rung while the original stays one file.
-
-**All three fixes this session were checked in both directions** — by breaking the fix and watching
-the tests go red — which is the only kind of regression test worth having here. Six tests between
-them: the `data-autofocus` handler took four e2e tests with it when reverted, and the two rung
-top-ups one each. One of those two **replaced a test that was asserting the defect**:
-`test_a_second_upload_of_known_bytes_generates_no_new_renditions` demanded that a deduplication hit
-render nothing at all, which is not what F42 promises.
+No failing tests. **Iteration I1 grew the suite 224 → 226 and 40 → 57**, against a recorded baseline
+of 224/40 taken before any work started (see `## Baseline I1`). Not one existing test was edited:
+the seventeen new e2e cases and the two new API cases are all additions, and every one of them fails
+without the change it guards — which is why the milestone counts as done rather than merely green.
 
 `-q` is set twice, so a passing run prints dots and no summary line. **Read the exit code.** Never
 pipe a test run through `tail` or `grep`: you get the pipe's status and a red suite reads as green.
 
-**Nothing is known bad.** Every task in every milestone is done and ticked; the only unticked item
-anywhere is T074, the production deploy, which the owner has chosen to run himself.
+**Two traps this machine cost time on, both of which will recur.** The i18n catalogue is behind
+`@lru_cache` in `app/templating.py`, so a **newly added translation key does not appear until the web
+container restarts** — it surfaces as the raw key (`blog.save_failed`) rendered on the page, and it
+cost one confusing red test. `docker compose restart web`, then wait for `/healthz` before running
+e2e; a run started against a restarting container fails at the `_site_is_up` fixture with
+`RemoteDisconnected`, which looks nothing like the real cause. And `docker compose run --rm tests
+<path>` **replaces the command rather than appending to it** — the service's command is
+`["python", "-m", "pytest", "-q"]`, so a single file is run as
+`docker compose run --rm tests python -m pytest <path>`.
+
+**Nothing is known bad.** Every task in every milestone including M10 is done and ticked; the only
+unticked item anywhere is T074, the production deploy, which the owner has chosen to run himself.
 
 ## Notes
 - 2026-08-04 — Intake: personal multi-section portfolio site (Главная / Разработка / Фото / Блог) for Dmitriy Bogdanov. Classified as marketing/portfolio site with an authenticated authoring surface.

@@ -1,0 +1,905 @@
+{
+  "under_44px_spec_f12": [
+    {
+      "path": "/",
+      "tag": "a",
+      "label": "Перейти к содержимому",
+      "width": 193,
+      "height": 40,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "button",
+      "label": "Меню",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "input",
+      "label": "",
+      "width": 94,
+      "height": 36,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "button",
+      "label": "Переключить тему",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "button",
+      "label": "Править",
+      "width": 98,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "button",
+      "label": "Править",
+      "width": 98,
+      "height": 32,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "a",
+      "label": "GitHub",
+      "width": 76,
+      "height": 36,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "a",
+      "label": "Telegram",
+      "width": 92,
+      "height": 36,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "a",
+      "label": "VK",
+      "width": 45,
+      "height": 36,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "a",
+      "label": "YouTube",
+      "width": 84,
+      "height": 36,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "a",
+      "label": "GitHub",
+      "width": 40,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "a",
+      "label": "Telegram",
+      "width": 53,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "a",
+      "label": "VK",
+      "width": 17,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "a",
+      "label": "YouTube",
+      "width": 51,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "button",
+      "label": "Изменить ссылки",
+      "width": 161,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/",
+      "tag": "button",
+      "label": "Выйти",
+      "width": 79,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "Перейти к содержимому",
+      "width": 193,
+      "height": 40,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Меню",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "input",
+      "label": "",
+      "width": 94,
+      "height": 36,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Переключить тему",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Добавить проект",
+      "width": 147,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "Foodgram",
+      "width": 126,
+      "height": 32,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "Репозиторий",
+      "width": 116,
+      "height": 36,
+      "inlineInProse": true,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "Подробнее",
+      "width": 100,
+      "height": 36,
+      "inlineInProse": true,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Править",
+      "width": 92,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Снять с публикации",
+      "width": 166,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "↑\n          Переместить выше",
+      "width": 48,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "↓\n          Переместить ниже",
+      "width": 48,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Удалить",
+      "width": 90,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "API YaMDb",
+      "width": 140,
+      "height": 32,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "Репозиторий",
+      "width": 116,
+      "height": 36,
+      "inlineInProse": true,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "Подробнее",
+      "width": 100,
+      "height": 36,
+      "inlineInProse": true,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Править",
+      "width": 92,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Снять с публикации",
+      "width": 166,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "↑\n          Переместить выше",
+      "width": 48,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "↓\n          Переместить ниже",
+      "width": 48,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Удалить",
+      "width": 90,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "Homework Bot",
+      "width": 185,
+      "height": 32,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "Репозиторий",
+      "width": 116,
+      "height": 36,
+      "inlineInProse": true,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Править",
+      "width": 92,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Снять с публикации",
+      "width": 166,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "↑\n          Переместить выше",
+      "width": 48,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "↓\n          Переместить ниже",
+      "width": 48,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Удалить",
+      "width": 90,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "GitHub",
+      "width": 40,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "Telegram",
+      "width": 53,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "VK",
+      "width": 17,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "a",
+      "label": "YouTube",
+      "width": 51,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Изменить ссылки",
+      "width": 161,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/dev",
+      "tag": "button",
+      "label": "Выйти",
+      "width": 79,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "a",
+      "label": "Перейти к содержимому",
+      "width": 193,
+      "height": 40,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "Меню",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "input",
+      "label": "",
+      "width": 94,
+      "height": 36,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "Переключить тему",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "a",
+      "label": "← Все альбомы",
+      "width": 130,
+      "height": 36,
+      "inlineInProse": true,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "Править альбом",
+      "width": 142,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "Снять с публикации",
+      "width": 166,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "Удалить альбом",
+      "width": 140,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "←\n          Переместить выше",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "→\n          Переместить ниже",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "★\n            Сделать обложкой",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "✕\n          Удалить",
+      "width": 30,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "input",
+      "label": "",
+      "width": 312,
+      "height": 35,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "←\n          Переместить выше",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "→\n          Переместить ниже",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "★\n            Сделать обложкой",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "✕\n          Удалить",
+      "width": 30,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "input",
+      "label": "",
+      "width": 312,
+      "height": 35,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "←\n          Переместить выше",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "→\n          Переместить ниже",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "★\n            Сделать обложкой",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "✕\n          Удалить",
+      "width": 30,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "input",
+      "label": "",
+      "width": 312,
+      "height": 35,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "←\n          Переместить выше",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "→\n          Переместить ниже",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "★\n            Сделать обложкой",
+      "width": 31,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "✕\n          Удалить",
+      "width": 30,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "input",
+      "label": "",
+      "width": 273,
+      "height": 35,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "a",
+      "label": "GitHub",
+      "width": 40,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "a",
+      "label": "Telegram",
+      "width": 53,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "a",
+      "label": "VK",
+      "width": 17,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "a",
+      "label": "YouTube",
+      "width": 51,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "Изменить ссылки",
+      "width": 161,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo/e2e-galereia-wszjoluvt",
+      "tag": "button",
+      "label": "Выйти",
+      "width": 79,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "a",
+      "label": "Перейти к содержимому",
+      "width": 193,
+      "height": 40,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "button",
+      "label": "Меню",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "input",
+      "label": "",
+      "width": 94,
+      "height": 36,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "button",
+      "label": "Переключить тему",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "a",
+      "label": "К списку статей",
+      "width": 136,
+      "height": 17,
+      "inlineInProse": true,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "a",
+      "label": "Открыть статью",
+      "width": 96,
+      "height": 22,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "button",
+      "label": "Сохранить",
+      "width": 107,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "button",
+      "label": "Опубликовать",
+      "width": 129,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "button",
+      "label": "Удалить",
+      "width": 90,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "input",
+      "label": "",
+      "width": 1,
+      "height": 1,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "a",
+      "label": "GitHub",
+      "width": 40,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "a",
+      "label": "Telegram",
+      "width": 53,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "a",
+      "label": "VK",
+      "width": 17,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "a",
+      "label": "YouTube",
+      "width": 51,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "button",
+      "label": "Изменить ссылки",
+      "width": 161,
+      "height": 33,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-admin-svip-wszjoluvt/edit",
+      "tag": "button",
+      "label": "Выйти",
+      "width": 79,
+      "height": 43,
+      "inlineInProse": false,
+      "crowded": false
+    }
+  ],
+  "under_wcag_2_5_8": []
+}

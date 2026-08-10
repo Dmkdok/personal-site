@@ -18,11 +18,14 @@
   var queue = document.getElementById("upload-queue");
   var queueWrap = document.getElementById("upload-queue-wrap");
   var clearButton = document.getElementById("upload-queue-clear");
+  var cancelButton = document.getElementById("upload-queue-cancel");
   if (!zone || !input || !queue) return;
 
   var CONCURRENCY = 3;
   var url = zone.getAttribute("data-upload-url");
   var maxFiles = parseInt(zone.getAttribute("data-max-files"), 10) || 50;
+  var maxBytes = parseInt(zone.getAttribute("data-max-bytes"), 10) || 0;
+  var accept = (zone.getAttribute("data-accept") || "").split(",").filter(Boolean);
 
   var text = {
     uploading: zone.getAttribute("data-state-uploading") || "",
@@ -32,12 +35,17 @@
     tooMany: zone.getAttribute("data-error-too-many") || "",
     uploadFailed: zone.getAttribute("data-error-upload") || "",
     network: zone.getAttribute("data-error-network") || "",
+    cancelled: zone.getAttribute("data-error-cancelled") || "",
+    tooBig: zone.getAttribute("data-error-too-big") || "",
+    wrongType: zone.getAttribute("data-error-wrong-type") || "",
+    retry: zone.getAttribute("data-retry-label") || "",
     progress: zone.getAttribute("data-progress-label") || "",
     summary: zone.getAttribute("data-summary") || "",
     summaryFailed: zone.getAttribute("data-summary-failed") || ""
   };
 
   var pending = [];
+  var inFlight = [];
   var active = 0;
   var rowsByPhoto = {};
   var refreshTimer = null;
@@ -92,6 +100,15 @@
   }
 
   // ------------------------------------------------------------------ rows
+  function progressBar(file) {
+    var bar = document.createElement("progress");
+    bar.className = "upload-item__bar";
+    bar.max = 100;
+    bar.value = 0;
+    bar.setAttribute("aria-label", text.progress + " — " + file.name);
+    return bar;
+  }
+
   function addRow(file) {
     queueWrap.hidden = false;
 
@@ -106,18 +123,14 @@
     state.className = "upload-item__state";
     state.textContent = text.uploading;
 
-    var bar = document.createElement("progress");
-    bar.className = "upload-item__bar";
-    bar.max = 100;
-    bar.value = 0;
-    bar.setAttribute("aria-label", text.progress + " — " + file.name);
+    var bar = progressBar(file);
 
     row.appendChild(name);
     row.appendChild(state);
     row.appendChild(bar);
     queue.appendChild(row);
 
-    return { root: row, state: state, bar: bar, error: null };
+    return { root: row, state: state, bar: bar, error: null, retry: null };
   }
 
   function setState(row, kind, label) {
@@ -127,7 +140,10 @@
 
   function setError(row, message) {
     setState(row, "failed", text.failed);
-    row.bar.remove();
+    if (row.bar) {
+      row.bar.remove();
+      row.bar = null;
+    }
     if (!row.error) {
       row.error = document.createElement("p");
       row.error.className = "upload-item__error";
@@ -138,7 +154,57 @@
     announce();
   }
 
+  /** Offer the row another attempt. The `File` is still held, so nothing is
+   *  re-picked; only failures the second attempt could survive get one — a
+   *  file refused for its size or its type would fail identically. */
+  function addRetry(job) {
+    if (job.row.retry) return;
+
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "button button--quiet upload-item__retry";
+    button.textContent = text.retry;
+    button.addEventListener("click", function () {
+      button.remove();
+      job.row.retry = null;
+      if (job.row.error) {
+        job.row.error.remove();
+        job.row.error = null;
+      }
+      counts.failed -= 1;
+      job.row.bar = progressBar(job.file);
+      job.row.root.appendChild(job.row.bar);
+      setState(job.row, "uploading", text.uploading);
+      pending.push(job);
+      announce();
+      pump();
+    });
+
+    job.row.retry = button;
+    job.row.root.appendChild(button);
+  }
+
   // ------------------------------------------------------------------ queue
+  /** Why this file cannot succeed, or "" if it can — checked before sending.
+   *
+   * The only client-side gate used to be `maxFiles`, plus the input's `accept`
+   * — and `accept` does not apply to a drop at all. A 60 MB file, or a TIFF,
+   * was uploaded in full and rejected on arrival, after the owner had watched a
+   * real progress bar reach 100 %.
+   *
+   * An empty `file.type` is *not* refused: the browser derives it from the
+   * extension, so a JPEG saved without one would be turned away here while the
+   * server — which reads the magic bytes — would have taken it. The server is
+   * still the authority; this only refuses what it certainly would.
+   */
+  function rejection(file) {
+    if (maxBytes && file.size > maxBytes) {
+      return text.tooBig.replace("{limit}", Math.round(maxBytes / (1024 * 1024)));
+    }
+    if (file.type && accept.length && accept.indexOf(file.type) === -1) return text.wrongType;
+    return "";
+  }
+
   function enqueue(files) {
     var list = Array.prototype.slice.call(files);
     if (!list.length) return;
@@ -149,7 +215,15 @@
     }
 
     list.forEach(function (file) {
-      pending.push({ file: file, row: addRow(file) });
+      var job = { file: file, row: addRow(file), request: null };
+      var why = rejection(file);
+      if (why) {
+        // Its own row and its own reason, exactly as a server refusal gets —
+        // the counters and the throttled announcement need no special case.
+        setError(job.row, why);
+        return;
+      }
+      pending.push(job);
     });
     counts.total += list.length;
     announce();
@@ -161,11 +235,23 @@
       active += 1;
       send(pending.shift());
     }
+    syncCancel();
   }
 
-  function finished() {
+  function finished(job) {
     active -= 1;
+    var index = inFlight.indexOf(job);
+    if (index !== -1) inFlight.splice(index, 1);
     pump();
+  }
+
+  /** The stop control exists only while there is something to stop. */
+  function syncCancel() {
+    if (!cancelButton) return;
+    var running = pending.length > 0 || inFlight.length > 0;
+    // Hiding the focused control is how focus ends up on <body> (F-002).
+    if (!running && document.activeElement === cancelButton) input.focus();
+    cancelButton.hidden = !running;
   }
 
   function send(job) {
@@ -176,8 +262,13 @@
     request.open("POST", url, true);
     request.setRequestHeader("X-CSRF-Token", csrfToken());
 
+    // Held on the job so the batch can be stopped: without a handle on the
+    // live requests there was no way back out of a fifty-file drop.
+    job.request = request;
+    inFlight.push(job);
+
     request.upload.addEventListener("progress", function (event) {
-      if (!event.lengthComputable) return;
+      if (!event.lengthComputable || !job.row.bar) return;
       job.row.bar.value = Math.round((event.loaded / event.total) * 100);
     });
 
@@ -199,21 +290,37 @@
         refreshGrid();
       } else {
         setError(job.row, payload.detail || text.uploadFailed);
+        addRetry(job);
       }
-      finished();
+      finished(job);
     });
 
     request.addEventListener("error", function () {
       setError(job.row, text.network);
-      finished();
+      addRetry(job);
+      finished(job);
     });
 
     request.addEventListener("abort", function () {
-      setError(job.row, text.network);
-      finished();
+      setError(job.row, text.cancelled);
+      addRetry(job);
+      finished(job);
     });
 
     request.send(form);
+  }
+
+  /** Empty the queue and stop what is already in the air. */
+  function cancelAll() {
+    pending.splice(0, pending.length).forEach(function (job) {
+      setError(job.row, text.cancelled);
+      addRetry(job);
+    });
+    // `abort` fires its own listener, which marks the row and calls finished().
+    inFlight.slice().forEach(function (job) {
+      if (job.request) job.request.abort();
+    });
+    syncCancel();
   }
 
   // ------------------------------------------------- reconcile with the grid
@@ -275,6 +382,10 @@
       event.preventDefault();
     });
   });
+
+  if (cancelButton) {
+    cancelButton.addEventListener("click", cancelAll);
+  }
 
   if (clearButton) {
     clearButton.addEventListener("click", function () {

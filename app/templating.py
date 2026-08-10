@@ -60,10 +60,32 @@ def static_url(path: str) -> str:
     return f"/static/{path.lstrip('/')}?v={ASSET_VERSION}"
 
 
+@lru_cache(maxsize=1)
+def upload_limits() -> dict[str, Any]:
+    """What the browser needs in order to refuse a file before sending it.
+
+    Read from the two places the *server* validates against, so the ceiling
+    cannot be published as one number and enforced as another — the class of
+    divergence that let the proxy cap request bodies at 30 MB while the
+    application accepted 50.
+
+    The import is deferred because `app.services.images` imports `translate`
+    from this module; the same shape `render` uses for `app.security`.
+    """
+    from app.services.images import ALLOWED_CONTENT_TYPES
+
+    return {
+        "max_bytes": settings.max_upload_bytes,
+        "max_mb": settings.max_upload_mb,
+        "accept": ",".join(sorted(ALLOWED_CONTENT_TYPES)),
+    }
+
+
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 templates.env.globals.update(
     t=translate,
     static_url=static_url,
+    upload_limits=upload_limits,
     site_url=settings.site_url,
     lang=DEFAULT_LANG,
     # Safe defaults so every template can be rendered from any route; routes

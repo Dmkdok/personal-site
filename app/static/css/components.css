@@ -342,10 +342,26 @@
       border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
   }
 
-  .button:hover {
+  /* Every hover is guarded against `:disabled` rather than repainted for it.
+     `.button` sets `color` explicitly, so the browser's own greying never
+     applies and a disabled button was pixel-identical to a working one. Undoing
+     each variant's hover by hand would mean writing every resting colour twice;
+     declining to apply it in the first place needs no copies and cannot drift. */
+  .button:hover:not(:disabled) {
     color: var(--text);
     border-color: var(--text-faint);
     background-color: var(--surface);
+  }
+
+  .button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* `.button` sets `display`, which outranks the user agent's `[hidden]` rule —
+     so a button hidden by the attribute stayed fully on screen. */
+  .button[hidden] {
+    display: none;
   }
 
   .button--primary {
@@ -354,7 +370,7 @@
     color: var(--on-accent);
   }
 
-  .button--primary:hover {
+  .button--primary:hover:not(:disabled) {
     color: var(--on-accent);
     background-color: color-mix(in srgb, var(--accent) 88%, var(--text));
     border-color: color-mix(in srgb, var(--accent) 88%, var(--text));
@@ -366,7 +382,7 @@
     color: var(--text-muted);
   }
 
-  .button--danger:hover {
+  .button--danger:hover:not(:disabled) {
     color: var(--danger-ink);
     border-color: var(--danger-ink);
     background-color: var(--danger-wash);

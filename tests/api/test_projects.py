@@ -3,6 +3,7 @@
 import pytest
 
 from app.models.project import Project
+from app.services import images
 
 FORM = {
     "title": "Foodgram",
@@ -38,6 +39,19 @@ def _only(db) -> Project:
     project = db.query(Project).first()
     assert project is not None, "project was not created"
     return project
+
+
+def test_the_project_form_accepts_what_the_server_accepts(admin_client):
+    """The cover picker's `accept` comes from the server's own allow-list.
+
+    It was the fourth hardcoded copy of the same three MIME types; a list that
+    is written down four times is a list that eventually disagrees with itself.
+    """
+    form = admin_client.get("/dev/admin/new").text
+
+    assert 'accept="' in form
+    for content_type in images.ALLOWED_CONTENT_TYPES:
+        assert content_type in form
 
 
 def test_create_stores_every_field(admin_client, db):

@@ -1,8 +1,124 @@
 # Review
 
-Two Phase 6 runs. **Run 2 is the current one and is below**; run 1 is kept
-underneath it because its findings are the reason half of M9 exists, and a
-reviewer arriving later should be able to see what was already looked at.
+Three Phase 6 runs. **Run 3 is the current one and is below**; the earlier two
+are kept underneath it because their findings are the reason half of M9 exists,
+and a reviewer arriving later should be able to see what was already looked at.
+
+---
+
+# Run 3 — Phase 6 against M10 (iteration I1), 2026-08-10
+
+Scope is the I1 delta only, not the product: the diff between `b69fe10` (the
+approved docs commit) and the working tree. The impact map in
+`docs/iterations/I1-ui-audit-p1.md` is what the diff was judged against —
+the reviewer's question in an iteration is "did anything move that was not
+supposed to", not "is this product good".
+
+## Verdict
+
+**PASS.** No Critical, High or Medium findings. Two notes, both recorded below
+rather than fixed, and one defect **found by the new tests and fixed in the same
+session** (`.button[hidden]`).
+
+Nothing outside the milestone's owned paths moved. The three extra files the
+diff touches beyond the task list — `dev/_board.html`, `photo/_board.html`,
+`photo/_grid.html` — carried the `is_first`/`is_last` plumbing that existed for
+one purpose, the `disabled` attribute this iteration removes; leaving it would
+have left dead variables and a comment describing behaviour that no longer
+exists. Two more, `dev/_project_form.html` and `blog/_editor_meta.html`, held
+the third and fourth hardcoded copies of the accepted MIME list that T105 exists
+to unify. Both extensions are named here because the task list did not name
+them.
+
+## Security
+
+**Tooling:** manual (`semgrep` is not on PATH on this machine).
+
+**No critical/high findings in scoped review.**
+
+The one change with a security dimension is F-004, which is a *client-side*
+gate. What matters is that it did not become the only gate:
+
+- `app/services/images.py` and `app/config.py` are **byte-for-byte unchanged**
+  (`git diff --stat` on both is empty). The size cap, the MIME allow-list, the
+  magic-byte check and the decode verification are all exactly where they were,
+  and `tests/unit/test_photo_pipeline.py`'s oversize rejection still passes.
+- The new client check is deliberately *narrower* than the server's: a file
+  whose `type` the browser could not determine is passed through rather than
+  refused, because the server reads the magic bytes and would have accepted a
+  JPEG saved without an extension. A client gate that refuses more than the
+  server would is a bug that looks like caution.
+- The values published to the page — `data-max-bytes`, `data-accept` — are
+  public policy, not secrets, and the markup carrying them is admin-only
+  (`album.html:26` wraps the uploader in `{% if is_admin %}`).
+- No new route, and no route lost its `CurrentAdmin` dependency;
+  `tests/api/test_authz_sweep.py` enumerates every non-`GET` route and passes.
+- `_move_headers` builds a catalogue key by interpolation, so it was read
+  twice: both halves are internal literals — `kind` is a call-site constant and
+  `outcome` is one of three values `_swap` returns. The user-controlled
+  `direction` never reaches the key.
+- No `innerHTML` anywhere in the new JavaScript. File names — the only
+  attacker-influenced strings in play — reach the DOM through `textContent` and
+  `setAttribute`, as they did before.
+- No inline `<style>` or `<script>` added, so the `style-src 'self'` CSP is
+  untouched. (The a11y sweep reveals hover-only controls through the CSSOM for
+  exactly this reason; an injected style tag would have been dropped silently
+  and the sweep would have measured nothing while reporting success.)
+
+| ID | Severity | Issue | Where | Fix |
+|----|----------|-------|-------|-----|
+| — | — | none | — | — |
+
+## Found by the new tests, fixed in this session
+
+**`.button[hidden]` did nothing.** `.button` sets `display: inline-flex`, which
+outranks the user agent's `[hidden] { display: none }`. The new «Отменить»
+control is the first button on this site to use the attribute, and
+`test_a_running_batch_can_be_stopped` caught it immediately — the element
+carried `hidden=""` and Playwright still reported it visible. One rule added in
+`components.css` next to `.button:disabled`. Latent since the button component
+was written; nothing had exercised it until now.
+
+## Notes — recorded, not fixed
+
+1. **The cover uploads have no size pre-check.** `_editor_meta.html`'s article
+   cover and `_project_form.html`'s project cover now share the accepted MIME
+   list with everything else, but they are plain htmx multipart forms with no
+   JavaScript behind them, so a 60 MB cover still travels the whole way up
+   before the server refuses it. F-004's target state named the album uploader
+   and in-article images, and both are done. Extending the gate to the two cover
+   forms means giving them a script they do not currently have; it belongs in
+   its own task, not in this one.
+2. **A cancelled upload is a client disconnect.** `cancelAll` calls `.abort()`
+   on the live `XMLHttpRequest`s, which the server sees as a dropped connection
+   mid-multipart — the same thing a lost Wi-Fi connection already produced, so
+   no new server path is exercised. Nothing is written until the bytes are
+   complete and validated, so an aborted upload leaves nothing behind.
+
+## Regression against the impact map
+
+Every row's stated proof exists and runs:
+
+| Item | Proof named in the map | Status |
+|------|------------------------|--------|
+| F-001 | the four sweeps pass over an admin session, or an argued exception | Pass, **no exception needed** — 83 contrast samples per theme with zero failures and zero unmeasurable, 120 focus stops with zero missing indicators, zero targets under 2.5.8 at 360 px |
+| F-002 + F-006 | focus is on the pressed button, never `<body>`, and a message appeared | `e2e/test_admin_keyboard.py`, 4 cases (project, album, photo, cover) |
+| F-003 | a dialog on leaving dirty, none after a save; the failed state persists | `e2e/test_editor_guard.py`, 4 cases |
+| F-004 | zero requests for a refused file; `data-max-bytes` equals the server's | `e2e/test_upload_guard.py` (3 cases, one a positive control) + `tests/api/test_photo.py::test_the_upload_zone_publishes_the_servers_own_limits` and `tests/api/test_projects.py::test_the_project_form_accepts_what_the_server_accepts` |
+| F-005 | a `[disabled]` control differs in computed opacity | `e2e/test_a11y.py::test_a_disabled_button_looks_disabled` |
+
+**No existing test was edited.** The prediction in the map held: `grep disabled`
+found no assertion on the old behaviour, and the `beforeunload` guard did not
+disturb any existing editor test, because none of them navigates away from a
+dirty editor.
+
+## Gates at the time of this verdict
+
+| Gate | Command | Result |
+|---|---|---|
+| Unit + API | `docker compose run --rm tests` | **226 passed**, exit 0 (baseline 224) |
+| End-to-end | `uv run pytest e2e -q` | **57 passed**, exit 0 (baseline 40) |
+| Lint + format | `uv run ruff check .` / `ruff format --check .` | clean, 118 files |
 
 ---
 

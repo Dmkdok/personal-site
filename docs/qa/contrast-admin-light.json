@@ -1,12 +1,28 @@
 {
   "theme": "light",
-  "samples": 76,
+  "samples": 83,
   "failures": [],
   "unmeasurable": [],
   "worst": [
     {
       "selector": "p",
       "text": "Фотография · Python · горы",
+      "color": "rgb(100, 108, 119)",
+      "backdrop": [
+        "rgb(238, 240, 243)"
+      ],
+      "background": "rgb(238, 240, 243)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/",
+      "theme": "light",
+      "ratio": 4.65,
+      "required": 4.5
+    },
+    {
+      "selector": "button.editable__edit",
+      "text": "Править",
       "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
@@ -53,6 +69,38 @@
       "required": 4.5
     },
     {
+      "selector": "button.site-links__edit",
+      "text": "Изменить ссылки",
+      "color": "rgb(100, 108, 119)",
+      "backdrop": [
+        "rgb(238, 240, 243)"
+      ],
+      "background": "rgb(238, 240, 243)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/",
+      "theme": "light",
+      "ratio": 4.65,
+      "required": 4.5
+    },
+    {
+      "selector": "p.board-actions__hint",
+      "text": "Порядок можно менять перетаскиванием или кнопками со стрелка",
+      "color": "rgb(100, 108, 119)",
+      "backdrop": [
+        "rgb(238, 240, 243)"
+      ],
+      "background": "rgb(238, 240, 243)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/dev",
+      "theme": "light",
+      "ratio": 4.65,
+      "required": 4.5
+    },
+    {
       "selector": "li.stack__item",
       "text": "Python",
       "color": "rgb(100, 108, 119)",
@@ -69,8 +117,8 @@
       "required": 4.5
     },
     {
-      "selector": "time",
-      "text": "8 августа 2026",
+      "selector": "p.photo-actions__hint",
+      "text": "Перетащите фотографию за уголок, чтобы изменить порядок",
       "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
@@ -79,14 +127,14 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog",
+      "page": "/photo/e2e-galereia-cdbicbgdr",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
     },
     {
-      "selector": "p.label",
-      "text": "Служебный вход",
+      "selector": "a",
+      "text": "К списку статей",
       "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
@@ -95,14 +143,14 @@
       "fontSize": 14.24,
       "fontWeight": 500,
       "onImage": false,
-      "page": "/login",
+      "page": "/blog/e2e-admin-svip-cdbicbgdr/edit",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
     },
     {
       "selector": "label.field__label",
-      "text": "Логин",
+      "text": "Заголовок",
       "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
@@ -111,89 +159,41 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/login",
+      "page": "/blog/e2e-admin-svip-cdbicbgdr/edit",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
     },
     {
-      "selector": "a.nav__link",
-      "text": "Главная",
-      "color": "rgb(20, 23, 26)",
+      "selector": "h2#pane-source",
+      "text": "Текст",
+      "color": "rgb(100, 108, 119)",
       "backdrop": [
-        "rgb(192, 118, 42)"
+        "rgb(238, 240, 243)"
       ],
-      "background": "rgb(192, 118, 42)",
+      "background": "rgb(238, 240, 243)",
       "fontSize": 14.24,
       "fontWeight": 500,
       "onImage": false,
-      "page": "/",
+      "page": "/blog/e2e-admin-svip-cdbicbgdr/edit",
       "theme": "light",
-      "ratio": 5.03,
+      "ratio": 4.65,
       "required": 4.5
     },
     {
-      "selector": "a.nav__link",
-      "text": "Разработка",
-      "color": "rgb(20, 23, 26)",
+      "selector": "p#editor-drop-hint",
+      "text": "Перетащите картинку сюда или вставьте из буфера — она загруз",
+      "color": "rgb(100, 108, 119)",
       "backdrop": [
-        "rgb(192, 118, 42)"
+        "rgb(238, 240, 243)"
       ],
-      "background": "rgb(192, 118, 42)",
+      "background": "rgb(238, 240, 243)",
       "fontSize": 14.24,
-      "fontWeight": 500,
+      "fontWeight": 400,
       "onImage": false,
-      "page": "/dev",
+      "page": "/blog/e2e-admin-svip-cdbicbgdr/edit",
       "theme": "light",
-      "ratio": 5.03,
-      "required": 4.5
-    },
-    {
-      "selector": "a.nav__link",
-      "text": "Фото",
-      "color": "rgb(20, 23, 26)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/photo",
-      "theme": "light",
-      "ratio": 5.03,
-      "required": 4.5
-    },
-    {
-      "selector": "a.nav__link",
-      "text": "Блог",
-      "color": "rgb(20, 23, 26)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/blog",
-      "theme": "light",
-      "ratio": 5.03,
-      "required": 4.5
-    },
-    {
-      "selector": "button.button.button--primary",
-      "text": "Войти",
-      "color": "rgb(20, 23, 26)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/login",
-      "theme": "light",
-      "ratio": 5.03,
+      "ratio": 4.65,
       "required": 4.5
     }
   ]

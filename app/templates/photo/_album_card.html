@@ -1,5 +1,8 @@
-{# One album on the index. `album`, `is_first` and `is_last` come from the
-   enclosing loop in `_board.html` — Jinja does not forward `loop` to includes. #}
+{# One album on the index. `album` comes from the enclosing loop in `_board.html`.
+
+   The ↑/↓ buttons are never `disabled`, not even at the ends of the list: htmx
+   restores focus after a swap by `id`, and a disabled element cannot take it
+   (ADR-016). The endpoint answers «уже первый» instead. #}
 {% set cover = album.cover_photo %}
 <article class="card album-card" id="album-{{ album.id }}" data-sort-id="{{ album.id }}">
   <a class="card__media{% if not (cover and cover.thumb_path) %} card__media--empty{% endif %}"
@@ -47,8 +50,7 @@
               id="album-{{ album.id }}-up"
               hx-vals='{"direction": "up", "view": "index"}'
               hx-target="#album-board"
-              hx-swap="outerHTML"
-              {% if is_first %}disabled{% endif %}>
+              hx-swap="outerHTML">
         <span aria-hidden="true">↑</span>
         <span class="visually-hidden">{{ t("photo.move_up") }}</span>
       </button>
@@ -58,8 +60,7 @@
               id="album-{{ album.id }}-down"
               hx-vals='{"direction": "down", "view": "index"}'
               hx-target="#album-board"
-              hx-swap="outerHTML"
-              {% if is_last %}disabled{% endif %}>
+              hx-swap="outerHTML">
         <span aria-hidden="true">↓</span>
         <span class="visually-hidden">{{ t("photo.move_down") }}</span>
       </button>
