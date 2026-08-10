@@ -6,33 +6,32 @@ approved_at: 2026-08-04
 
 ## Resume here
 
-**Branch `session/2026-08-06-m3-fixes-and-e2e`, tree clean, nothing running but the dev stack
-(`db`, `web`) — `docker compose down` stops it.** No remote; merging into `main` is the owner's
-call.
+**Branch `session/2026-08-06-m3-fixes-and-e2e`. Iteration I1 is approved and M10 is in progress.**
+No remote; merging into `main` is the owner's call.
 
-**The build is finished. M9 is complete — all twelve tasks — and Phase 6 has been re-run against
-it and passes.** Every milestone M0–M9 is done and ticked, every gate is green (unit/API 224, e2e
-40, launch flows 6, lint and format clean), and `docs/TASKS.md` now has no unticked line at all.
-What remains is not code.
+**M0–M9 are done and every gate was green at the I1 baseline below.** What is being built now is
+not new product: it is Phase A of `docs/UI-AUDIT.md` — the four P1 findings, plus F-006 which the
+same change closes and F-005 which it half-orphans. The intake, the impact map, the ordering
+constraints and the exit criteria are one page: **`docs/iterations/I1-ui-audit-p1.md`**. Read that
+before touching M10, not this section.
 
-### Next three actions, in order
+### Next actions, in order — this is the binding order, not a suggestion
 
-1. **The owner's own unaided pass through all three publishing flows.** This is the single open
-   item on the launch checklist in `docs/SPEC.md`, and it is his by definition — an acceptance
-   step no test can stand in for. Sit down at the running site, publish an article, upload an
-   album, add a project, without touching code. Tick that line when it is done.
-2. **Deploy, and check on the server the three things nothing local can reach.** T074 is ticked,
-   but its DoD was only «config validates; not deployed in this run» — the deploy itself was never
-   a task, by the owner's choice. On the first run: **(a)** upload a file between 30 and 50 MB.
-   The `Caddyfile` capped bodies at 30MB while the app allowed 50 until this session, and there is
-   no test that can catch that class — dev has no proxy. **(b)** Confirm the login throttle still
-   fires behind the real Caddy, where `X-Forwarded-For` is finally somebody else's to write.
-   **(c)** Run `make restore-check` on the server, against server artefacts.
-3. **Merge the branch into `main`** once (1) and (2) are done. Nothing is pushed and no remote
-   exists, so this is a local decision and nobody else is waiting on it.
+1. **T102** — one `.button:disabled` in `components.css`. Shared primitive: lands **alone and
+   first**, because every page renders through that sheet.
+2. **T106** — extend the four a11y sweeps in `e2e/test_a11y.py` to an admin session. Before the
+   fixes it measures. Test-only, so it can reveal but cannot break. If it surfaces findings outside
+   I1's scope — F-016's clipped tile controls at 360 px is the likely one — **ask the owner before
+   widening scope**; record the exception in `docs/qa/` with an allow-list keyed by selector, and
+   never by moving `_threshold()`.
+3. **T103** — the ↑/↓/★ controls stop being `disabled` and the no-op branch answers (ADR-016).
+4. **T104**, then **T105** — both edit `app/static/js/editor.js`, so they are **serial**.
 
-**Waiting on the owner:** nothing blocking, and nothing in flight. Both open items above are his,
-not the next session's.
+Still open and still the owner's, unchanged by this iteration: his own unaided pass through the
+three publishing flows (the last unticked line on the launch checklist in `docs/SPEC.md`); the
+deploy, with the three server-only checks recorded under `## Notes`; and the merge into `main`.
+
+**Waiting on the owner:** nothing blocking. He approved the I1 delta on 2026-08-10 («утверждаю»).
 
 **Two things about this machine that cost time today.** `make` is **not on PATH** here, in either
 shell, although `README.md` and `docs/CONVENTIONS.md` document every command as `make …` — run the
@@ -46,6 +45,33 @@ pictures in text — 1920 px — and it covers project descriptions too; he expo
 everything under `docs/`. And, put to him during this session's review: when deduplication hands
 back a ladder narrower than the profile asks for, **top the ladder up** rather than refuse to
 deduplicate.
+
+## Baseline I1
+
+Recorded 2026-08-10 **before** any work on the UI audit, on branch
+`session/2026-08-06-m3-fixes-and-e2e` with a clean tree (only `docs/UI-AUDIT.md` and the two new
+skills untracked). This is the line any regression in M10 is measured against.
+
+| Gate | Command | Result |
+|---|---|---|
+| Unit + API | `docker compose run --rm tests` | **224 passed**, exit 0 |
+| End-to-end | `uv run pytest e2e -q` | **40 passed**, exit 0 |
+| Lint + format | `uv run ruff check .` then `uv run ruff format --check .` | clean, 114 files already formatted |
+
+Two environment facts, unchanged from the last session and paid for again today: `make` is **not on
+PATH** here, so the `Makefile`'s bodies are run directly; and Docker Desktop was not running at the
+start, so `docker compose` failed with a named-pipe error until it was started.
+
+## Iteration I1 progress
+- [x] 0 baseline recorded (branch, suite result, timestamp)
+- [x] 1 delta intake agreed (in / out / deferred)
+- [x] 2 impact map written
+- [x] 3 docs amended (SPEC F24/F49/F50, ADR-016/017, TASKS M10)
+- [x] **GATE approved by the owner 2026-08-10 («утверждаю»)**
+- [ ] 4 implementation
+- [ ] 5 verification green, baseline suites still green
+- [ ] 6 review clean or waived
+- [ ] 7 closed (STATUS rewritten, milestone ticked)
 
 ## Checklist
 - [x] Phase 0 intake

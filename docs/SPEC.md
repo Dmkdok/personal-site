@@ -85,7 +85,7 @@ Needs: no code, no file management, no fragile admin UI, clear feedback on long 
 | F21 | Album CRUD in place on the photo pages | Given a logged-in admin on `/photo`, when «Новый альбом» is used, then an album is created with a unique slug derived from the title, and its title, caption, cover, order and published state can be edited from the album page itself without navigating to a separate admin area |
 | F22 | Batch upload by drag-and-drop | Given an album page, when up to 50 image files are dropped at once, then each is uploaded and processed, per-file progress and state (загружается / обрабатывается / готово / ошибка) are visible, and successes are unaffected by individual failures |
 | F23 | Derivative generation | Given an accepted upload, when processing completes, then the original is stored unmodified on the media volume and WebP derivatives at 640 / 1600 / 2560 px width are generated with aspect ratio preserved, orientation corrected from EXIF, and stored width/height recorded; images smaller than a target size are not upscaled |
-| F24 | Upload validation | Given a file that is not a JPEG/PNG/WebP, exceeds 50 MB, or fails to decode, when it is uploaded, then it is rejected with a clear per-file message, nothing is written outside the media volume, and the stored filename is server-generated (never derived from client input) |
+| F24 | Upload validation | Given a file that is not a JPEG/PNG/WebP, exceeds 50 MB, or fails to decode, when it is uploaded, then it is rejected with a clear per-file message, nothing is written outside the media volume, and the stored filename is server-generated (never derived from client input); a file whose type or size the browser can already see will be refused is rejected **before any of its bytes are sent**, with its own reason on its own row, and the server-side check remains the authority. *Client-side gate added 2026-08-10 (I1/F-004); it is a second, earlier gate, never a replacement.* |
 | F25 | Photo management | Given photos in an album, when the admin reorders by drag, sets a cover, edits alt text or deletes a photo, then the change persists and is reflected for visitors; deleting a photo removes its derivatives and its original from disk |
 | F26 | Publish control | Given an unpublished album, when a visitor requests its URL, then it returns 404; when the admin publishes it, then it appears in `/photo` and in search |
 | F27 | Processing resilience | Given the container restarts while photos are still processing, when it starts again, then photos left in a pending state are re-processed or clearly marked as failed with a retry action |
@@ -135,6 +135,16 @@ above.
 | F47 | A cover is a cover, not the first picture | Given an article with a cover, when a visitor opens it, then the cover appears in the blog index card and as the Open Graph image but does not open the article's text |
 | F48 | The repository explains itself | Given someone arriving at the repository on GitHub, when they read `README.md`, then they learn what the site is, what it is built from, how to run it, how to run the tests, how it deploys, and where the rest of the documentation lives, with screenshots |
 
+### I1 — UI audit, Phase A
+
+Added 2026-08-10 from `docs/UI-AUDIT.md`. Both state something the product was
+already trying to do and did not finish; see ADR-016.
+
+| ID | Requirement | Acceptance |
+|----|-------------|------------|
+| F49 | An admin action always leaves the caret somewhere, and always answers | Given a logged-in admin operating a board or a grid from the keyboard, when a control is pressed — including a move that cannot happen, such as ↑ on the first item or ★ on the photo that is already the cover — then the action reports its outcome in a message, and focus is on a control adjacent to the action taken, never on `<body>` |
+| F50 | Unsaved article text cannot be lost silently | Given the article editor with text typed since the last successful save, when the tab is closed or navigated away from, then the browser's own confirmation is raised; and when an autosave fails, then the save-state region shows a distinct failed state that persists until the next successful save rather than a message that removes itself |
+
 
 ## Non-functional
 
@@ -155,6 +165,8 @@ above.
 **Accessibility (WCAG 2.2 AA baseline)**
 - Full keyboard operation of navigation, search, lightbox and every admin control.
 - Focus visible everywhere; focus trapped in the lightbox and returned on close.
+- Focus is never dropped to `<body>` by an htmx swap: a control that acts leaves the caret on a control. *Added 2026-08-10 (I1/F-002).*
+- The automated accessibility sweeps measure the signed-in surfaces, not only the anonymous ones. *Added 2026-08-10 (I1/F-001).*
 - Contrast ≥ 4.5:1 for body text in both themes.
 - `alt` text on photos, with the admin able to set it; decorative imagery marked as such.
 - `prefers-reduced-motion` respected — animations reduced to opacity or removed.
