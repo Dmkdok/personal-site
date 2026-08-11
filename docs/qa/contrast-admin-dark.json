@@ -1,6 +1,6 @@
 {
   "theme": "dark",
-  "samples": 81,
+  "samples": 83,
   "failures": [],
   "unmeasurable": [],
   "worst": [
@@ -15,7 +15,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -31,7 +31,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -47,7 +47,7 @@
       "fontSize": 14.24,
       "fontWeight": 500,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -63,7 +63,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -79,7 +79,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -95,7 +95,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -111,7 +111,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -127,7 +127,7 @@
       "fontSize": 14.24,
       "fontWeight": 500,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -143,7 +143,7 @@
       "fontSize": 14.24,
       "fontWeight": 500,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -159,7 +159,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wlfbaqnvy/edit",
+      "page": "/blog/e2e-admin-svip-kmmzkwbjq/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -176,7 +176,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/photo/e2e-galereia-wlfbaqnvy",
+      "page": "/photo/e2e-galereia-kmmzkwbjq",
       "theme": "dark",
       "ratio": 4.99,
       "required": 4.5

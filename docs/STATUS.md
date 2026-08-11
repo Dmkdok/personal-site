@@ -10,10 +10,18 @@ approved_at: 2026-08-04
 (`db`, `web`) — `docker compose down` stops it.** No remote; merging into `main` is the owner's call.
 
 **M10 is complete and iteration I1 is closed.** Phase A of `docs/UI-AUDIT.md` — the four P1 findings
-plus F-005 and F-006 — is built, tested and reviewed. Gates: unit/API **226**, e2e **57**, lint and
+plus F-005 and F-006 — is built, tested and reviewed. Gates: unit/API **226**, e2e **60**, lint and
 format clean, all run on the final tree. `docs/TASKS.md` has no unticked line. The one page that
 explains what was taken, what was refused and what it cost is
 **`docs/iterations/I1-ui-audit-p1.md`**; the review is run 3 in `docs/REVIEW.md`.
+
+**One thing landed after that close: the nav search field**, reported by the owner from the browser
+rather than by any sweep. Three faults on one control that appears on every page — two concentric
+focus rings in two different oranges, a ring painted on the inner `<input>` and pulled 3px inside it
+so it crossed the first letter of the query, and the browser's own clear button arriving white on
+one theme and blue on the other. The ring is now on the field itself, once; the clear button is
+painted through the tokens. Three e2e cases guard it, both themes, and all three were watched
+failing against the old CSS first. Written up under «After the close» in the iteration doc.
 
 **The audit is not finished, and that is deliberate.** Thirteen P2 findings (F-007…F-018) and seven
 P3 (F-019…F-026) are deferred by **ADR-017**, not dropped. `docs/UI-AUDIT.md` is the backlog and is
@@ -40,6 +48,17 @@ now has the `:disabled` rule it depended on). The consolidations — F-009, F-01
 primitives and want a milestone of their own.
 
 **Waiting on the owner:** nothing blocking, and nothing in flight. Both open items above are his.
+
+**One defect found and deliberately not fixed — decide before deploying.** `ASSET_VERSION` in
+`app/templating.py` is `Path(__file__).stat().st_mtime`: **templating.py's own** mtime, not the
+static tree's. The comment above it says it is "bumped whenever the process restarts" — it is not
+bumped by a restart, and it is not bumped when CSS or JS changes either. `Caddyfile` sets
+`Cache-Control "public, max-age=604800"` on `/static/*`, so **a release that touches only CSS or JS
+serves the old files to returning visitors for up to a week** — the shape of the search-field fix
+above, which is why it turned up. It cannot bite in development (no proxy, and the container
+bind-mounts `./app`), which is why nothing has caught it. `static_url` already receives the path, so
+keying `?v=` on the requested file's own mtime is a few lines; it is a sitewide mechanism, so it is
+the owner's call and not a silent fix.
 
 **Two things about this machine that cost time today.** `make` is **not on PATH** here, in either
 shell, although `README.md` and `docs/CONVENTIONS.md` document every command as `make …` — run the
@@ -105,15 +124,16 @@ Each gate below carries its own last-run timestamp and the command that produced
 | Gate | Command | Last run | Result |
 |---|---|---|---|
 | Unit + API | `docker compose run --rm tests` | 2026-08-10, end of I1 | **226 passed**, exit 0 |
-| End-to-end | `uv run pytest e2e -q` | 2026-08-10, end of I1 | **57 passed**, exit 0 |
+| End-to-end | `uv run pytest e2e -q` | 2026-08-11, after the search-field fix | **60 passed**, exit 0 |
 | Six launch flows | `uv run pytest e2e -m launch_flow` | 2026-08-08 | **6 passed**, exit 0 |
 | Lint | `uv run ruff check .` | 2026-08-10, end of I1 | clean, exit 0 |
 | Format | `uv run ruff format --check .` | 2026-08-10, end of I1 | clean, 118 files |
 
 No failing tests. **Iteration I1 grew the suite 224 → 226 and 40 → 57**, against a recorded baseline
-of 224/40 taken before any work started (see `## Baseline I1`). Not one existing test was edited:
-the seventeen new e2e cases and the two new API cases are all additions, and every one of them fails
-without the change it guards — which is why the milestone counts as done rather than merely green.
+of 224/40 taken before any work started (see `## Baseline I1`); the search-field fix that followed
+the close took e2e to **60**. Not one existing test was edited: the twenty new e2e cases and the two
+new API cases are all additions, and every one of them fails without the change it guards — which is
+why the milestone counts as done rather than merely green.
 
 `-q` is set twice, so a passing run prints dots and no summary line. **Read the exit code.** Never
 pipe a test run through `tail` or `grep`: you get the pipe's status and a red suite reads as green.
@@ -202,4 +222,7 @@ unticked item anywhere is T074, the production deploy, which the owner has chose
 - 2026-08-08 — **Deduplication is keyed on bytes, not on what the bytes were wanted for, and that quietly capped photographs.** A frame first stored as a cover carries `COVER`'s ladder — 640/1600 at quality 85, never the frame's own width — and adding it to an album reused those renditions and marked the photo `READY` on the spot. The lightbox would have served 1600 px at q85 for a 4000 px original, forever, with nothing to revisit it: ADR-014's one property that must not fail, lost to a cache hit. **`COVER` and `PROSE` are subsets of neither**, so the same trap existed between a cover and an in-article picture. `images.missing_rungs` names what a profile wants and the disk lacks — by glob, because the profile a file came in under is recorded nowhere — and `images.top_up` renders exactly those onto the one stored copy. F42 asks for one file behind one URL; it does not ask for a rung to go unrendered.
 - 2026-08-08 — **One of the tests was asserting the defect.** `test_a_second_upload_of_known_bytes_generates_no_new_renditions` demanded that a deduplication hit render *nothing* — it passed for the whole of M9 and was the reason the cap looked intentional. A test that encodes an implementation detail as a requirement will defend a bug against the person trying to fix it. It now asserts what F42 actually promises: one stored original, no second copy.
 - 2026-08-08 — **`make` is not on PATH on this machine**, in Git Bash or PowerShell, although `README.md` and `docs/CONVENTIONS.md` document every command as `make …`. Run the `Makefile`'s body directly. Docker Desktop also needs starting before anything: `docker compose` fails with a named-pipe error until `docker version` answers.
+- **2026-08-11 — The nav search field, reported by the owner from a screenshot rather than by a sweep.** Three faults on one control: two concentric focus rings in two different oranges (`--accent` on the label's border against `--accent-ink` on the input's outline); the ring painted on the inner `<input>` at `outline-offset: -3px` against 2px of padding, so its left stroke crossed the first letter of the query; and the user agent's own clear button, the one piece of chrome the token layer never saw, arriving white on dark and blue on light. **The ring belongs on the box the eye reads as the control** — the label, icon and clear button included — not on the focusable element inside it; `outline: none` on the input is the only one on the site and is bought by the label's ring existing, which `e2e/test_search.py` now asserts as one contract so neither half can be removed alone. Details under «After the close» in `docs/iterations/I1-ui-audit-p1.md`.
+- 2026-08-11 — **A measurement trap worth keeping: `getComputedStyle` in the same tick as `.focus()` reads the *resting* value of any transitioned property.** `border-color` on `.search-field` transitions over `--dur-fast` (130ms), so the first failing run printed a transparent border and looked impossible. Outlines are not transitioned, which is why the assertions that mattered were unaffected — but a colour assertion on a transitioned property needs the transition waited out or it asserts the wrong frame.
+- **2026-08-11 — `ASSET_VERSION` does not change when a static file does.** `app/templating.py` computes it from `Path(__file__).stat().st_mtime` — templating.py's own mtime — under a comment claiming it is "bumped whenever the process restarts". It is bumped by neither a restart nor a CSS edit, and `Caddyfile` caches `/static/*` for a week, so a CSS- or JS-only release serves stale assets to returning visitors for up to seven days. **Development cannot show this**: no proxy, and `./app` is bind-mounted. Reported, not fixed — see "Waiting on the owner".
 - 2026-08-08 — The owner committed `eec956a` himself, mid-session, reverting most of an earlier tooling commit: the numeric thresholds (report-length budget, debug-round cap, STATUS line caps, the rotation of old notes into `docs/notes/`, `.test-runs/`) went, the SessionStart hook and the practices from Claude Code's own guidance stayed. Consequence worth knowing: **`.test-runs/` is not gitignored** — put long test logs in the session scratchpad, not in the tree.

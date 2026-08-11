@@ -133,3 +133,45 @@ htmx multipart forms with no script behind them, so a 60 MB cover still travels 
 before the server refuses it. F-004's target state named the album uploader and in-article images;
 both are done. Extending the gate to the cover forms means giving them JavaScript they do not have,
 and that is its own task.
+
+## After the close — the nav search field
+
+Found by the owner, in the browser, after M10 was committed: not an audit finding, not in scope, and
+not something any of the four sweeps would have caught. Fixed on the same branch as one small
+follow-on commit rather than reopening the milestone.
+
+**Three faults, one control.** The search field in the nav capsule is on every page.
+
+1. **Two focus rings.** `.search-field:focus-within` painted its border in `--accent` while the
+   site-wide `:focus-visible` outline sat 3px inside it in `--accent-ink`: two concentric rings, in
+   two different oranges. The comment above the rule already said the border was decoration and had
+   to stay under 3:1 — the code had stopped agreeing with it. Now `--accent-ink`, once.
+2. **The ring crossed the text.** With the ring on the inner `<input>` and `outline-offset: -3px`
+   against 2px of inline padding, the stroke landed between the field's edge and the first letter.
+   The ring moved to the label — the box the eye reads as the control, icon and clear button
+   included — at `outline-offset: -1px`, so it sits on the field's own border and focus does not
+   change the field's footprint. `outline: none` on the input is the only one on the site, and it is
+   only allowed because the label one box out paints the ring the moment the input takes focus.
+3. **The clear button was the user agent's.** `type="search"` draws a glyph the token layer never
+   saw: white on the dark theme, blue on the light one. `appearance: none` plus a `data:` mask paints
+   it in `--text-faint`, which follows both themes. `img-src` already allows `data:`, so the CSP is
+   untouched. Firefox draws no clear button at all and cannot be made to; the field works without it.
+
+**Tests:** `e2e/test_search.py` gained three cases (40 → 57 → **60**). The ring test is parametrised
+over both themes and asserts one contract in four parts — the ring exists, it is on the field, it
+stays out of the box the text lives in, and focus does not move the field. It was proved by putting
+the old rules back and watching both parametrisations go red before the fix was restored.
+
+**One trap it cost time on.** `border-color` on `.search-field` is transitioned (`--dur-fast`,
+130ms), so a `getComputedStyle` taken in the same tick as `.focus()` reads the *resting* colour and
+a failure prints a border that looks impossible. The test waits the transition out. The outline is
+not transitioned, which is why the assertions that matter were never affected.
+
+**One finding out of scope, reported and not fixed:** `ASSET_VERSION` in `app/templating.py` is
+`Path(__file__).stat().st_mtime` — **templating.py's own** mtime, not the static tree's. The comment
+above it claims it is "bumped whenever the process restarts"; it is not bumped by a restart, and it
+is not bumped by editing CSS or JS either. Combined with `Caddyfile`'s
+`header @static Cache-Control "public, max-age=604800"`, a release that changes only static assets
+serves the old ones to returning visitors for up to a week — which is precisely the shape of this
+change. Left for the owner to schedule; `static_url` already receives the path, so keying `?v=` on
+the requested file's own mtime is the small version of the fix.

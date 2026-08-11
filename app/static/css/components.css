@@ -101,13 +101,28 @@
       background-color var(--dur-fast) var(--ease);
   }
 
-  /* The capsule reacts to focus, but the reaction is decoration, not the
-     indicator: `--line-strong` on `--surface-raised` measures ~1.8:1 in the
-     light theme, well under SC 1.4.11's 3:1. The visible ring below is the
-     indicator; this only softens the surface underneath it. */
+  /* The field reads as one control — icon, text and clear button in a single
+     capsule — so the focus ring goes round the capsule, not round the input
+     inside it.
+
+     It used to sit on the input, pulled 3px in by `outline-offset`. The input
+     carries only 2px of inline padding, so that stroke landed *between* the
+     field's edge and the first letter: the ring cut through the text it was
+     meant to frame, and read as a second, tighter ring inside the field's own
+     border. One control, on every page, wearing two.
+
+     `outline-offset: -1px` puts the ring over the 1px border rather than
+     outside it, so focus does not change the field's footprint inside the nav
+     capsule; the border is painted in the same colour underneath in case a
+     fractional device pixel ratio lets a hairline through. `:focus-within`
+     rather than `:has(:focus-visible)` because a text input matches
+     `:focus-visible` however it was focused — the two select the same moments
+     here, and this is the cheaper one to read. */
   .search-field:focus-within {
     background-color: var(--surface-raised);
-    border-color: var(--accent);
+    border-color: var(--accent-ink);
+    outline: 2px solid var(--accent-ink);
+    outline-offset: -1px;
   }
 
   .search-field__icon {
@@ -127,17 +142,48 @@
     color: var(--text);
   }
 
-  /* `outline: none` used to live above, inside @layer components, so it beat
-     the site-wide :focus-visible ring in base.css — on the one control that
-     appears on every page. The ring is pulled inside the capsule instead of
-     removed, so it still reads as one rounded field. */
+  /* The one place on the site where `outline: none` on a focusable element is
+     allowed, and only because the label one box out paints a conforming ring
+     the moment this input takes focus. The rule above is the indicator; this
+     would be the second one. `e2e/test_search.py` asserts both halves, so
+     removing the label's ring cannot quietly leave the input bare. */
   .search-field__input:focus-visible {
-    outline-offset: -3px;
-    border-radius: var(--radius-pill);
+    outline: none;
   }
 
   .search-field__input::placeholder {
     color: var(--text-faint);
+  }
+
+  /* `type="search"` makes the browser draw its own clear button — the only
+     chrome on this site that came from the user agent rather than from the
+     token layer, so it arrived white on the dark theme and blue on the light
+     one. `appearance: none` drops the UA glyph; the mask paints ours in
+     `background-color`, which is what lets it follow the tokens and both
+     themes. `data:` is already allowed by `img-src` (app/main.py), so the CSP
+     is untouched.
+
+     The box is asked for at 1.5rem against the ~14px the browser drew, with the
+     glyph held at 11px by `mask-size` so only the hit area grows. How much of
+     that Chromium honours on its own pseudo-element is not something the DOM
+     will report, so the test asserts what matters — that the control still
+     clears the field — rather than a number nothing can measure.
+
+     Firefox draws no clear button at all and cannot be made to; the field is
+     fully usable without it, which is why this is styling rather than markup. */
+  .search-field__input::-webkit-search-cancel-button {
+    appearance: none;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    margin-inline-end: -0.35rem;
+    cursor: pointer;
+    background-color: var(--text-faint);
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M12 4l-8 8' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E")
+      center / 11px 11px no-repeat;
+  }
+
+  .search-field__input::-webkit-search-cancel-button:hover {
+    background-color: var(--text);
   }
 
   /* --- Icon buttons -------------------------------------------------------- */
