@@ -152,6 +152,14 @@ beside it.
 Older functional gaps — article-image CLS, touch-target sizing, two labelling gaps, draft Russian
 copy — are unchanged and live in `docs/HANDOFF.md` §8.
 
+**Not a bug, but it will cost time again.** `media`, `pgdata` and `backups` are separate ZFS
+datasets, so anything rooted at `portfolio` that does not cross a mount boundary shows them as empty
+directories. Two consequences already met: an SMB share must be created on `media` itself, not on
+the parent; and the **File Browser app cannot see them at all** — it bind-mounts `/mnt/tank` with
+`propagation=rprivate` and has been running since 10 July, so mounts created afterwards never
+entered its namespace. Restarting that app fixes it, and will be needed again for every future
+dataset, ours or anyone's.
+
 ## Deployment, brought up on the LAN
 
 Brought up 2026-08-13 through the Portainer API. Stack `portfolio`, three containers, `db` and `web`
