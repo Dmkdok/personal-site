@@ -1,7 +1,31 @@
-# Caddy obtains and renews the TLS certificate on its own; nothing to configure
-# beyond SITE_DOMAIN in .env and an A record pointing at this server.
+# The site address is a variable so that one file serves both deployments:
+#
+#   CADDY_SITE_ADDRESS=:80           TLS is terminated upstream — a Keenetic
+#                                    router today — and Caddy speaks plain HTTP
+#                                    on the LAN. A bare port never asks for a
+#                                    certificate, which is what makes this safe
+#                                    behind a proxy and behind a grey IP.
+#   CADDY_SITE_ADDRESS=example.com   Caddy obtains and renews the certificate
+#                                    itself. Needs an A record pointing here and
+#                                    ports 80/443 reachable from outside.
+#
+# Moving between the two is a variable, not an edit.
+{
+	servers {
+		# Which peers may be believed when they send X-Forwarded-For. Caddy
+		# discards that header from an untrusted peer and substitutes the peer's
+		# own address — so without this every visitor arriving through the router
+		# looks like the router, they all share one login-throttle bucket, and
+		# five strangers' failed attempts lock the owner out of his own site.
+		#
+		# The cost of the default: anything already on the LAN can reach the
+		# published port directly and forge the header. Narrow it to the router's
+		# address alone if that matters.
+		trusted_proxies static {$CADDY_TRUSTED_PROXIES:private_ranges}
+	}
+}
 
-{$SITE_DOMAIN} {
+{$CADDY_SITE_ADDRESS::80} {
 	encode zstd gzip
 
 	# Photographs are served under content-addressed names, so they can be

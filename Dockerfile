@@ -30,6 +30,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY alembic.ini ./
 COPY migrations ./migrations
 COPY app ./app
+# Media maintenance (`media_orphans.py`) is run against the deployed site, and
+# on a server there is no checkout to mount it from. Compose bind-mounts this
+# directory in development, which is why its absence from the image went unseen.
+COPY scripts ./scripts
 
 # Runs unprivileged. On a Linux host the media bind mount must be writable by
 # this uid: sudo chown -R 1000:1000 ./data/media

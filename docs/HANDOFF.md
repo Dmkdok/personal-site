@@ -194,35 +194,84 @@ Both are safe to run repeatedly, and `--prune` re-checks the database before it 
 
 ---
 
-## 6. Deploying to a VPS
+## 6. Deploying
 
-Requirements: Docker with Compose v2, ports 80 and 443 reachable, and an A record for
-`SITE_DOMAIN` pointing at the server.
+Two deployments out of one repository, differing in who terminates TLS and where the image comes
+from. `CADDY_SITE_ADDRESS` is the whole switch: a domain and Caddy gets its own certificate, a bare
+port and it speaks plain HTTP behind something that already has one. ADR-018 records why.
+
+### 6.1 TrueNAS Scale behind a Keenetic router — the current target
+
+The server holds no source and no configuration files. GitHub Actions builds two images on every
+push to `main` — the application, and `caddy:2-alpine` with this repository's `Caddyfile` baked in —
+and pushes both to GHCR under one tag, so the proxy configuration can never lag the templates it
+fronts. Portainer is handed one compose file and a set of variables.
+
+Ports 80 and 443 on that host belong to the TrueNAS web interface and are not ours to take, which
+is why the stack publishes `HTTP_PORT` (8080) instead. The router reaches it there.
+
+**Once, before the first deploy:**
+
+1. Datasets under `/mnt/<pool>/portfolio/`: `media`, `pgdata`, `backups`. The image runs
+   unprivileged as uid 1000, so `chown -R 1000:1000` the media dataset or every upload fails on
+   permissions. `atime=off` and `recordsize=16K` suit `pgdata`.
+2. Portainer → Registries → add `ghcr.io`, username your GitHub name, password a personal access
+   token with `read:packages`. The package is private because the repository is.
+3. Portainer → Stacks → Add stack → Web editor. Paste `deploy/portainer-stack.yml` whole and fill
+   in the variables listed in its header. `SECRET_KEY`, `ADMIN_PASSWORD` and `POSTGRES_PASSWORD`
+   are generated here and exist nowhere else — not in the repository, not in a file on the host.
+4. A reverse-proxy rule on the Keenetic pointing at `192.168.1.20:8080`.
+
+**Every release after that:** push to `main`, wait for the `publish` workflow, then Redeploy the
+stack in Portainer with *Re-pull image* enabled. Nothing on the server needs touching. To pin a
+release rather than follow `main`, set `IMAGE_TAG` to a `sha-<short>` tag.
+
+**Backups do not work the way §5 describes on this host** — `make backup` needs a checkout and
+`make`, and there is neither. Durability comes from TrueNAS periodic snapshot tasks on both
+datasets, plus a scheduled logical dump into `backups`:
+
+```bash
+docker exec <db-container> pg_dump -U portfolio --clean --if-exists portfolio | gzip > /mnt/<pool>/portfolio/backups/db-$(date +%Y%m%d).sql.gz
+```
+
+Both are needed. A ZFS snapshot of a running Postgres is crash-consistent — the database will
+replay its WAL and come up — but it restores only onto the same major version and the same layout,
+which a dump does not care about.
+
+### 6.2 A server that faces the internet itself
+
+Requirements: Docker with Compose v2, ports 80 and 443 reachable, and an A record for the domain
+pointing at the server.
 
 ```bash
 git clone <repo> portfolio && cd portfolio
-cp .env.example .env      # set SECRET_KEY, ADMIN_*, POSTGRES_PASSWORD, SITE_URL, SITE_DOMAIN
+cp .env.example .env      # SECRET_KEY, ADMIN_*, POSTGRES_PASSWORD, SITE_URL, CADDY_SITE_ADDRESS
 mkdir -p data/media data/backups
 
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 The production overlay: Caddy obtains and renews the certificate automatically, neither the app nor
-the database publishes a host port, the code is baked into the image instead of bind-mounted,
-`ENV=production` makes cookies `Secure`, and Caddy caches `/media` hard (content-addressed names)
-and `/static` for a week. The upload ceiling is set in two places that must agree — `MAX_UPLOAD_MB`
-in `.env` and `request_body max_size` in the `Caddyfile`, currently 50 MB and 55 MB to leave room
-for the multipart envelope. **Move them together.** With the proxy set lower, Caddy answers a bare
-413 before the application is reached, so the size the owner was promised is not the size he gets
-and no Russian message explains why — and nothing local reproduces it, because dev runs without
-the proxy.
+the database publishes a host port, the code is baked into the image instead of bind-mounted, and
+`ENV=production` makes cookies `Secure`. Expect first-run certificate issuance to need DNS to have
+propagated. Then sign in at `https://<domain>/login`, change the seeded password, and add the cron
+entry for `make backup`.
 
-Then: sign in at `https://<domain>/login`, change the seeded password, and add the cron entry for
-`make backup`.
+### Two ceilings that must agree, in both deployments
 
-> **Not yet deployed.** The overlay and `Caddyfile` are written and validate, but this stack has
-> never been brought up on a real server (T074). Expect first-run certificate issuance to need
-> DNS to have propagated.
+The upload limit is set in two places — `MAX_UPLOAD_MB` and `request_body max_size` in the
+`Caddyfile`, currently 50 MB and 55 MB to leave room for the multipart envelope. **Move them
+together.** With the proxy set lower, Caddy answers a bare 413 before the application is reached,
+so the size the owner was promised is not the size he gets and no Russian message explains why —
+and nothing local reproduces it, because dev runs without the proxy.
+
+Behind the Keenetic there is now a third ceiling, the router's own, which this repository cannot
+see or set. It is the first thing to suspect when a large upload fails there and nowhere else.
+
+> **Not yet brought up.** Both files validate — `caddy validate` passes for a port and for a
+> domain, `docker compose config` renders the stack and refuses it when a secret is missing, and
+> the proxy image builds with its configuration checked at build time. Nothing has yet run on the
+> server (T074). The post-deploy checks are §7.
 
 ---
 
@@ -249,11 +298,32 @@ Accessibility and performance evidence is committed as JSON under `docs/qa/`:
 Measured on a 50-photo album at 1440×900: CLS 0.00023, LCP 168 ms, heaviest thumbnail 96 KB, all 50
 images carrying `loading="lazy"`, intrinsic dimensions, `srcset` and alt text.
 
+### Post-deploy checks
+
+Four things no local test reaches, in the order they are worth doing. All of them are the owner's:
+they need the live route, the real router and a browser.
+
+1. **Sign in over the public address.** `ENV=production` sets the session cookie `Secure`; the
+   browser talks HTTPS to the router, so it should be sent — but only the live path proves it. If
+   the login form accepts the password and returns you to the login form, this is why.
+2. **Upload a file between 30 and 50 MB.** Exercises the client-side gate, the application's
+   `MAX_UPLOAD_MB`, Caddy's `max_size` and the router's own undocumented ceiling in one go. The
+   most likely thing to fail on first contact.
+3. **The login throttle, from two different networks.** Six failed attempts from a phone on mobile
+   data, then a real sign-in from a laptop. If the laptop is locked out too, the router is not
+   forwarding `X-Forwarded-For`, every visitor is sharing one bucket, and `CADDY_TRUSTED_PROXIES`
+   needs narrowing to the router's LAN address — or the header needs enabling on the router.
+4. **A restore rehearsal from server artefacts.** Bring the newest dump and a media snapshot up as
+   a separate stack and open a few album pages. `make restore-check` does this locally; on the
+   appliance it is done by hand, because there is no checkout to run it from.
+
 ---
 
 ## 8. Known gaps
 
-1. **The production stack has never been deployed** (§6). The highest-value thing to do next.
+1. **The production stack has never been run on the server** (§6). The machinery is in place — two
+   images, a workflow, a compose file that validates — but nothing has been deployed. Still the
+   highest-value thing to do next.
 2. **A picture inside an article shifts the page as it loads.** Measured 2026-08-07: an article with
    two pictures scores CLS 0.119 against this project's 0.02 budget, on a 400 kB/s cold load. They
    are lazy-loaded and carry no `width`/`height`, so nothing reserves their height. The album grid

@@ -6,10 +6,14 @@ approved_at: 2026-08-04
 
 ## Resume here
 
-**Branch `session/2026-08-06-m3-fixes-and-e2e`, tree clean, nothing running but the dev stack
-(`db`, `web`) — `docker compose down` stops it.** The remote is
-`origin` → `https://github.com/Dmkdok/personal-site.git`, and the branch is pushed and in sync as of
-2026-08-13 (`2f3ae06`). `origin/main` is still back at `81ecaf0`; merging into `main` is the owner's call.
+**Branch `main`, and it is the only one now.** `session/2026-08-06-m3-fixes-and-e2e` was merged into
+`main` fast-forward on 2026-08-13 and deleted both locally and on `origin`; `origin/main` is at
+`2125d87`. The remote is `origin` → `https://github.com/Dmkdok/personal-site.git`. The dev stack
+(`db`, `web`) is up — `docker compose down` stops it.
+
+**Tree clean.** The deployment work below is committed to `main` and pushed. That push is also the
+first run of the `publish` workflow, so it is the moment the two GHCR images came into existence —
+check its result in Actions before expecting Portainer to pull anything.
 
 **M10 is complete and iteration I1 is closed.** Phase A of `docs/UI-AUDIT.md` — the four P1 findings
 plus F-005 and F-006 — is built, tested and reviewed. Gates: unit/API **226**, e2e **60**, lint and
@@ -31,17 +35,60 @@ still accurate, with two corrections I1 earned: F-001 found **no** admin accessi
 all, and F-016's clipped tile controls are not a 2.5.8 conformance problem — zero targets failed at
 360 px as admin. Both are comfort questions the audit itself already routed to ADR-010.
 
-### Next three actions, in order
+## The deployment, built this session
 
-1. **The owner's own unaided pass through all three publishing flows.** Still the single open item
-   on the launch checklist in `docs/SPEC.md`, and still his by definition. Worth doing *now* rather
-   than before: the editor no longer loses text silently, and a bad file is refused before it
-   uploads, so the flows are less annoying than they were this morning.
-2. **Deploy, and check on the server the three things nothing local can reach** — (a) upload a file
-   between 30 and 50 MB, (b) confirm the login throttle fires behind the real Caddy, (c) run
-   `make restore-check` against server artefacts. Unchanged by I1, except that (a) now also exercises
-   the new client-side gate, which reads the same `MAX_UPLOAD_MB` the server does.
-3. **Merge the branch into `main`** once (1) and (2) are done. Local decision; nobody is waiting.
+A server appeared: **TrueNAS Scale at `192.168.1.20`**, Portainer from its Apps catalogue on
+`https://192.168.1.20:31015` (self-signed), behind a **Keenetic** router on a grey IP. Its own web
+interface holds `:5000` — and also `:80` and `:443`, which is the first thing that broke the old
+plan. **ADR-018** records the shape and the four rejected alternatives.
+
+What the arrangement is: GitHub Actions builds **two** images and pushes them to GHCR under one tag
+— the application, and `caddy:2-alpine` with this repository's `Caddyfile` baked in. Portainer gets
+one self-contained compose file and a set of variables; the server stores no source and no config
+files. The router terminates TLS, so `CADDY_SITE_ADDRESS` is a bare port and Caddy asks for no
+certificate. Media and the Postgres data directory bind-mount to ZFS datasets.
+
+| File | What it is |
+|---|---|
+| `deploy/portainer-stack.yml` | the whole server side — pasted into Portainer, variables documented in its header |
+| `.github/workflows/publish.yml` | builds and pushes both images to GHCR on push to `main` |
+| `Dockerfile.caddy` | the proxy with the Caddyfile baked in; `caddy validate` runs at build time |
+| `Caddyfile` | site address and trusted-proxy list are now variables — one file, both deployments |
+| `docs/HANDOFF.md` §6 | rewritten: §6.1 this deployment, §6.2 a server that faces the internet |
+
+**`ASSET_VERSION` is fixed** — the defect the last handoff left for the owner to decide. `static_url`
+now keys `?v=` on the requested file's own mtime instead of `templating.py`'s, which moved for
+neither a restart nor a stylesheet edit. It became load-bearing rather than theoretical the moment a
+proxy with `max-age=604800` entered the picture. Seven tests in `tests/unit/test_static_url.py` hold
+it, including the exact shape of the old bug (two assets sharing one version).
+
+**Also:** `COPY scripts ./scripts` in the `Dockerfile`. `scripts/` was never in the image and the
+prod overlay never mounted it, so `media_orphans.py` — documented in `docs/HANDOFF.md` §5 as the way
+to maintain the media tree — did not exist on a deployed site. Only development bind-mounted it,
+which is why nobody noticed.
+
+**Gates, on the final tree:** unit/API **233** passed exit 0 (226 before, +7 new), e2e **60** passed
+exit 0, `ruff check` and `ruff format --check` clean. Separately: `caddy validate` passes both for a
+bare port and for a domain, `docker compose config` renders the stack and refuses it when a secret
+is missing, and `Dockerfile.caddy` builds.
+
+**Nothing has run on the server.** Not one container, not one file. Everything above is verified
+locally and by construction only.
+
+### Next actions, in order
+
+1. **Confirm the first `publish` run went green** and that both packages exist under the GitHub
+   account. Nothing downstream works if it did not — and it has never run before, so this is the
+   one step with no prior evidence behind it at all.
+2. **The owner's server-side setup**, per `docs/HANDOFF.md` §6.1: datasets (media `chown 1000:1000`),
+   a GHCR registry entry in Portainer with a `read:packages` token, the stack, the Keenetic rule.
+3. **The four post-deploy checks**, now written down in `docs/HANDOFF.md` §7. The order matters —
+   sign-in first, then a 30–50 MB upload, then the login throttle from two networks, then a restore
+   rehearsal. The upload is the likeliest to fail: the router has an upload ceiling of its own that
+   this repository cannot see or set.
+4. **The owner's own unaided pass through all three publishing flows.** Still the single open item on
+   the launch checklist in `docs/SPEC.md`, and still his by definition. Better done against the
+   deployed site than locally.
 
 **If instead the next session is more UI work:** open `docs/UI-AUDIT.md` at «Phase B», run
 `iterate-product` again as I2, and take the cheap end first — F-011 (`position: relative` on
@@ -49,18 +96,13 @@ all, and F-016's clipped tile controls are not a 2.5.8 conformance problem — z
 now has the `:disabled` rule it depended on). The consolidations — F-009, F-010 — touch shared
 primitives and want a milestone of their own.
 
-**Waiting on the owner:** nothing blocking, and nothing in flight. Both open items above are his.
+**Waiting on the owner:** step 2 above, and `docs/TASKS.md` has no milestone for this work — the
+deployment was planned and executed outside the M-numbering. Add one or leave it; it is the only
+place the tree and the checklists now disagree.
 
-**One defect found and deliberately not fixed — decide before deploying.** `ASSET_VERSION` in
-`app/templating.py` is `Path(__file__).stat().st_mtime`: **templating.py's own** mtime, not the
-static tree's. The comment above it says it is "bumped whenever the process restarts" — it is not
-bumped by a restart, and it is not bumped when CSS or JS changes either. `Caddyfile` sets
-`Cache-Control "public, max-age=604800"` on `/static/*`, so **a release that touches only CSS or JS
-serves the old files to returning visitors for up to a week** — the shape of the search-field fix
-above, which is why it turned up. It cannot bite in development (no proxy, and the container
-bind-mounts `./app`), which is why nothing has caught it. `static_url` already receives the path, so
-keying `?v=` on the requested file's own mtime is a few lines; it is a sitewide mechanism, so it is
-the owner's call and not a silent fix.
+**CI runs no tests.** `publish.yml` builds and pushes; it does not gate on the suite. `latest`
+follows `main` whatever state `main` is in. The local gates remain the only gate, which is fine
+while one person releases by hand and worth revisiting when that stops being true.
 
 **Two things about this machine that cost time today.** `make` is **not on PATH** here, in either
 shell, although `README.md` and `docs/CONVENTIONS.md` document every command as `make …` — run the

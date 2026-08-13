@@ -15,12 +15,14 @@ from app.config import settings
 APP_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = APP_DIR / "templates"
 I18N_DIR = APP_DIR / "i18n"
+STATIC_DIR = APP_DIR / "static"
 
 DEFAULT_LANG = "ru"
 
-# Bumped whenever the process restarts; enough to bust static caches in a
-# single-instance deployment without a build pipeline.
-ASSET_VERSION = str(int(Path(__file__).stat().st_mtime))
+# Only reached when a template names a file that is not on disk — a bug in the
+# template rather than a cache worth preserving. Real versions are the asset's
+# own mtime; see `static_url`.
+_FALLBACK_ASSET_VERSION = str(int(Path(__file__).stat().st_mtime))
 
 
 @lru_cache
@@ -57,7 +59,19 @@ def translate(key: str, lang: str = DEFAULT_LANG, **kwargs: Any) -> str:
 
 
 def static_url(path: str) -> str:
-    return f"/static/{path.lstrip('/')}?v={ASSET_VERSION}"
+    """Cache-busting URL for a file under `static/`, keyed on that file's mtime.
+
+    Not on the process's start time and not on this module's mtime, which is
+    what it used to be: neither of those moves when a stylesheet changes.
+    Caddy serves `/static/*` with `max-age=604800`, so a release touching only
+    CSS or JS would otherwise reach returning visitors up to a week late.
+    """
+    relative = path.lstrip("/")
+    try:
+        version = str(int((STATIC_DIR / relative).stat().st_mtime))
+    except OSError:
+        version = _FALLBACK_ASSET_VERSION
+    return f"/static/{relative}?v={version}"
 
 
 @lru_cache(maxsize=1)

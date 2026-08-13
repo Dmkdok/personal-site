@@ -1,0 +1,133 @@
+# The whole server-side deployment: paste this into Portainer → Stacks → Add
+# stack → Web editor, fill in the environment variables below it, and deploy.
+#
+# Nothing else is placed on the host. Both images come from GHCR under one tag,
+# so the application and the proxy configuration in front of it always move
+# together. There is no build context here on purpose — a stack created in the
+# web editor has none.
+#
+# TLS is *not* terminated here. The Keenetic router in front holds the
+# certificate and reaches this stack over plain HTTP on HTTP_PORT, which is what
+# makes the site work behind a grey IP. The dedicated server this eventually
+# moves to uses docker-compose.yml + docker-compose.prod.yml instead, where the
+# same Caddyfile takes TLS back by being given a domain rather than a port.
+#
+# ---------------------------------------------------------------------------
+# Environment variables. Those without a default must be set or the stack will
+# refuse to deploy rather than start something half-configured.
+#
+#   Secrets — generate these yourself, they belong in Portainer and nowhere else
+#     SECRET_KEY            python -c "import secrets; print(secrets.token_urlsafe(48))"
+#     ADMIN_PASSWORD        at least 12 characters under ENV=production
+#     POSTGRES_PASSWORD     any long random string
+#
+#   Addresses
+#     SITE_URL              public https:// address, used for canonical tags,
+#                           Open Graph and sitemap.xml. Not the LAN address.
+#     HTTP_PORT             host port the router forwards to        (default 8080)
+#
+#   Storage — ZFS datasets, created before the first deploy
+#     MEDIA_HOST_DIR        /mnt/<pool>/portfolio/media    (must be owned by uid 1000)
+#     PGDATA_HOST_DIR       /mnt/<pool>/portfolio/pgdata
+#
+#   Release
+#     IMAGE_TAG             latest, or a sha-<short> tag to pin  (default latest)
+#
+#   Rarely changed: ADMIN_USERNAME, POSTGRES_USER, POSTGRES_DB, MAX_UPLOAD_MB,
+#   MAX_BATCH_FILES, SESSION_MAX_AGE_DAYS, LOGIN_MAX_ATTEMPTS,
+#   LOGIN_WINDOW_MINUTES, TRUSTED_PROXY_IPS, CADDY_TRUSTED_PROXIES.
+# ---------------------------------------------------------------------------
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-portfolio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?generate one, do not reuse the development password}
+      POSTGRES_DB: ${POSTGRES_DB:-portfolio}
+    volumes:
+      # Mount point is /var/lib/postgresql, NOT /var/lib/postgresql/data: since
+      # Postgres 18 the image stores data in a major-version-specific
+      # subdirectory and refuses to start when the older path is mounted
+      # directly. A ZFS dataset here means TrueNAS snapshots cover the database
+      # — though a snapshot of a running Postgres is only crash-consistent, so
+      # keep taking logical dumps as well.
+      - ${PGDATA_HOST_DIR:?set it to a dataset, e.g. /mnt/pool/portfolio/pgdata}:/var/lib/postgresql
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-portfolio} -d ${POSTGRES_DB:-portfolio}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    # No published port. The database is reachable only from this stack's network.
+
+  web:
+    image: ghcr.io/dmkdok/personal-site:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Every variable the application reads is named here. Portainer's stack
+      # variables are substituted into ${...} below; they do not reach the
+      # container by themselves, and there is no .env file on the server to fall
+      # back on. Drop a line from this list and the setting silently reverts to
+      # its default — or, for the three secrets, refuses to start.
+      ENV: production
+      SECRET_KEY: ${SECRET_KEY:?generate one, at least 32 characters}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?at least 12 characters under ENV=production}
+      SITE_URL: ${SITE_URL:?the public https:// address, e.g. https://example.keenetic.pro}
+      DATABASE_URL: >-
+        postgresql+psycopg://${POSTGRES_USER:-portfolio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-portfolio}
+      MEDIA_ROOT: /data/media
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-50}
+      MAX_BATCH_FILES: ${MAX_BATCH_FILES:-50}
+      SESSION_MAX_AGE_DAYS: ${SESSION_MAX_AGE_DAYS:-30}
+      LOGIN_MAX_ATTEMPTS: ${LOGIN_MAX_ATTEMPTS:-5}
+      LOGIN_WINDOW_MINUTES: ${LOGIN_WINDOW_MINUTES:-15}
+    volumes:
+      # Photographs on a ZFS dataset, not in a named volume: snapshots and
+      # replication reach them, ordinary tools can read them, and `down -v`
+      # cannot take them. The image runs unprivileged as uid 1000, so the
+      # dataset must be chowned to it before the first deploy.
+      - ${MEDIA_HOST_DIR:?set it to a dataset, e.g. /mnt/pool/portfolio/media}:/data/media
+    # `--forwarded-allow-ips` must name the proxy and nothing else. With "*"
+    # uvicorn rewrites the peer address from any client's own X-Forwarded-For,
+    # which hands the login throttle a fresh budget on every attempt. The default
+    # is Docker's private bridge range, which on this stack is Caddy alone.
+    command:
+      ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers",
+       "--forwarded-allow-ips", "${TRUSTED_PROXY_IPS:-172.16.0.0/12}"]
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz', timeout=3).status==200 else 1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  caddy:
+    # This repository's Caddyfile, baked in. Same tag as the application, so a
+    # redeploy moves both or neither.
+    image: ghcr.io/dmkdok/personal-site-caddy:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      # A bare port: no certificate is requested, the router holds TLS. Caddy is
+      # still worth having here for the cache headers on /media and /static, the
+      # request-body ceiling and compression — none of which the router does.
+      CADDY_SITE_ADDRESS: ":80"
+      CADDY_TRUSTED_PROXIES: ${CADDY_TRUSTED_PROXIES:-private_ranges}
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

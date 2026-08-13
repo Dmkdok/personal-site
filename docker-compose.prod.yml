@@ -39,7 +39,11 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     environment:
-      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in .env, e.g. dmkdok.ru}
+      # A domain here means Caddy terminates TLS itself. Behind a proxy that
+      # already does — the TrueNAS deployment, see deploy/portainer-stack.yml —
+      # it is a bare port instead.
+      CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:?set CADDY_SITE_ADDRESS in .env, e.g. dmkdok.ru}
+      CADDY_TRUSTED_PROXIES: ${CADDY_TRUSTED_PROXIES:-private_ranges}
 
 volumes:
   caddy_data:

@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+
+# The proxy, with this repository's Caddyfile baked in.
+#
+# It exists because the TrueNAS deployment has no checkout to bind-mount from:
+# Portainer is handed a compose file and nothing else. The alternatives were a
+# second copy of the configuration inlined in that compose file, or a copy left
+# on the server by hand — both of which drift from the Caddyfile silently. This
+# way the proxy configuration is versioned and released with the application
+# that it fronts, under the same tag.
+#
+# The site address and the trusted-proxy list stay environment variables, read
+# at startup: see the comments in the Caddyfile itself.
+
+FROM caddy:2-alpine
+
+COPY Caddyfile /etc/caddy/Caddyfile
+
+RUN caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
