@@ -76,7 +76,19 @@ exit 0, `ruff check` and `ruff format --check` clean. Separately: `caddy validat
 bare port and for a domain, `docker compose config` renders the stack and refuses it when a secret
 is missing, and `Dockerfile.caddy` builds.
 
-## It is deployed, on the LAN
+## Published, 2026-08-13
+
+**`https://profile.dmkdok.crazedns.ru:8443/`** — KeenDNS cloud mode, on the owner's own KeenDNS
+domain `dmkdok.crazedns.ru` rather than `keenetic.pro`. `profile` is a fourth-level name published
+from the router's «доступ к веб-приложениям» form and pointed at `192.168.1.20:8080`. Port **8443**
+because a VPN on the same router holds 443; 8443 is on KeenDNS's allowed HTTPS list, as is the 8080
+the stack publishes, so both ends of the path are legal by luck and should stay put.
+
+**Immediately outstanding: `SITE_URL` is still `http://192.168.1.20:8080`.** Canonical tags, Open
+Graph and `sitemap.xml` therefore advertise a LAN address to the public internet. Fix is one
+variable in Portainer → Stacks → portfolio → Editor plus a redeploy; it changes no code.
+
+## Deployment, brought up on the LAN
 
 Brought up 2026-08-13 through the Portainer API. Stack `portfolio`, three containers, `db` and `web`
 healthy, serving `http://192.168.1.20:8080`. Datasets `tank/app_data/_dev_/portfolio/{media,pgdata,backups}`
@@ -112,9 +124,8 @@ outside the deployment's scope, so it is left for a decision rather than fixed i
 
 ### Next actions, in order
 
-1. **Decide how the site is published**, per the KeenDNS constraint in `docs/HANDOFF.md` §6.1: the
-   router's own third-level name, where the certificate is valid, or a Cloudflare Tunnel. Everything
-   else waits on this, because everything else needs HTTPS.
+1. **Set `SITE_URL` to `https://profile.dmkdok.crazedns.ru:8443` and redeploy the stack.** Until
+   then the site tells search engines and link previews that it lives at `192.168.1.20`.
 2. **The four post-deploy checks**, in `docs/HANDOFF.md` §7 — sign-in, a 30–50 MB upload, the login
    throttle from two different networks, a restore rehearsal. The upload is the likeliest to fail:
    whether KeenDNS caps request size is undocumented, and so is whether it forwards
