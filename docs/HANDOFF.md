@@ -212,9 +212,12 @@ is why the stack publishes `HTTP_PORT` (8080) instead. The router reaches it the
 
 **Once, before the first deploy:**
 
-1. Datasets under `/mnt/<pool>/portfolio/`: `media`, `pgdata`, `backups`. The image runs
-   unprivileged as uid 1000, so `chown -R 1000:1000` the media dataset or every upload fails on
-   permissions. `atime=off` and `recordsize=16K` suit `pgdata`.
+1. Datasets under `tank/app_data/_dev_/portfolio`: `media`, `pgdata`, `backups` — beside
+   `_dev_/raskladka`, following this appliance's own convention for the owner's projects. The image
+   runs unprivileged as uid 1000, so `chown -R 1000:1000` the media dataset or every upload fails
+   on permissions. `atime=off` on all three, `recordsize=16K` on `pgdata`. Note the parent carries
+   NFSv4 ACLs, under which a plain `chown` is enough only because TrueNAS's default ACL gives
+   `owner@` full control; verify by writing, not by reading the mode bits.
 2. Portainer → Registries → add `ghcr.io`, username your GitHub name, password a personal access
    token with `read:packages`. The package is private because the repository is.
 3. Portainer → Stacks → Add stack → Web editor. Paste `deploy/portainer-stack.yml` whole and fill
@@ -225,6 +228,25 @@ is why the stack publishes `HTTP_PORT` (8080) instead. The router reaches it the
 **Every release after that:** push to `main`, wait for the `publish` workflow, then Redeploy the
 stack in Portainer with *Re-pull image* enabled. Nothing on the server needs touching. To pin a
 release rather than follow `main`, set `IMAGE_TAG` to a `sha-<short>` tag.
+
+**External access, and why it is not simply "publish it in KeenDNS".** The router has a grey IP, so
+KeenDNS runs in cloud mode, which proxies HTTP/HTTPS only and only on a fixed list of ports —
+80, 81, 280, 591, 777, 5080, **8080**, 8090, 65080 for HTTP. `HTTP_PORT=8080` is on that list, and
+that is not an accident to be optimised away later: move it to 8081 and the site becomes
+unreachable from outside with no error that says so.
+
+The obstacle is the certificate. KeenDNS publishes an internal web application under a **fourth**
+level name — `portfolio.<router>.keenetic.pro` — while the certificate Keenetic issues covers
+`*.keenetic.pro` and `keenetic.pro`, and a TLS wildcard matches exactly one label. Fourth-level
+names therefore fail validation; Keenetic's own forum has this open and unresolved. A browser can
+be clicked through, but link previews, Open Graph fetchers and crawlers cannot, and the admin
+session cookie is `Secure`. Either publish under the router's own third-level name, where the
+certificate is valid, or terminate TLS somewhere else — a Cloudflare Tunnel costs nothing, is
+indifferent to a grey IP, carries a real certificate for a real domain and has no port list.
+
+Two things the KeenDNS documentation does not state at all: whether the cloud proxy caps request
+size, and whether it forwards `X-Forwarded-For`. Those are exactly checks 2 and 3 in §7, and they
+are why those checks exist.
 
 **Backups do not work the way §5 describes on this host** — `make backup` needs a checkout and
 `make`, and there is neither. Durability comes from TrueNAS periodic snapshot tasks on both
@@ -268,10 +290,17 @@ and nothing local reproduces it, because dev runs without the proxy.
 Behind the Keenetic there is now a third ceiling, the router's own, which this repository cannot
 see or set. It is the first thing to suspect when a large upload fails there and nowhere else.
 
-> **Not yet brought up.** Both files validate — `caddy validate` passes for a port and for a
-> domain, `docker compose config` renders the stack and refuses it when a secret is missing, and
-> the proxy image builds with its configuration checked at build time. Nothing has yet run on the
-> server (T074). The post-deploy checks are §7.
+> **Brought up 2026-08-13** on TrueNAS 26.0.0-BETA.2 at `192.168.1.20`, Portainer stack
+> `portfolio`, datasets under `tank/app_data/_dev_/portfolio`, reachable at
+> `http://192.168.1.20:8080`. `db` and `web` healthy, public pages, `/healthz`, `sitemap.xml` and
+> `robots.txt` all answering; migrations applied; Caddy's cache headers confirmed on the wire. The
+> media dataset carries NFSv4 ACLs and the unprivileged container writes to it — proven by the
+> `originals/` and `derived/` directories the application created there itself, owned by uid 1000.
+>
+> **Not yet done: anything requiring HTTPS.** Admin sign-in cannot be tested over the LAN address
+> because `ENV=production` marks the session cookie `Secure` and a browser will not send it over
+> `http://`. Nor, therefore, can the upload ceiling or the login throttle. Those three are §7's
+> post-deploy checks and they wait on external access — see the KeenDNS constraint below.
 
 ---
 
@@ -321,9 +350,10 @@ they need the live route, the real router and a browser.
 
 ## 8. Known gaps
 
-1. **The production stack has never been run on the server** (§6). The machinery is in place — two
-   images, a workflow, a compose file that validates — but nothing has been deployed. Still the
-   highest-value thing to do next.
+1. **The site runs on the LAN but is not published** (§6.1). Everything that can be verified over
+   `http://192.168.1.20:8080` is verified; sign-in, the upload ceiling and the login throttle
+   cannot be, because all three need working HTTPS. The KeenDNS certificate constraint in §6.1 is
+   the decision blocking that.
 2. **A picture inside an article shifts the page as it loads.** Measured 2026-08-07: an article with
    two pictures scores CLS 0.119 against this project's 0.02 budget, on a 400 kB/s cold load. They
    are lazy-loaded and carry no `width`/`height`, so nothing reserves their height. The album grid

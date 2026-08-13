@@ -76,21 +76,59 @@ exit 0, `ruff check` and `ruff format --check` clean. Separately: `caddy validat
 bare port and for a domain, `docker compose config` renders the stack and refuses it when a secret
 is missing, and `Dockerfile.caddy` builds.
 
-**Nothing has run on the server.** Not one container, not one file. Everything above is verified
-locally and by construction only.
+## It is deployed, on the LAN
+
+Brought up 2026-08-13 through the Portainer API. Stack `portfolio`, three containers, `db` and `web`
+healthy, serving `http://192.168.1.20:8080`. Datasets `tank/app_data/_dev_/portfolio/{media,pgdata,backups}`
+— beside `_dev_/raskladka`, which is this appliance's own convention for the owner's projects.
+
+Verified on the wire, not assumed: public pages, `/healthz`, `sitemap.xml`, `robots.txt`; migrations
+applied (Postgres created `pgdata/18`); `Cache-Control: public, max-age=604800` on stylesheets;
+`?v=` moving with the release. And the one that mattered most — **the unprivileged container writes
+to an NFSv4-ACL dataset**, proven by the `originals/` and `derived/` directories the application
+created there itself as uid 1000. Only Caddy publishes a port (8080); `db` and `web` publish none.
+The host went from 29 containers to 32; nothing else was touched.
+
+**What is still unverified, and why:** sign-in, the upload ceiling and the login throttle all need
+working HTTPS, because `ENV=production` marks the session cookie `Secure`. They wait on external
+access, which has a real obstacle recorded in `docs/HANDOFF.md` §6.1: KeenDNS publishes internal
+apps under a *fourth*-level name while Keenetic's certificate covers only `*.keenetic.pro`, and a
+TLS wildcard matches one label. Port 8080 is on KeenDNS's allowed list, which is luck worth keeping.
+
+**A correction to ADR-018 and to the commit that carried it.** Both say the `ASSET_VERSION` defect
+"became load-bearing" under a proxy caching `/static` for a week. That overstates it *for this
+deployment*: the image is rebuilt from a fresh checkout each release, so `templating.py`'s mtime
+moved too and the old code would have busted caches anyway. The fix is still right — it makes the
+mechanism mean what its name says, and it is the difference between working and not in any
+deployment that bind-mounts `app/`, which is what development does — but the week of stale CSS was
+never going to happen here. Recorded so the next session does not inherit the wrong reason.
+
+**One defect found from the live request log, not fixed.** The base template preloads
+`onest-cyrillic.woff2` through `static_url`, so the preload carries `?v=…`, while the `@font-face`
+rule in CSS asks for the same file without a query. Different URLs: the preload never matches, the
+browser fetches the font twice and warns that a preloaded resource went unused. It is the
+LCP-critical font. Pre-existing — the version query was appended before this session too — and
+outside the deployment's scope, so it is left for a decision rather than fixed in passing.
 
 ### Next actions, in order
 
-1. **The owner's server-side setup**, per `docs/HANDOFF.md` §6.1: datasets (media `chown 1000:1000`),
-   a GHCR registry entry in Portainer with a `read:packages` token, the stack, the Keenetic rule.
-   This is the first step that touches the appliance at all.
-2. **The four post-deploy checks**, now written down in `docs/HANDOFF.md` §7. The order matters —
-   sign-in first, then a 30–50 MB upload, then the login throttle from two networks, then a restore
-   rehearsal. The upload is the likeliest to fail: the router has an upload ceiling of its own that
-   this repository cannot see or set.
+1. **Decide how the site is published**, per the KeenDNS constraint in `docs/HANDOFF.md` §6.1: the
+   router's own third-level name, where the certificate is valid, or a Cloudflare Tunnel. Everything
+   else waits on this, because everything else needs HTTPS.
+2. **The four post-deploy checks**, in `docs/HANDOFF.md` §7 — sign-in, a 30–50 MB upload, the login
+   throttle from two different networks, a restore rehearsal. The upload is the likeliest to fail:
+   whether KeenDNS caps request size is undocumented, and so is whether it forwards
+   `X-Forwarded-For`, which is what the throttle depends on.
 3. **The owner's own unaided pass through all three publishing flows.** Still the single open item on
    the launch checklist in `docs/SPEC.md`, and still his by definition. Better done against the
    deployed site than locally.
+4. **Backups.** Nothing is scheduled yet — no snapshot task on the two datasets, no `pg_dump` cron.
+   The site now holds real state, so this stops being theoretical the moment content is added.
+
+**Credentials.** `ADMIN_USERNAME` is `admin`; `ADMIN_PASSWORD`, `SECRET_KEY` and `POSTGRES_PASSWORD`
+were generated during deployment and exist only in the Portainer stack's environment, readable at
+Portainer → Stacks → portfolio → Editor. Changing `ADMIN_PASSWORD` there and redeploying updates the
+stored hash.
 
 **If instead the next session is more UI work:** open `docs/UI-AUDIT.md` at «Phase B», run
 `iterate-product` again as I2, and take the cheap end first — F-011 (`position: relative` on
