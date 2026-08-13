@@ -11,9 +11,13 @@ approved_at: 2026-08-04
 `2125d87`. The remote is `origin` → `https://github.com/Dmkdok/personal-site.git`. The dev stack
 (`db`, `web`) is up — `docker compose down` stops it.
 
-**Tree clean.** The deployment work below is committed to `main` and pushed. That push is also the
-first run of the `publish` workflow, so it is the moment the two GHCR images came into existence —
-check its result in Actions before expecting Portainer to pull anything.
+**Tree clean.** The deployment work below is committed to `main` (`e43913c`) and pushed. That push
+was also the first run of the `publish` workflow, and it went green: both images exist in GHCR,
+tagged `latest` and `sha-e43913c`. Portainer has something to pull.
+
+One thing the local `gh` token cannot do: list the packages. It has no `read:packages` scope, so the
+tags above were read out of the workflow logs rather than the registry. The token Portainer needs
+carries exactly that scope, which is the same gap seen from the other side.
 
 **M10 is complete and iteration I1 is closed.** Phase A of `docs/UI-AUDIT.md` — the four P1 findings
 plus F-005 and F-006 — is built, tested and reviewed. Gates: unit/API **226**, e2e **60**, lint and
@@ -77,16 +81,14 @@ locally and by construction only.
 
 ### Next actions, in order
 
-1. **Confirm the first `publish` run went green** and that both packages exist under the GitHub
-   account. Nothing downstream works if it did not — and it has never run before, so this is the
-   one step with no prior evidence behind it at all.
-2. **The owner's server-side setup**, per `docs/HANDOFF.md` §6.1: datasets (media `chown 1000:1000`),
+1. **The owner's server-side setup**, per `docs/HANDOFF.md` §6.1: datasets (media `chown 1000:1000`),
    a GHCR registry entry in Portainer with a `read:packages` token, the stack, the Keenetic rule.
-3. **The four post-deploy checks**, now written down in `docs/HANDOFF.md` §7. The order matters —
+   This is the first step that touches the appliance at all.
+2. **The four post-deploy checks**, now written down in `docs/HANDOFF.md` §7. The order matters —
    sign-in first, then a 30–50 MB upload, then the login throttle from two networks, then a restore
    rehearsal. The upload is the likeliest to fail: the router has an upload ceiling of its own that
    this repository cannot see or set.
-4. **The owner's own unaided pass through all three publishing flows.** Still the single open item on
+3. **The owner's own unaided pass through all three publishing flows.** Still the single open item on
    the launch checklist in `docs/SPEC.md`, and still his by definition. Better done against the
    deployed site than locally.
 
