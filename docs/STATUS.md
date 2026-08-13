@@ -85,8 +85,72 @@ because a VPN on the same router holds 443; 8443 is on KeenDNS's allowed HTTPS l
 the stack publishes, so both ends of the path are legal by luck and should stay put.
 
 **Immediately outstanding: `SITE_URL` is still `http://192.168.1.20:8080`.** Canonical tags, Open
-Graph and `sitemap.xml` therefore advertise a LAN address to the public internet. Fix is one
-variable in Portainer → Stacks → portfolio → Editor plus a redeploy; it changes no code.
+Graph and `sitemap.xml` therefore advertise a LAN address to the public internet — confirmed by
+reading the published page. Fix is one variable in Portainer → Stacks → portfolio → Editor plus a
+redeploy; it changes no code.
+
+### Tested against the public URL, 2026-08-13
+
+| Check | Result |
+|---|---|
+| TLS, strict verification | **passes** — Let's Encrypt, SAN `*.dmkdok.crazedns.ru`, valid to 13 Oct 2026 |
+| Public pages, `/login` | 200 |
+| Admin sign-in | **works** — `POST /login → 303` observed in the application log |
+| Cache headers through the proxy | `Cache-Control: public, max-age=604800` and HSTS survive intact |
+| Upload ceiling | 1, 10 and **40 MB reach the application**; 60 MB → 413 from our own Caddy |
+| Client address seen by the application | **`192.168.1.1` for every external request** |
+
+Two of those overturn things written earlier in this file, and one is a new defect.
+
+**Correction — the certificate objection was wrong.** §6.1 of `docs/HANDOFF.md` and the entry above
+argued that a fourth-level KeenDNS name cannot have a valid certificate, reasoning from a
+`*.keenetic.pro` wildcard. Keenetic in fact issues a wildcard for the *router's own* name —
+here `*.dmkdok.crazedns.ru` — which covers `profile.dmkdok.crazedns.ru` exactly. Strict `curl`
+verification passes. No Cloudflare Tunnel is needed and none should be built.
+
+**Confirmed good — KeenDNS imposes no request-size cap.** A 40 MB body reached FastAPI (which
+answered 422, being a login form). The only ceiling on the path is the intended one: Caddy's 55 MB,
+which returned 413 at 60 MB. A 30–50 MB photograph will upload.
+
+**New defect — the login throttle is effectively global.** The router sends no `X-Forwarded-For`,
+so Caddy substitutes its peer and the application records `192.168.1.1` for every visitor on earth.
+`LOGIN_MAX_ATTEMPTS=5` per 15 minutes is therefore shared by everyone: any stranger can lock the
+owner out of his own site with five wrong passwords, and the owner cannot fall back to the LAN
+address because `ENV=production` makes the session cookie `Secure` and the LAN address is plain
+HTTP. The flip side is that brute force is throttled unusually hard. Not fixable in this repository
+— it needs the header from the router, or a deliberate decision about the limit.
+
+### Open problems and bugs, all of them
+
+Ordered by what bites first. Items 1–3 are consequences of this deployment; 4–8 predate it or sit
+beside it.
+
+1. **`SITE_URL` advertises `http://192.168.1.20:8080` to the internet.** Canonical, Open Graph,
+   `sitemap.xml`. One variable in Portainer, then redeploy. Note the replacement must carry the
+   port: `https://profile.dmkdok.crazedns.ru:8443`.
+2. **The login throttle is shared by every external visitor** — no `X-Forwarded-For` from the
+   router, so everyone is `192.168.1.1`. Five wrong passwords from a stranger lock the owner out
+   for 15 minutes, with no LAN fallback because the LAN address is plain HTTP and the cookie is
+   `Secure`. Detail above.
+3. **No backups are scheduled.** No ZFS snapshot task on `media` or `pgdata`, no `pg_dump` cron.
+   Harmless while the site is empty; not harmless the moment content exists. `make backup` does
+   not apply here — see `docs/HANDOFF.md` §6.1.
+4. **The Cyrillic font is downloaded twice on every cold load.** `base.html` preloads it through
+   `static_url`, so the preload URL carries `?v=…`, while the `@font-face` rule asks for the same
+   file without a query. The preload never matches, and it is the LCP-critical font. Pre-existing.
+5. **CI runs no tests.** `publish.yml` builds and pushes; `latest` follows `main` in whatever state
+   `main` is. The local gates are the only gates.
+6. **The appliance runs TrueNAS 26.0.0-BETA.2.** A beta OS under a live site. Nothing has
+   misbehaved, but it is worth knowing before diagnosing anything strange.
+7. **`docs/TASKS.md` has no milestone for any of this work.** The deployment happened outside the
+   M-numbering; it is the one place the tree and the checklists disagree.
+8. **Credential hygiene, outstanding.** The TrueNAS account password and four tokens were pasted
+   into a chat transcript. The classic GHCR PAT is *in use* — it is Portainer's registry credential
+   — so it must be replaced in Portainer before being revoked, not after. `Test_Key` in TrueNAS is
+   revoked and should be deleted. Full order of operations at the end of this session's notes.
+
+Older functional gaps — article-image CLS, touch-target sizing, two labelling gaps, draft Russian
+copy — are unchanged and live in `docs/HANDOFF.md` §8.
 
 ## Deployment, brought up on the LAN
 
