@@ -7,7 +7,9 @@ approved_at: 2026-08-04
 ## Resume here
 
 **Branch `session/2026-08-06-m3-fixes-and-e2e`, tree clean, nothing running but the dev stack
-(`db`, `web`) — `docker compose down` stops it.** No remote; merging into `main` is the owner's call.
+(`db`, `web`) — `docker compose down` stops it.** The remote is
+`origin` → `https://github.com/Dmkdok/personal-site.git`, and the branch is pushed and in sync as of
+2026-08-13 (`2f3ae06`). `origin/main` is still back at `81ecaf0`; merging into `main` is the owner's call.
 
 **M10 is complete and iteration I1 is closed.** Phase A of `docs/UI-AUDIT.md` — the four P1 findings
 plus F-005 and F-006 — is built, tested and reviewed. Gates: unit/API **226**, e2e **60**, lint and
