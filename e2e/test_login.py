@@ -58,7 +58,10 @@ def test_wrong_password_is_rejected_with_a_generic_message(
     page.get_by_label("Пароль", exact=True).fill("definitely-not-the-password")
     page.get_by_role("button", name="Войти", exact=True).click()
 
-    error = page.get_by_role("alert")
+    # Scoped to the form: since UI-AUDIT F-007 the toast host keeps a permanent
+    # `role="alert"` region on every page, so an unscoped alert role is two
+    # elements everywhere.
+    error = page.locator(".login").get_by_role("alert")
     expect(error).to_be_visible()
     # F17: the message must not distinguish a wrong name from a wrong password.
     assert username not in error.inner_text()

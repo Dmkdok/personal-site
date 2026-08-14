@@ -810,19 +810,37 @@
      Not in admin.css, which is only loaded for a signed-in admin: `ui.js` shows
      a toast to anyone whose request fails, and an unstyled one lands as bare
      text in the corner of the page. */
+  /* Above the lightbox, not below it: at `--z-nav + 1` a toast raised while
+     the lightbox was open rendered behind it, which is the one moment the
+     message matters most. The host stays click-through so it never swallows a
+     press meant for the page; each toast takes its own clicks back. */
   .toast-host {
     position: fixed;
     inset-block-end: calc(var(--space-s) + 3.5rem);
     inset-inline-start: 50%;
     translate: -50% 0;
-    z-index: calc(var(--z-nav) + 1);
+    z-index: calc(var(--z-overlay) + 1);
     display: flex;
     flex-direction: column;
-    gap: var(--space-2xs);
     pointer-events: none;
   }
 
+  .toast-region {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+  }
+
+  /* Only when both regions are carrying something: an empty one must not push
+     the visible stack off its anchor. */
+  .toast-region:not(:empty) + .toast-region:not(:empty) {
+    margin-block-start: var(--space-2xs);
+  }
+
   .toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2xs);
     padding: 0.5rem 0.95rem;
     border-radius: var(--radius-pill);
     background-color: var(--surface-raised);
@@ -830,6 +848,23 @@
     box-shadow: var(--shadow-raised);
     font-size: var(--step--1);
     animation: toast-in var(--dur) var(--ease);
+    pointer-events: auto;
+  }
+
+  .toast__close {
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    margin-inline-end: -0.4rem;
+    border-radius: 50%;
+    font-size: var(--step-1);
+    line-height: 1;
+  }
+
+  .toast__close:hover {
+    background-color: var(--danger-wash);
   }
 
   .toast--error {

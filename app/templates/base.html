@@ -77,17 +77,26 @@
 
     {# `ui.js` reads its messages from here. Data attributes rather than an
        inline script: the CSP forbids one, and this keeps every user-visible
-       string in the catalogue where ADR-007 says it belongs. #}
+       string in the catalogue where ADR-007 says it belongs.
+
+       Two regions, not one (UI-AUDIT F-007). `role="alert"` on the shared host
+       would make every «Сохранено» interrupt whatever a screen reader was
+       saying; on its own region it interrupts only for the messages that have
+       earned it. Both are in the DOM from first paint, because a live region
+       created at the same moment as its content is a live region that may
+       never be announced. #}
     <div
       class="toast-host"
       id="toasts"
-      aria-live="polite"
-      aria-atomic="false"
       data-msg-expired="{{ t('errors.session_expired') }}"
       data-msg-stale="{{ t('errors.stale_page') }}"
       data-msg-failed="{{ t('errors.save_failed') }}"
       data-msg-offline="{{ t('errors.offline') }}"
-    ></div>
+      data-msg-dismiss="{{ t('errors.dismiss') }}"
+    >
+      <div class="toast-region" id="toasts-polite" aria-live="polite" aria-atomic="false"></div>
+      <div class="toast-region" id="toasts-alert" role="alert"></div>
+    </div>
 
     <script src="{{ static_url('js/vendor/htmx.min.js') }}" defer></script>
     <script src="{{ static_url('js/theme.js') }}" defer></script>

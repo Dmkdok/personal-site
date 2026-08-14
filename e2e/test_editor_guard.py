@@ -112,3 +112,35 @@ def test_a_failed_save_stays_on_screen(admin_page: Page, draft: Post) -> None:
 
     admin_page.get_by_label(ru("blog.body_label")).fill("И ещё немного текста.")
     expect(state).to_contain_text(ru("blog.save_failed"))
+
+
+def test_a_failed_save_leaves_a_message_that_can_be_read_and_dismissed(
+    admin_page: Page, draft: Post
+) -> None:
+    """UI-AUDIT F-007: the message about lost work outlives four seconds.
+
+    It used to be posted into a `polite` region that removed itself after
+    4 000 ms and could not be clicked — so it could not be re-read, and a
+    screen reader mid-utterance could miss it entirely. Errors now go to the
+    assertive region and stay until the owner closes them.
+    """
+    admin_page.goto(f"/blog/{draft.slug}/edit")
+    # Publishing rather than typing-then-saving: one failed request and exactly
+    # one message. A failed *save* also leaves the autosave debounce armed, and
+    # a second toast arriving at 2.5 s would make a stale one indistinguishable
+    # from a fresh one — the test would pass on the old behaviour.
+    admin_page.route(f"**/blog/admin/posts/{draft.id}/publish", lambda route: route.abort())
+    admin_page.get_by_role("button", name=ru("blog.publish"), exact=True).click()
+
+    error = admin_page.locator("#toasts-alert .toast--error")
+    expect(error).to_have_count(1)
+    # A success would interrupt a screen reader if it shared this region.
+    expect(admin_page.locator("#toasts-polite .toast--error")).to_have_count(0)
+
+    # Four seconds is how long every toast used to last.
+    admin_page.wait_for_timeout(4500)
+    expect(error).to_have_count(1)
+    expect(error).to_be_visible()
+
+    error.get_by_role("button", name=ru("errors.dismiss")).click()
+    expect(error).to_have_count(0)

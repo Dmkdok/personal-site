@@ -106,6 +106,13 @@ Only these, and each is a behaviour change the owner is approving with the featu
 No other existing test may be edited. A red test outside this list is a regression, not an
 expectation to update.
 
+**One more was found during the build.** `e2e/test_login.py:61` located the login error with an
+unscoped `get_by_role("alert")`. Row 5 gives the toast host a permanent `role="alert"` region on
+every page, so that locator resolves to two elements everywhere and Playwright's strict mode refuses
+it. The assertion is unchanged; it is now scoped to `.login`. The alternative — leaving the region
+out of the DOM until an error arrives — is the thing the finding warns against: a live region
+created at the same moment as its content may never be announced.
+
 ## What the build corrected in the audit
 
 ### F-015: the prescribed fix is half of one (T107)

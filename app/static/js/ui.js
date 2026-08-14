@@ -12,16 +12,48 @@
 
   var host = document.getElementById("toasts");
   var text = (host && host.dataset) || {};
+  var politeRegion = document.getElementById("toasts-polite");
+  var alertRegion = document.getElementById("toasts-alert");
 
+  /**
+   * Show a message. Successes are polite and go away; errors do neither.
+   *
+   * An error told the owner their article did not save, and said it in a
+   * polite region that disappeared after four seconds and could not be
+   * clicked — so it could not be re-read, and a screen reader mid-utterance
+   * could miss it entirely (UI-AUDIT F-007). Errors now land in the assertive
+   * region and stay until they are dismissed.
+   */
   function toast(message, kind) {
     if (!host || !message) return;
+    var isError = kind === "error";
+    var region = isError ? alertRegion : politeRegion;
+    if (!region) return;
+
     var el = document.createElement("p");
     el.className = "toast" + (kind ? " toast--" + kind : "");
-    el.textContent = message;
-    host.appendChild(el);
-    window.setTimeout(function () {
-      el.remove();
-    }, 4000);
+
+    var body = document.createElement("span");
+    body.textContent = message;
+    el.appendChild(body);
+
+    if (isError) {
+      var close = document.createElement("button");
+      close.type = "button";
+      close.className = "toast__close";
+      close.setAttribute("aria-label", text.msgDismiss || "");
+      close.textContent = "×";
+      close.addEventListener("click", function () {
+        el.remove();
+      });
+      el.appendChild(close);
+    } else {
+      window.setTimeout(function () {
+        el.remove();
+      }, 4000);
+    }
+
+    region.appendChild(el);
   }
 
   window.portfolioToast = toast;
