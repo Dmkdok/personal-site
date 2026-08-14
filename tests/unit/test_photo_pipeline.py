@@ -254,6 +254,69 @@ def test_a_rejected_upload_leaves_nothing_behind(db):
 
 
 # --------------------------------------------------------------------------
+# HEIC on input (F51)
+# --------------------------------------------------------------------------
+def test_a_heic_photograph_is_accepted_and_served_as_webp(pipeline):
+    """What the owner's phone writes, taken without a conversion step first.
+
+    Nothing downstream learns a new format: the renditions are WebP exactly as
+    they are for a JPEG, and only the kept original carries `.heic`.
+    """
+    stored = pipeline(
+        make_image(2000, 1200, "HEIF"), filename="IMG_0042.HEIC", content_type="image/heic"
+    )
+
+    assert stored.original_path.endswith(".heic")
+    assert (stored.width, stored.height) == (2000, 1200)
+    assert sorted(stored.derivatives) == [640, 1600, 2000]
+    assert size_of(stored.derivatives[640]) == (640, 384)
+    for relative in stored.derivatives.values():
+        assert relative.endswith(".webp")
+        with Image.open(derived(relative)) as rendition:
+            assert rendition.format == "WEBP"
+
+
+def test_a_heic_is_rotated_before_it_is_measured(pipeline):
+    """A phone stores the sensor's pixels and the orientation beside them.
+
+    For HEIC the correction lands in the decoder rather than in
+    `ImageOps.exif_transpose` — pillow-heif applies the tag on open — so this
+    asserts the size the visitor is served, not which line produced it.
+    """
+    stored = pipeline(
+        make_image(2000, 1200, "HEIF", orientation=6),
+        filename="IMG_0043.HEIC",
+        content_type="image/heic",
+    )
+
+    # Stored 2000×1200, displayed 1200×2000 — and the ladder follows the
+    # displayed width, so no rendition is built from the un-rotated frame.
+    assert (stored.width, stored.height) == (1200, 2000)
+    assert sorted(stored.derivatives) == [640, 1200]
+    assert size_of(stored.derivatives[640]) == (640, 1067)
+
+
+def test_a_tiff_is_still_refused():
+    """Accepting one more format is not accepting whatever Pillow can open."""
+    with pytest.raises(images.ImageRejected):
+        images.validate_upload("scan.tiff", "image/tiff", make_image(400, 300, "TIFF"))
+
+
+@pytest.mark.parametrize(
+    ("label", "data"),
+    [
+        # ISO-BMFF, `ftyp` in the right place — and a video. The brand at offset
+        # 8 is the only thing separating it from a photograph.
+        ("video", b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00" + b"\x00" * 48),
+        ("not a media file at all", b"PK\x03\x04 this is a zip"),
+    ],
+)
+def test_a_file_that_only_pretends_to_be_heic_is_refused(label, data):
+    with pytest.raises(images.ImageRejected):
+        images.validate_upload("IMG_0044.heic", "image/heic", data)
+
+
+# --------------------------------------------------------------------------
 # Removal
 # --------------------------------------------------------------------------
 def test_delete_files_removes_the_original_and_every_rendition(pipeline):

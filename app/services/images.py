@@ -33,6 +33,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from PIL import Image, ImageOps
+from pillow_heif import register_heif_opener
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -46,10 +47,16 @@ from app.templating import translate
 
 logger = logging.getLogger("portfolio.images")
 
-# Accepted input formats. HEIC is deliberately absent: it would pull in an extra
-# native dependency and the owner shoots camera JPEG.
-ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
-ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+# HEIC is what an iPhone produces by default, and refusing it made the owner
+# convert every file before uploading it (SPEC F51, roadmap R-10). `pillow-heif`
+# ships libheif inside its wheel, so this costs a Python dependency and no apt
+# package. The decode happens at intake and nothing downstream learns a new
+# format: the derivatives are WebP exactly as before, and AVIF output stays
+# deferred by ADR-019.
+register_heif_opener()
+
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}
 
 #: Hard ceiling on pixel count, independent of Pillow's own bomb thresholds.
 #: 120 Mp is far above anything the owner's cameras produce and far below what
@@ -60,6 +67,13 @@ MAX_PIXELS = 120_000_000
 _MAGIC = (
     (b"\xff\xd8\xff", "image/jpeg"),
     (b"\x89PNG\r\n\x1a\n", "image/png"),
+)
+
+#: HEIF is ISO-BMFF: no leading signature, but `ftyp` at offset 4 and a brand at
+#: 8 naming the flavour. Only the still-image brands are accepted; `mif1` and
+#: `msf1` are the generic ones an iPhone also writes.
+_HEIF_BRANDS = frozenset(
+    {b"heic", b"heix", b"heim", b"heis", b"hevc", b"hevm", b"hevs", b"mif1", b"msf1"}
 )
 
 
@@ -175,6 +189,8 @@ def _sniff(data: bytes) -> str | None:
             return content_type
     if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return "image/webp"
+    if data[4:8] == b"ftyp" and data[8:12] in _HEIF_BRANDS:
+        return "image/heic"
     return None
 
 
@@ -383,7 +399,12 @@ def store_original(
     article or project the file belongs to, so that everything one of them owns
     sits in a directory of its own (F40).
     """
-    extension = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}[mime]
+    extension = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp",
+        "image/heic": ".heic",
+    }[mime]
     relative = f"{kind}/{safe_group(group)}/{uuid.uuid4().hex}{extension}"
 
     absolute = resolve_inside(settings.originals_dir, relative)
