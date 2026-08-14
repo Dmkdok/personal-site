@@ -1,0 +1,19 @@
+{
+  "recorded": "2026-08-14",
+  "engine": "chromium, Playwright forced_colors=active",
+  "note": "emulation, not a Windows contrast theme; see docs/qa/forced-colors.md",
+  "current_section": {
+    "outlineStyle": "none",
+    "outlineWidth": "3px",
+    "borderStyle": "solid",
+    "borderWidth": "2px",
+    "decoration": "none"
+  },
+  "other_section": {
+    "outlineStyle": "none",
+    "outlineWidth": "3px",
+    "borderStyle": "none",
+    "borderWidth": "0px",
+    "decoration": "none"
+  }
+}

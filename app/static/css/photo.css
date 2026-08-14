@@ -377,6 +377,25 @@
     outline-offset: -2px;
   }
 
+  /* Forced colours discard `box-shadow` outright, and the warm rim above is the
+     whole of this site's hover and focus language for photographs — so under a
+     contrast theme every thumbnail had no focus indicator at all, and the
+     global ring could not stand in for it because `outline-offset: -2px` above
+     was written expecting the rim to carry the weight (UI-AUDIT F-013).
+     `Highlight` is a system keyword, so it is whatever the chosen theme uses to
+     mean «this one». */
+  @media (forced-colors: active) {
+    .photo-item__link:hover,
+    .photo-item__link:focus-visible {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
+
+    .photo-drag-chosen {
+      outline: 3px solid Highlight;
+    }
+  }
+
   /* --- Still in the pipeline ---------------------------------------------- */
   .photo-item__waiting {
     display: flex;
