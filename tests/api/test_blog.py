@@ -18,6 +18,7 @@ from app.config import settings
 from app.models.post import Post, PostStatus
 from app.services.images import group_name, release
 from app.services.markdown import render_markdown
+from app.services.pagination import PAGE_SIZE
 from app.services.slugs import make_slug
 
 
@@ -243,6 +244,60 @@ def test_index_shows_drafts_to_the_owner(admin_client, make_post):
     assert "Черновики" in html
     # One status, one chip, whichever section renders it (UI-AUDIT F-010).
     assert 'class="status-chip"' in html
+
+
+def test_the_index_is_bounded_and_every_article_is_on_exactly_one_page(client, db, make_post):
+    """SPEC F8/F52: a page, not an archive — and nothing falls between the two.
+
+    Seeded newest-first by `published_at` so the assertion is about paging and
+    not about ordering; the route's own order is unchanged, which is what makes
+    page 1 identical to what the whole list used to open with.
+    """
+    total = PAGE_SIZE + 3
+    for index in range(total):
+        make_post(
+            slug=f"paged-{index}",
+            title=f"Статья {index}",
+            published_at=datetime(2026, 1, 1, tzinfo=UTC) + timedelta(days=index),
+        )
+
+    first = client.get("/blog").text
+    second = client.get("/blog?page=2").text
+
+    # Matched on the href, not the title: «Статья 1» is a prefix of «Статья 12».
+    on_first = {n for n in range(total) if f'"/blog/paged-{n}"' in first}
+    on_second = {n for n in range(total) if f'"/blog/paged-{n}"' in second}
+
+    assert len(on_first) == PAGE_SIZE
+    assert len(on_second) == 3
+    assert not (on_first & on_second), "an article is on two pages"
+    assert on_first | on_second == set(range(total)), "an article is on no page"
+
+    # The newest is on page 1: the order the route always used, still.
+    assert total - 1 in on_first
+
+    assert 'rel="next"' in first
+    assert 'rel="prev"' not in first
+    assert 'rel="prev"' in second
+
+
+def test_a_page_out_of_range_is_answered_rather_than_refused(client, db, make_post):
+    make_post(slug="only-one", title="Единственная")
+
+    for query in ("?page=0", "?page=-4", "?page=abc", "?page=99"):
+        response = client.get(f"/blog{query}")
+        assert response.status_code == 200, query
+        assert "Единственная" in response.text, query
+
+
+def test_drafts_are_not_paginated(admin_client, db, make_post):
+    """They are the owner's, they are a separate section, and they are short."""
+    for index in range(PAGE_SIZE + 2):
+        make_post(slug=f"draft-{index}", title=f"Черновик {index}", published=False)
+
+    html = admin_client.get("/blog").text
+
+    assert all(f'"/blog/draft-{index}"' in html for index in range(PAGE_SIZE + 2))
 
 
 def test_index_offers_no_admin_markup_to_a_visitor(client, make_post):

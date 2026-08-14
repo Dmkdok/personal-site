@@ -13,7 +13,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import HTMLResponse, JSONResponse, Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.deps import CurrentAdmin, DbSession, OptionalAdmin
 from app.models.post import Post, PostStatus
@@ -31,6 +31,7 @@ from app.services.images import (
     store_and_process,
 )
 from app.services.markdown import excerpt_from, render_markdown
+from app.services.pagination import page_for
 from app.services.slugs import unique_slug
 from app.templating import render, toast_headers, translate
 
@@ -121,13 +122,23 @@ def _apply_form(
 # Public pages
 # --------------------------------------------------------------------------
 @router.get("", response_class=HTMLResponse)
-def post_index(request: Request, db: DbSession, admin: OptionalAdmin) -> HTMLResponse:
-    """Published articles, newest first. Drafts are listed for the owner only."""
+def post_index(
+    request: Request, db: DbSession, admin: OptionalAdmin, page: str | None = None
+) -> HTMLResponse:
+    """Published articles, newest first, one page at a time (SPEC F8, F52).
+
+    The order is the one this route has always used, so page 1 is item-for-item
+    what the whole list used to open with. Drafts are **not** paginated: they
+    are the owner's, they are a separate section, and there are never many.
+    """
+    published = select(Post).where(Post.status == PostStatus.PUBLISHED)
+    total = db.scalar(select(func.count()).select_from(published.subquery())) or 0
+    current = page_for(total, page)
     posts = list(
         db.scalars(
-            select(Post)
-            .where(Post.status == PostStatus.PUBLISHED)
-            .order_by(Post.published_at.desc(), Post.id.desc())
+            published.order_by(Post.published_at.desc(), Post.id.desc())
+            .limit(current.size)
+            .offset(current.offset)
         )
     )
     drafts: list[Post] = []
@@ -143,7 +154,7 @@ def post_index(request: Request, db: DbSession, admin: OptionalAdmin) -> HTMLRes
     return render(
         request,
         "blog/index.html",
-        _ctx(posts=posts, drafts=drafts),
+        _ctx(posts=posts, drafts=drafts, page=current),
         admin=admin,
     )
 

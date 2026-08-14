@@ -24,6 +24,7 @@
           {% include "blog/_post_card.html" %}
         {% endfor %}
       </div>
+      {% include "partials/pagination.html" %}
     {% elif not drafts %}
       {% with title = t("blog.empty_title"),
               note = t("blog.empty_note_admin") if is_admin else t("blog.empty_note") %}
