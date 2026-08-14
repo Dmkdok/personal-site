@@ -17,6 +17,20 @@
       <p class="photo-actions__hint">{{ t("photo.reorder_hint") }}</p>
     {% endif %}
 
+    {# The server always ships an alt, so nothing is ever unlabelled — but a
+       fifty-photo album where the fields are empty ships one sentence fifty
+       times, and until now nothing said so (UI-AUDIT F-017). Counted here
+       rather than in the router: the grid already has the photos in hand, and
+       every route that renders it gets the count for free. #}
+    {% if is_admin %}
+      {% set undescribed = photos | rejectattr("alt") | list | length %}
+      {% if undescribed %}
+        <p class="photo-actions__hint">
+          {{ t("photo.undescribed_count", count=undescribed, total=photos|length) }}
+        </p>
+      {% endif %}
+    {% endif %}
+
     <ul
       class="photo-grid"
       id="photo-list"

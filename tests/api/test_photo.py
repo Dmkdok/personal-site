@@ -360,6 +360,35 @@ def test_alt_text_is_saved_and_rendered(admin_client, db, album):
     assert db.get(Photo, photo.id).alt == "Ледник на рассвете"
 
 
+def test_the_owner_is_told_how_many_photos_have_no_description(admin_client, client, db, album):
+    """UI-AUDIT F-017: one sentence repeated fifty times is not fifty descriptions.
+
+    The server-side fallback stays exactly as it was — it is the floor, and the
+    alt sweep still has to find nothing empty. What changes is that the owner
+    can see the work, and the visitor sees no trace of it.
+    """
+    response = upload(admin_client, album.id, make_jpeg(800, 600), "shot.jpg", "image/jpeg")
+    photo = settled(db, response.json()["id"])
+
+    page = admin_client.get(f"/photo/{album.slug}").text
+    assert "Без описания: 1 из 1" in page
+    assert "photo-item--undescribed" in page
+
+    admin_client.post(f"/photo/admin/photos/{photo.id}/alt", data={"alt": "Ледник"})
+    described = admin_client.get(f"/photo/{album.slug}").text
+    assert "Без описания" not in described
+    assert "photo-item--undescribed" not in described
+
+    # The prompt is the owner's business, and F36 keeps it out of a visitor's
+    # HTML. The album fixture is published already; publishing it again would
+    # toggle it off and leave this asserting against a 404.
+    admin_client.post(f"/photo/admin/photos/{photo.id}/alt", data={"alt": ""})
+    visitor = client.get(f"/photo/{album.slug}").text
+    assert "Без описания" not in visitor
+    assert "photo-item--undescribed" not in visitor
+    assert f"Фотография из альбома «{album.title}»" in visitor
+
+
 def test_cover_can_be_moved_to_another_photo(admin_client, db, album):
     first = settled(
         db, upload(admin_client, album.id, make_jpeg(800, 600), "a.jpg", "image/jpeg").json()["id"]

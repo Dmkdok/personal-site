@@ -337,6 +337,14 @@
     background-color: var(--surface-sunken);
   }
 
+  /* Only ever emitted for the owner (UI-AUDIT F-017). Dashed rather than solid,
+     and inset so it reads over the photograph: this marks work to do, not an
+     error — the visitor's alt is already there. */
+  .photo-item--undescribed {
+    outline: 2px dashed var(--accent);
+    outline-offset: -2px;
+  }
+
   .photo-item--9x16 { --ratio: 0.5625; }
   .photo-item--2x3 { --ratio: 0.6667; }
   .photo-item--3x4 { --ratio: 0.75; }

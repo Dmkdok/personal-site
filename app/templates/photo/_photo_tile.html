@@ -9,7 +9,13 @@
 {% set ready = photo.status.value == "ready" %}
 {% set is_cover = album.cover_photo_id == photo.id %}
 <li
-  class="photo-item photo-item--{{ ratio_class(photo) }}{% if not ready %} photo-item--waiting{% endif %}"
+  {# `photo-item--undescribed` is a prompt, not a fault: the alt the visitor
+     gets is the album-wide fallback, which is a floor and not a description
+     (UI-AUDIT F-017). Only the owner ever sees the class — the visitor's grid
+     is rendered without `is_admin` — and it never changes what is shipped. #}
+  class="photo-item photo-item--{{ ratio_class(photo) }}
+    {%- if not ready %} photo-item--waiting{% endif %}
+    {%- if is_admin and not photo.alt %} photo-item--undescribed{% endif %}"
   id="photo-{{ photo.id }}"
   data-sort-id="{{ photo.id }}"
   data-photo-id="{{ photo.id }}"
