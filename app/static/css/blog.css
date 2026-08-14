@@ -77,13 +77,10 @@
     gap: var(--space-2xs);
   }
 
+  /* Appearance comes from `.meta`; this places it. */
   .post-card__date {
     margin-block-start: auto;
     padding-block-start: var(--space-3xs);
-    color: var(--text-faint);
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    letter-spacing: 0;
   }
 
   .blog-new {
@@ -133,12 +130,6 @@
     letter-spacing: var(--tracking-display);
     line-height: var(--leading-tight);
     text-wrap: balance;
-  }
-
-  .article__date {
-    color: var(--text-faint);
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
   }
 
   .article__admin {

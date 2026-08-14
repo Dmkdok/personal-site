@@ -2,14 +2,35 @@
 
 @layer components {
   /* ==========================================================================
-     Eyebrow / label — mono, small, used to carry real metadata only
+     Eyebrow and metadata — two roles that used to share one costume
      ========================================================================= */
+  /* Mono + uppercase + tracking + `--text-faint` was the appearance of the home
+     eyebrow, every form label, the search group headings, the editor's pane
+     headings, the upload queue's state, the pipeline state and every date. On
+     the editor screen seven of them appeared at once and ranked identically,
+     so the eye got no structure from any of them (UI-AUDIT F-009).
+
+     Three roles now: `.label` for structure, `.meta` for the machine's own
+     running commentary, and `.field__label` in admin.css for what the owner
+     reads while typing. `.label` moves to `--text-muted` — a heading has no
+     business being the faintest text on its page — and `.meta` keeps
+     `--text-faint`, which is where a timestamp belongs. */
   .label {
     font-family: var(--font-mono);
     font-size: var(--step--1);
     font-weight: 500;
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Dates, queue state, pipeline state: read, not scanned, so no uppercase and
+     no tracking. Everything that carries it also carries a class of its own for
+     placement; this sets appearance only. */
+  .meta {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: 0;
     color: var(--text-faint);
   }
 

@@ -120,7 +120,7 @@
     name.textContent = file.name;
 
     var state = document.createElement("span");
-    state.className = "upload-item__state";
+    state.className = "meta upload-item__state";
     state.textContent = text.uploading;
 
     var bar = progressBar(file);

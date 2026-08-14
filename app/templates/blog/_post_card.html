@@ -34,7 +34,7 @@
     {% endif %}
 
     {% if post.published_at %}
-      <p class="post-card__date">
+      <p class="meta post-card__date">
         <time datetime="{{ iso_date(post.published_at) }}">{{ ru_date(post.published_at) }}</time>
       </p>
     {% endif %}

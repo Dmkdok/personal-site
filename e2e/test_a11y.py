@@ -17,7 +17,8 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import Browser, Page, expect
 
-from e2e.helpers import Album, composite, contrast_ratio, flatten, ru
+from e2e.conftest import Trash
+from e2e.helpers import AdminApi, Album, composite, contrast_ratio, flatten, ru
 
 pytestmark = pytest.mark.a11y
 
@@ -361,6 +362,62 @@ def test_a_disabled_button_looks_disabled(page: Page) -> None:
     assert measured["live"] == "1", measured
     assert float(measured["dead"]) < 1, measured
     assert measured["cursor"] == "not-allowed", measured
+
+
+READ_ROLE = """
+(el) => {
+  const s = getComputedStyle(el);
+  return {
+    transform: s.textTransform,
+    tracking: s.letterSpacing,
+    color: s.color,
+    family: s.fontFamily
+  };
+}
+"""
+
+
+def test_the_three_label_roles_are_told_apart(
+    admin_page: Page,
+    admin_surfaces: list[str],
+    admin_api: AdminApi,
+    trash: Trash,
+    run_token: str,
+) -> None:
+    """UI-AUDIT F-009: one costume was worn by ten jobs at once.
+
+    Mono + uppercase + tracking + `--text-faint` dressed the eyebrow, every
+    form label and every date alike, and on the editor screen seven of them
+    ranked identically. Read off the shipped stylesheet rather than grepped:
+    the point is what the cascade produces, not what the file says.
+    """
+    editor = next(path for path in admin_surfaces if path.endswith("/edit"))
+    admin_page.goto(editor)
+    eyebrow = admin_page.locator(".label").first.evaluate(READ_ROLE)
+    field = admin_page.locator(".field__label").first.evaluate(READ_ROLE)
+
+    assert eyebrow["transform"] == "uppercase", eyebrow
+    assert eyebrow["tracking"] != "normal", eyebrow
+
+    # The label the owner reads while typing: sentence case, and the body's own
+    # tracking rather than the label's +0.09em — measured in px against the
+    # eyebrow, since the inherited value is not the keyword `normal`.
+    assert field["transform"] == "none", field
+    assert float(field["tracking"].removesuffix("px")) <= 0, field
+    assert "mono" in field["family"].lower(), field
+
+    # A heading must not be the faintest thing on the page it heads.
+    assert eyebrow["color"] != field["color"], (eyebrow, field)
+
+    # The third role, on the one surface that is certain to carry it: a
+    # published article states its date.
+    post = trash.post(admin_api.create_post(f"E2E роли {run_token}"))
+    admin_api.publish_post(post, "Текст.")
+    admin_page.goto(f"/blog/{post.slug}")
+    meta = admin_page.locator("p.meta").first.evaluate(READ_ROLE)
+
+    assert meta["transform"] == "none", meta
+    assert meta["color"] != eyebrow["color"], (meta, eyebrow)
 
 
 PRESS_PROBE = """

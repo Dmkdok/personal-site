@@ -1,25 +1,9 @@
 {
   "theme": "light",
-  "samples": 83,
+  "samples": 82,
   "failures": [],
   "unmeasurable": [],
   "worst": [
-    {
-      "selector": "p",
-      "text": "Фотография · Python · горы",
-      "color": "rgb(100, 108, 119)",
-      "backdrop": [
-        "rgb(238, 240, 243)"
-      ],
-      "background": "rgb(238, 240, 243)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/",
-      "theme": "light",
-      "ratio": 4.65,
-      "required": 4.5
-    },
     {
       "selector": "button.editable__edit",
       "text": "Править",
@@ -51,22 +35,6 @@
       "theme": "light",
       "ratio": 4.65,
       "required": 3.0
-    },
-    {
-      "selector": "p.label",
-      "text": "Где меня найти",
-      "color": "rgb(100, 108, 119)",
-      "backdrop": [
-        "rgb(238, 240, 243)"
-      ],
-      "background": "rgb(238, 240, 243)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/",
-      "theme": "light",
-      "ratio": 4.65,
-      "required": 4.5
     },
     {
       "selector": "button.site-links__edit",
@@ -127,23 +95,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/photo/e2e-galereia-olafpacfu",
-      "theme": "light",
-      "ratio": 4.65,
-      "required": 4.5
-    },
-    {
-      "selector": "a",
-      "text": "К списку статей",
-      "color": "rgb(100, 108, 119)",
-      "backdrop": [
-        "rgb(238, 240, 243)"
-      ],
-      "background": "rgb(238, 240, 243)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/blog/e2e-admin-svip-olafpacfu/edit",
+      "page": "/photo/e2e-galereia-jfrikxnyo",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
@@ -159,23 +111,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-olafpacfu/edit",
-      "theme": "light",
-      "ratio": 4.65,
-      "required": 4.5
-    },
-    {
-      "selector": "h2#pane-source",
-      "text": "Текст",
-      "color": "rgb(100, 108, 119)",
-      "backdrop": [
-        "rgb(238, 240, 243)"
-      ],
-      "background": "rgb(238, 240, 243)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/blog/e2e-admin-svip-olafpacfu/edit",
+      "page": "/blog/e2e-admin-svip-jfrikxnyo/edit",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
@@ -191,9 +127,74 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-olafpacfu/edit",
+      "page": "/blog/e2e-admin-svip-jfrikxnyo/edit",
       "theme": "light",
       "ratio": 4.65,
+      "required": 4.5
+    },
+    {
+      "selector": "label.field__label",
+      "text": "Файлы для загрузки",
+      "color": "rgb(100, 108, 119)",
+      "backdrop": [
+        "color(srgb 0.972549 0.976471 0.984314 / 0.6)",
+        "rgb(238, 240, 243)"
+      ],
+      "background": "rgb(238, 240, 243)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/photo/e2e-galereia-jfrikxnyo",
+      "theme": "light",
+      "ratio": 4.88,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Главная",
+      "color": "rgb(20, 23, 26)",
+      "backdrop": [
+        "rgb(192, 118, 42)"
+      ],
+      "background": "rgb(192, 118, 42)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/",
+      "theme": "light",
+      "ratio": 5.03,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Разработка",
+      "color": "rgb(20, 23, 26)",
+      "backdrop": [
+        "rgb(192, 118, 42)"
+      ],
+      "background": "rgb(192, 118, 42)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/dev",
+      "theme": "light",
+      "ratio": 5.03,
+      "required": 4.5
+    },
+    {
+      "selector": "button.button.button--primary",
+      "text": "Добавить проект",
+      "color": "rgb(20, 23, 26)",
+      "backdrop": [
+        "rgb(192, 118, 42)"
+      ],
+      "background": "rgb(192, 118, 42)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/dev",
+      "theme": "light",
+      "ratio": 5.03,
       "required": 4.5
     }
   ]

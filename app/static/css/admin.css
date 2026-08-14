@@ -63,11 +63,14 @@
     inline-size: 100%;
   }
 
+  /* Sentence case, no tracking: uppercase Cyrillic at ~13 px with +0.09em is
+     the least legible combination this system can produce, and it was the one
+     carrying every label the owner reads while typing (UI-AUDIT F-009). Mono
+     and `--step--1` stay — the field label is still machine-adjacent, it just
+     no longer competes with the headings above it. */
   .field__label {
     font-family: var(--font-mono);
     font-size: var(--step--1);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
     color: var(--text-faint);
   }
 

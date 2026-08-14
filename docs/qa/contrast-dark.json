@@ -5,22 +5,6 @@
   "unmeasurable": [],
   "worst": [
     {
-      "selector": "p",
-      "text": "Фотография · Python · горы",
-      "color": "rgb(138, 147, 158)",
-      "backdrop": [
-        "rgb(28, 31, 35)"
-      ],
-      "background": "rgb(28, 31, 35)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/",
-      "theme": "dark",
-      "ratio": 5.31,
-      "required": 4.5
-    },
-    {
       "selector": "span.hero__line",
       "text": "Рассказываю, как это было.",
       "color": "rgb(138, 147, 158)",
@@ -35,22 +19,6 @@
       "theme": "dark",
       "ratio": 5.31,
       "required": 3.0
-    },
-    {
-      "selector": "p.label",
-      "text": "Где меня найти",
-      "color": "rgb(138, 147, 158)",
-      "backdrop": [
-        "rgb(28, 31, 35)"
-      ],
-      "background": "rgb(28, 31, 35)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/",
-      "theme": "dark",
-      "ratio": 5.31,
-      "required": 4.5
     },
     {
       "selector": "li.stack__item",
@@ -80,22 +48,6 @@
       "fontWeight": 400,
       "onImage": false,
       "page": "/blog",
-      "theme": "dark",
-      "ratio": 5.31,
-      "required": 4.5
-    },
-    {
-      "selector": "p.label",
-      "text": "Служебный вход",
-      "color": "rgb(138, 147, 158)",
-      "backdrop": [
-        "rgb(28, 31, 35)"
-      ],
-      "background": "rgb(28, 31, 35)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/login",
       "theme": "dark",
       "ratio": 5.31,
       "required": 4.5
@@ -197,6 +149,57 @@
       "fontWeight": 500,
       "onImage": false,
       "page": "/search?q=",
+      "theme": "dark",
+      "ratio": 6.32,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Главная",
+      "color": "rgb(168, 177, 187)",
+      "backdrop": [
+        "rgba(44, 49, 55, 0.82)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/login",
+      "theme": "dark",
+      "ratio": 6.32,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Главная",
+      "color": "rgb(168, 177, 187)",
+      "backdrop": [
+        "rgba(44, 49, 55, 0.82)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/does-not-exist",
+      "theme": "dark",
+      "ratio": 6.32,
+      "required": 4.5
+    },
+    {
+      "selector": "a.nav__link",
+      "text": "Главная",
+      "color": "rgb(168, 177, 187)",
+      "backdrop": [
+        "rgba(44, 49, 55, 0.82)",
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 500,
+      "onImage": false,
+      "page": "/photo/e2e-galereia-ljhdbtpou",
       "theme": "dark",
       "ratio": 6.32,
       "required": 4.5

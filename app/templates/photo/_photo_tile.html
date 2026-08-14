@@ -41,7 +41,7 @@
     </a>
   {% else %}
     <div class="photo-item__waiting">
-      <span class="photo-item__state">{{ state_label(photo) }}</span>
+      <span class="meta photo-item__state">{{ state_label(photo) }}</span>
       {% if photo.error %}
         <span class="photo-item__error">{{ photo.error }}</span>
       {% endif %}

@@ -245,12 +245,8 @@
     white-space: nowrap;
   }
 
+  /* Appearance comes from `.meta`; these two set what is particular to it. */
   .upload-item__state {
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--text-faint);
     white-space: nowrap;
   }
 
@@ -391,14 +387,6 @@
     block-size: 100%;
     padding: var(--space-s);
     text-align: center;
-  }
-
-  .photo-item__state {
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--text-faint);
   }
 
   .photo-item--waiting .photo-item__state {

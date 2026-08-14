@@ -30,7 +30,7 @@
       <h1 class="article__title">{{ post.title }}</h1>
 
       {% if post.published_at %}
-        <p class="article__date">
+        <p class="meta">
           <time datetime="{{ iso_date(post.published_at) }}">{{ ru_date(post.published_at) }}</time>
         </p>
       {% endif %}
