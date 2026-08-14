@@ -41,6 +41,12 @@ def _only(db) -> Project:
     return project
 
 
+def _control(html: str, name: str) -> str:
+    """The one tag carrying `name="…"`, from its `<` to its `>`."""
+    at = html.index(f'name="{name}"')
+    return html[html.rindex("<", 0, at) : html.index(">", at) + 1]
+
+
 def test_the_project_form_accepts_what_the_server_accepts(admin_client):
     """The cover picker's `accept` comes from the server's own allow-list.
 
@@ -113,6 +119,32 @@ def test_dangerous_or_malformed_urls_are_refused(admin_client, db, bad_url):
     assert response.status_code == 200
     assert "http://" in response.text  # the inline error explains what is expected
     assert db.query(Project).count() == 0, f"{bad_url} was stored"
+
+
+def test_a_rejected_url_marks_the_url_field_and_not_the_title(admin_client):
+    """UI-AUDIT F-008: the mark, and the caret with it, land where the fault is.
+
+    The form announced the message once at the top and then put `data-autofocus`
+    on «Название» whatever had gone wrong, so a bad `repo_url` sent the caret
+    three fields away from the input it was about.
+    """
+    html = _create(admin_client, repo_url="javascript:alert(1)").text
+
+    repo = _control(html, "repo_url")
+    assert 'aria-invalid="true"' in repo, repo
+    assert 'aria-describedby="project-form-repo_url-error"' in repo, repo
+    assert 'id="project-form-repo_url-error"' in html
+
+    # The field that is not at fault says nothing about being at fault.
+    assert "aria-invalid" not in _control(html, "title")
+
+
+def test_a_field_keeps_its_hint_when_it_is_marked_invalid(admin_client):
+    """Two ids in one `aria-describedby`, not a second attribute the browser drops."""
+    html = _create(admin_client, tech_stack=", ".join(f"T{n}" for n in range(20))).text
+
+    stack = _control(html, "tech_stack")
+    assert 'aria-describedby="project-form-stack-hint project-form-tech_stack-error"' in stack
 
 
 def test_rejected_save_keeps_what_was_typed(admin_client):

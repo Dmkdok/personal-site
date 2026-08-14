@@ -75,7 +75,15 @@ _STATE_KEYS = {
 
 
 class AlbumInvalid(Exception):
-    """Input the owner can fix. Reported inline, never as a traceback."""
+    """Input the owner can fix. Reported inline, never as a traceback.
+
+    `field` is the `name` of the input at fault, so the re-rendered form can
+    mark it rather than leaving the owner to find it (UI-AUDIT F-008).
+    """
+
+    def __init__(self, message: str, field: str | None = None) -> None:
+        super().__init__(message)
+        self.field = field
 
 
 # --------------------------------------------------------------------------
@@ -264,18 +272,22 @@ def _retarget(selector: str) -> dict[str, str]:
 def _parse_album(values: dict[str, str]) -> dict[str, str]:
     title = " ".join((values.get("title") or "").split())
     if not title:
-        raise AlbumInvalid(translate("photo.title_required"))
+        raise AlbumInvalid(translate("photo.title_required"), "title")
     if len(title) > MAX_TITLE:
-        raise AlbumInvalid(translate("photo.title_long", limit=MAX_TITLE))
+        raise AlbumInvalid(translate("photo.title_long", limit=MAX_TITLE), "title")
 
     caption = (values.get("caption") or "").strip()
     if len(caption) > MAX_CAPTION:
-        raise AlbumInvalid(translate("photo.caption_long", limit=MAX_CAPTION))
+        raise AlbumInvalid(translate("photo.caption_long", limit=MAX_CAPTION), "caption")
 
     return {"title": title, "caption": caption}
 
 
-def _new_form(values: dict[str, str] | None = None, error: str | None = None) -> dict[str, Any]:
+def _new_form(
+    values: dict[str, str] | None = None,
+    error: str | None = None,
+    error_field: str | None = None,
+) -> dict[str, Any]:
     return {
         "dom_id": "album-form",
         "action": "/photo/admin/albums",
@@ -283,13 +295,17 @@ def _new_form(values: dict[str, str] | None = None, error: str | None = None) ->
         "submit": translate("photo.create_album"),
         "values": values or {"title": "", "caption": ""},
         "error": error,
+        "error_field": error_field,
         "cancel_url": "/photo/admin/board",
         "cancel_target": "#album-board",
     }
 
 
 def _edit_form(
-    album: Album, values: dict[str, str] | None = None, error: str | None = None
+    album: Album,
+    values: dict[str, str] | None = None,
+    error: str | None = None,
+    error_field: str | None = None,
 ) -> dict[str, Any]:
     return {
         "dom_id": f"album-form-{album.id}",
@@ -298,6 +314,7 @@ def _edit_form(
         "submit": translate("photo.save"),
         "values": values or {"title": album.title, "caption": album.caption},
         "error": error,
+        "error_field": error_field,
         "cancel_url": f"/photo/admin/albums/{album.id}/head",
         "cancel_target": "#album-head",
     }
@@ -539,7 +556,7 @@ def album_create(
         fields = _parse_album(submitted)
     except AlbumInvalid as exc:
         return _form_response(
-            request, admin, _new_form(submitted, str(exc)), _index_context(db, admin)
+            request, admin, _new_form(submitted, str(exc), exc.field), _index_context(db, admin)
         )
 
     last = db.scalar(select(func.max(Album.sort_order)))
@@ -590,7 +607,7 @@ def album_update(
         return _form_response(
             request,
             admin,
-            _edit_form(album, submitted, str(exc)),
+            _edit_form(album, submitted, str(exc), exc.field),
             _album_context(db, album, admin),
         )
 

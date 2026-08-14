@@ -1,5 +1,26 @@
 {# Create/edit form. Targets itself so a rejected save comes back with every
-   typed value intact; on success the server retargets to the whole board. #}
+   typed value intact; on success the server retargets to the whole board.
+
+   A rejection names the field it belongs to, and these two macros are how the
+   field says so (UI-AUDIT F-008). The shape is `partials/site_links_form.html`
+   without the loop: `aria-invalid` on the control, `aria-describedby` pointing
+   at the message beside it. The message carries no `role="alert"` — the
+   summary at the top already has one, and two of them would say the same
+   sentence twice. `ui.js` focuses `[aria-invalid]` after the swap, which is
+   why the caret no longer lands on «Название» whatever went wrong. #}
+{% macro described(name, hint="") -%}
+  {%- set error_id = (form.dom_id ~ "-" ~ name ~ "-error") if form.error_field == name else "" -%}
+  {%- set ids = [hint, error_id] | select | join(" ") -%}
+  {%- if ids %} aria-describedby="{{ ids }}"{% endif -%}
+  {%- if error_id %} aria-invalid="true"{% endif -%}
+{%- endmacro %}
+
+{% macro field_error(name) -%}
+  {%- if form.error_field == name %}
+    <p class="form-error" id="{{ form.dom_id }}-{{ name }}-error">{{ form.error }}</p>
+  {%- endif -%}
+{%- endmacro %}
+
 <form
   class="project-form"
   id="{{ form.dom_id }}"
@@ -21,14 +42,16 @@
   <div class="field">
     <label class="field__label" for="{{ form.dom_id }}-title">{{ t("dev.field_title") }}</label>
     <input class="field__input" id="{{ form.dom_id }}-title" name="title" type="text"
-           value="{{ values.title }}" required data-autofocus />
+           value="{{ values.title }}" required data-autofocus{{ described("title") }} />
+    {{ field_error("title") }}
   </div>
 
   <div class="field">
     <label class="field__label" for="{{ form.dom_id }}-summary">{{ t("dev.field_summary") }}</label>
     <textarea class="field__input" id="{{ form.dom_id }}-summary" name="summary" rows="2"
-              aria-describedby="{{ form.dom_id }}-summary-hint">{{ values.summary }}</textarea>
+              {{- described("summary", form.dom_id ~ "-summary-hint") }}>{{ values.summary }}</textarea>
     <p class="field__hint" id="{{ form.dom_id }}-summary-hint">{{ t("dev.field_summary_hint") }}</p>
+    {{ field_error("summary") }}
   </div>
 
   <div class="field">
@@ -42,20 +65,26 @@
     <div class="field">
       <label class="field__label" for="{{ form.dom_id }}-repo">{{ t("dev.field_repo") }}</label>
       <input class="field__input" id="{{ form.dom_id }}-repo" name="repo_url" type="url"
-             inputmode="url" placeholder="https://github.com/…" value="{{ values.repo_url }}" />
+             inputmode="url" placeholder="https://github.com/…" value="{{ values.repo_url }}"
+             {{- described("repo_url") }} />
+      {{ field_error("repo_url") }}
     </div>
     <div class="field">
       <label class="field__label" for="{{ form.dom_id }}-demo">{{ t("dev.field_demo") }}</label>
       <input class="field__input" id="{{ form.dom_id }}-demo" name="demo_url" type="url"
-             inputmode="url" placeholder="https://…" value="{{ values.demo_url }}" />
+             inputmode="url" placeholder="https://…" value="{{ values.demo_url }}"
+             {{- described("demo_url") }} />
+      {{ field_error("demo_url") }}
     </div>
   </div>
 
   <div class="field">
     <label class="field__label" for="{{ form.dom_id }}-stack">{{ t("dev.field_stack") }}</label>
     <input class="field__input" id="{{ form.dom_id }}-stack" name="tech_stack" type="text"
-           value="{{ values.tech_stack }}" aria-describedby="{{ form.dom_id }}-stack-hint" />
+           value="{{ values.tech_stack }}"
+           {{- described("tech_stack", form.dom_id ~ "-stack-hint") }} />
     <p class="field__hint" id="{{ form.dom_id }}-stack-hint">{{ t("dev.field_stack_hint") }}</p>
+    {{ field_error("tech_stack") }}
   </div>
 
   <div class="field">
@@ -77,7 +106,8 @@
       </label>
     {% endif %}
     <input class="field__input" id="{{ form.dom_id }}-cover" name="cover" type="file"
-           accept="{{ upload_limits().accept }}" />
+           accept="{{ upload_limits().accept }}"{{ described("cover") }} />
+    {{ field_error("cover") }}
   </div>
 
   <div class="project-form__actions">

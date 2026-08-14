@@ -197,6 +197,10 @@ def test_creating_an_album_without_a_title_is_rejected_in_place(admin_client):
     assert response.status_code == 200
     assert "Введите название альбома." in response.text
     assert 'value="x"' in response.text or ">x<" in response.text
+    # The field at fault says so, and the message beside it has an id to be
+    # described by (UI-AUDIT F-008).
+    assert 'aria-invalid="true"' in response.text
+    assert 'id="album-form-title-error"' in response.text
 
 
 def test_admin_edits_title_and_caption_from_the_album_page(admin_client, db, album):

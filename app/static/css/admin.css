@@ -90,6 +90,12 @@
     outline-offset: 1px;
   }
 
+  /* The field the server refused, marked in the page and not only in the
+     accessibility tree (UI-AUDIT F-008). */
+  .field__input[aria-invalid="true"] {
+    border-color: var(--danger-ink);
+  }
+
   .field__input--area {
     font-family: var(--font-mono);
     font-size: var(--step--1);

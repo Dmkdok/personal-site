@@ -37,7 +37,17 @@ _STACK_SEPARATORS = re.compile(r"[,\n;]")
 
 
 class ProjectInvalid(Exception):
-    """Input the owner can fix. Reported inline, never as a traceback."""
+    """Input the owner can fix. Reported inline, never as a traceback.
+
+    `field` is the `name` of the input at fault, so the re-rendered form can
+    mark it rather than leaving the owner to find it (UI-AUDIT F-008). It stays
+    optional: a rejection that belongs to the whole form rather than to one
+    control still has somewhere to go, and the summary paragraph carries it.
+    """
+
+    def __init__(self, message: str, field: str | None = None) -> None:
+        super().__init__(message)
+        self.field = field
 
 
 # --------------------------------------------------------------------------
@@ -98,16 +108,16 @@ def _retarget_board() -> dict[str, str]:
 # --------------------------------------------------------------------------
 # Input handling
 # --------------------------------------------------------------------------
-def _clean_url(raw: str, label_key: str) -> str | None:
+def _clean_url(raw: str, label_key: str, name: str) -> str | None:
     value = (raw or "").strip()
     if not value:
         return None
     field = translate(label_key)
     if len(value) > MAX_URL:
-        raise ProjectInvalid(translate("dev.error_url_long", field=field, limit=MAX_URL))
+        raise ProjectInvalid(translate("dev.error_url_long", field=field, limit=MAX_URL), name)
     lowered = value.lower()
     if not lowered.startswith(ALLOWED_URL_SCHEMES) or len(lowered.split("//", 1)[1].strip()) == 0:
-        raise ProjectInvalid(translate("dev.error_url", field=field))
+        raise ProjectInvalid(translate("dev.error_url", field=field), name)
     return value
 
 
@@ -122,27 +132,27 @@ def _clean_stack(raw: str) -> list[str]:
         seen.add(item.casefold())
         result.append(item)
     if len(result) > MAX_STACK_ITEMS:
-        raise ProjectInvalid(translate("dev.error_stack_many", limit=MAX_STACK_ITEMS))
+        raise ProjectInvalid(translate("dev.error_stack_many", limit=MAX_STACK_ITEMS), "tech_stack")
     return result
 
 
 def _parse(values: dict[str, str]) -> dict[str, Any]:
     title = " ".join((values.get("title") or "").split())
     if not title:
-        raise ProjectInvalid(translate("dev.error_title_required"))
+        raise ProjectInvalid(translate("dev.error_title_required"), "title")
     if len(title) > MAX_TITLE:
-        raise ProjectInvalid(translate("dev.error_title_long", limit=MAX_TITLE))
+        raise ProjectInvalid(translate("dev.error_title_long", limit=MAX_TITLE), "title")
 
     summary = (values.get("summary") or "").strip()
     if len(summary) > MAX_SUMMARY:
-        raise ProjectInvalid(translate("dev.error_summary_long", limit=MAX_SUMMARY))
+        raise ProjectInvalid(translate("dev.error_summary_long", limit=MAX_SUMMARY), "summary")
 
     return {
         "title": title,
         "summary": summary,
         "body_md": (values.get("body_md") or "").strip(),
-        "repo_url": _clean_url(values.get("repo_url", ""), "dev.field_repo"),
-        "demo_url": _clean_url(values.get("demo_url", ""), "dev.field_demo"),
+        "repo_url": _clean_url(values.get("repo_url", ""), "dev.field_repo", "repo_url"),
+        "demo_url": _clean_url(values.get("demo_url", ""), "dev.field_demo", "demo_url"),
         "tech_stack": _clean_stack(values.get("tech_stack", "")),
     }
 
@@ -169,7 +179,7 @@ def _store_cover(db: DbSession, cover: UploadFile | None, group: str) -> str | N
             profile=images.COVER,
         )
     except images.ImageRejected as exc:
-        raise ProjectInvalid(str(exc)) from exc
+        raise ProjectInvalid(str(exc), "cover") from exc
     # The widest rendition. The card asks for a narrower one through `srcset`.
     return stored.derivatives[max(stored.derivatives)]
 
@@ -201,7 +211,11 @@ def _values_of(project: Project) -> dict[str, Any]:
     }
 
 
-def _new_form(values: dict[str, Any] | None = None, error: str | None = None) -> dict[str, Any]:
+def _new_form(
+    values: dict[str, Any] | None = None,
+    error: str | None = None,
+    error_field: str | None = None,
+) -> dict[str, Any]:
     return {
         "dom_id": "project-form",
         "action": "/dev/admin/projects",
@@ -209,11 +223,15 @@ def _new_form(values: dict[str, Any] | None = None, error: str | None = None) ->
         "submit": translate("dev.create"),
         "values": values or _blank_values(),
         "error": error,
+        "error_field": error_field,
     }
 
 
 def _edit_form(
-    project: Project, values: dict[str, Any] | None = None, error: str | None = None
+    project: Project,
+    values: dict[str, Any] | None = None,
+    error: str | None = None,
+    error_field: str | None = None,
 ) -> dict[str, Any]:
     return {
         "dom_id": f"project-{project.id}",
@@ -222,6 +240,7 @@ def _edit_form(
         "submit": translate("dev.save"),
         "values": values or _values_of(project),
         "error": error,
+        "error_field": error_field,
     }
 
 
@@ -312,7 +331,7 @@ def project_create(
     try:
         fields = _parse(submitted)
     except ProjectInvalid as exc:
-        return _form_response(request, admin, _new_form(submitted, str(exc)))
+        return _form_response(request, admin, _new_form(submitted, str(exc), exc.field))
 
     last = db.scalar(select(func.max(Project.sort_order)))
     project = Project(
@@ -331,7 +350,7 @@ def project_create(
         project.cover_path = _store_cover(db, cover, images.group_name(project.id, project.slug))
     except ProjectInvalid as exc:
         db.rollback()
-        return _form_response(request, admin, _new_form(submitted, str(exc)))
+        return _form_response(request, admin, _new_form(submitted, str(exc), exc.field))
 
     db.commit()
 
@@ -366,7 +385,7 @@ def project_update(
         fields = _parse(submitted)
         new_cover = _store_cover(db, cover, images.group_name(project.id, project.slug))
     except ProjectInvalid as exc:
-        return _form_response(request, admin, _edit_form(project, submitted, str(exc)))
+        return _form_response(request, admin, _edit_form(project, submitted, str(exc), exc.field))
 
     previous_cover = project.cover_path
     pictures_before = images.stems_in_text(project.body_md, project.body_html)

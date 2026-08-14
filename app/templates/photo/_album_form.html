@@ -3,7 +3,24 @@
    that has to change — the index board, or the album's own header.
 
    `form['values']` is subscripted, never `form.values`: attribute lookup on a
-   dict finds the built-in `values()` method first and renders nothing at all. #}
+   dict finds the built-in `values()` method first and renders nothing at all.
+
+   A rejection names the field it belongs to, and the macros below are how the
+   field says so — the same shape as `dev/_project_form.html` and
+   `partials/site_links_form.html` (UI-AUDIT F-008). No `role="alert"` on the
+   per-field message: the summary above already carries one. #}
+{% macro described(name, hint="") -%}
+  {%- set error_id = (form.dom_id ~ "-" ~ name ~ "-error") if form.error_field == name else "" -%}
+  {%- set ids = [hint, error_id] | select | join(" ") -%}
+  {%- if ids %} aria-describedby="{{ ids }}"{% endif -%}
+  {%- if error_id %} aria-invalid="true"{% endif -%}
+{%- endmacro %}
+
+{% macro field_error(name) -%}
+  {%- if form.error_field == name %}
+    <p class="form-error" id="{{ form.dom_id }}-{{ name }}-error">{{ form.error }}</p>
+  {%- endif -%}
+{%- endmacro %}
 <form
   class="album-form"
   id="{{ form.dom_id }}"
@@ -21,14 +38,17 @@
     <label class="field__label" for="{{ form.dom_id }}-title">{{ t("photo.title_label") }}</label>
     <input class="field__input" id="{{ form.dom_id }}-title" name="title" type="text"
            value="{{ form['values']['title'] }}" placeholder="{{ t('photo.title_placeholder') }}"
-           maxlength="200" required data-autofocus />
+           maxlength="200" required data-autofocus{{ described("title") }} />
+    {{ field_error("title") }}
   </div>
 
   <div class="field">
     <label class="field__label" for="{{ form.dom_id }}-caption">{{ t("photo.caption_label") }}</label>
     <textarea class="field__input" id="{{ form.dom_id }}-caption" name="caption" rows="2"
               maxlength="600"
-              placeholder="{{ t('photo.caption_placeholder') }}">{{ form['values']['caption'] }}</textarea>
+              placeholder="{{ t('photo.caption_placeholder') }}"
+              {{- described("caption") }}>{{ form['values']['caption'] }}</textarea>
+    {{ field_error("caption") }}
   </div>
 
   {% if album %}
