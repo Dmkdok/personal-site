@@ -53,7 +53,7 @@
     "not_saved": "Изменения не сохранены",
     "save_failed": "Не удалось сохранить — текст остался только в этом окне",
     "image_too_big": "«{name}» больше {limit} МБ — не отправлено.",
-    "image_wrong_type": "«{name}» — нужен JPEG, PNG или WebP.",
+    "image_wrong_type": "«{name}» — нужен JPEG, PNG, WebP или HEIC.",
     "publish": "Опубликовать",
     "unpublish": "Вернуть в черновики",
     "open": "Открыть статью",

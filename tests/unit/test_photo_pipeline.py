@@ -296,6 +296,16 @@ def test_a_heic_is_rotated_before_it_is_measured(pipeline):
     assert size_of(stored.derivatives[640]) == (640, 1067)
 
 
+def test_a_heic_with_no_content_type_is_left_to_the_magic_bytes():
+    """Some browsers report no type for this format at all.
+
+    The gate in the browser lets an unknown type through for exactly this
+    reason, so the server has to be the one that decides — and it decides on the
+    bytes, not on what the client called them.
+    """
+    assert images.validate_upload("IMG_0042.HEIC", "", make_image(320, 240, "HEIF")) == "image/heic"
+
+
 def test_a_tiff_is_still_refused():
     """Accepting one more format is not accepting whatever Pillow can open."""
     with pytest.raises(images.ImageRejected):

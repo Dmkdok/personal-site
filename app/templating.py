@@ -88,10 +88,20 @@ def upload_limits() -> dict[str, Any]:
     """
     from app.services.images import ALLOWED_CONTENT_TYPES
 
+    types = ",".join(sorted(ALLOWED_CONTENT_TYPES))
     return {
         "max_bytes": settings.max_upload_bytes,
         "max_mb": settings.max_upload_mb,
-        "accept": ",".join(sorted(ALLOWED_CONTENT_TYPES)),
+        # What the JavaScript gate compares `File.type` against: MIME types
+        # only, exactly the set the server validates.
+        "types": types,
+        # What the file dialog filters on, which is not the same list. Browsers
+        # disagree about HEIC's MIME type — some report `image/heic`, some
+        # report nothing and leave it to the extension — and a filter that
+        # recognises neither hides the phone's own photographs from the dialog.
+        # The extensions are for the dialog alone; the magic sniff on the server
+        # is still the authority (F51).
+        "accept": f"{types},.heic,.heif",
     }
 
 

@@ -71,7 +71,7 @@
     "upload_network_failed": "Нет связи с сервером. Файл не загружен.",
     "upload_cancelled": "Загрузка отменена.",
     "file_too_big": "Файл больше {limit} МБ — сервер его не примет.",
-    "file_wrong_type": "Нужен JPEG, PNG или WebP.",
+    "file_wrong_type": "Нужен JPEG, PNG, WebP или HEIC.",
     "processing_failed": "Не удалось обработать изображение.",
     "original_missing": "Исходный файл не найден на диске.",
 

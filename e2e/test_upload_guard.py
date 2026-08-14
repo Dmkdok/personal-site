@@ -102,6 +102,50 @@ def test_the_gate_only_refuses_what_the_server_would(album_page: Page) -> None:
     assert len(uploads) == 1, uploads
 
 
+def test_a_heic_from_a_phone_is_not_turned_away_at_the_door(album_page: Page) -> None:
+    """T121 taught the server HEIC; the gate in front of it must agree (F51).
+
+    Two shapes, because browsers disagree about this format: one reports
+    `image/heic`, another reports nothing at all and leaves the type to the
+    extension — which the gate deliberately lets through, since the server reads
+    the magic bytes. Zeros again: the server refuses these on decode, and what
+    is under test is that they were sent to it rather than refused here.
+    """
+    uploads: list[str] = []
+    album_page.on(
+        "request",
+        lambda request: (
+            uploads.append(request.url)
+            if request.method == "POST" and "/photos" in request.url
+            else None
+        ),
+    )
+
+    album_page.evaluate(
+        DROP_FILES,
+        [
+            {"name": "IMG_0042.HEIC", "type": "image/heic", "size": 4096},
+            {"name": "IMG_0043.heic", "type": "", "size": 4096},
+        ],
+    )
+
+    rows = album_page.locator(".upload-item")
+    expect(rows).to_have_count(2)
+    album_page.wait_for_timeout(1500)
+
+    assert len(uploads) == 2, uploads
+    # And no row was failed by *this* gate — whatever the server then says about
+    # four kilobytes of zeros is the server's own answer.
+    expect(album_page.get_by_text(ru("photo.file_wrong_type"))).to_have_count(0)
+
+    # The dialog offers them too: `accept` carries the extensions as well,
+    # because a filter that recognises neither the type nor the suffix hides the
+    # phone's photographs instead of showing them.
+    accept = album_page.locator("#upload-input").get_attribute("accept") or ""
+    assert ".heic" in accept and ".heif" in accept, accept
+    assert "image/heic" in accept, accept
+
+
 def test_a_running_batch_can_be_stopped(album_page: Page) -> None:
     """Fifty files used to be a commitment: `pending` and the three live
     XMLHttpRequests had no abort path at all."""
