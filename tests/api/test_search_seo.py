@@ -7,6 +7,7 @@ import pytest
 from app.models.album import Album
 from app.models.post import Post, PostStatus
 from app.models.project import Project
+from app.services.search import DEFAULT_LIMIT
 
 
 @pytest.fixture
@@ -89,6 +90,55 @@ def test_short_or_empty_queries_give_guidance_not_an_error(client, query):
     response = client.get("/search", params={"q": query})
     assert response.status_code == 200
     assert "Ничего не нашлось" not in response.text
+
+
+def test_a_capped_group_states_the_real_total_and_offers_the_rest(client, db):
+    """UI-AUDIT F-014: the list stopped at twelve without saying so.
+
+    «12 из 12» and «12 из 27» look the same when the page says neither, and a
+    visitor cannot tell a complete answer from a truncated one.
+    """
+    total = DEFAULT_LIMIT + 5
+    made = [
+        Post(
+            slug=f"counted-{index}",
+            title=f"Счётная запись {index} про Эльбрус",
+            excerpt="Текст",
+            body_md="Текст",
+            body_html="<p>Текст</p>",
+            status=PostStatus.PUBLISHED,
+            published_at=datetime.now(UTC),
+        )
+        for index in range(total)
+    ]
+    db.add_all(made)
+    db.commit()
+
+    try:
+        html = client.get("/search", params={"q": "Эльбрус"}).text
+
+        assert f"{DEFAULT_LIMIT} из {total}" in html
+        assert f"Найдено: {total}" in html
+        assert 'role="status"' in html
+        assert "Показать ещё" in html
+
+        # And the continuation is the server's, not the client's: it comes back
+        # as the whole group, with the count and the button re-rendered from the
+        # same query as the list.
+        more = client.get(
+            "/search/group",
+            params={"q": "Эльбрус", "kind": "post", "limit": DEFAULT_LIMIT + 12},
+        )
+        assert more.status_code == 200
+        assert f"{total} из {total}" in more.text
+        assert "Показать ещё" not in more.text
+        assert more.text.count('class="result"') == total
+
+        assert client.get("/search/group", params={"q": "Эльбрус", "kind": "x"}).status_code == 404
+    finally:
+        for item in made:
+            db.delete(db.merge(item))
+        db.commit()
 
 
 def test_no_results_state(client, content):

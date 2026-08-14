@@ -1,0 +1,35 @@
+{# One group of search results, with what it is showing out of what there is
+   (UI-AUDIT F-014). Rendered by the page and by `/search/group`, which returns
+   this same element with a longer list — so «Показать ещё» never needs to know
+   how to build a row, and the count and the button cannot drift from the list
+   they describe.
+
+   `group`, `label` and `query` come from the caller. #}
+<section class="results" id="results-{{ group.kind }}">
+  <h2 class="label results__label">
+    {{ label }} · {{ t("search.group_count", shown=group.shown, total=group.total) }}
+  </h2>
+
+  <ul class="results__list" role="list">
+    {% for hit in group.hits %}
+      <li>
+        <a class="result" href="{{ hit.url }}">
+          <span class="result__title">{{ hit.title }}</span>
+          {% if hit.note %}
+            <span class="result__note">{{ hit.note|truncate(160, true, "…") }}</span>
+          {% endif %}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  {% if group.has_more %}
+    <button
+      class="button results__more"
+      type="button"
+      hx-get="/search/group?q={{ query|urlencode }}&kind={{ group.kind }}&limit={{ group.shown + 12 }}"
+      hx-target="#results-{{ group.kind }}"
+      hx-swap="outerHTML"
+    >{{ t("search.more") }}</button>
+  {% endif %}
+</section>

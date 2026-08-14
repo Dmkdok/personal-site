@@ -16,6 +16,10 @@
     margin-block-start: var(--space-2xs);
   }
 
+  .results__more {
+    margin-block-start: var(--space-s);
+  }
+
   .result {
     display: flex;
     flex-direction: column;

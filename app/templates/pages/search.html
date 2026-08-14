@@ -33,28 +33,18 @@
         {% include "partials/empty_state.html" %}
       {% endwith %}
     {% else %}
+      {# Announced once, in words, so a screen-reader user learns the size of
+         the answer without traversing the list (UI-AUDIT F-014). #}
+      <p class="search-note" role="status">{{ t("search.found", total=results.total) }}</p>
+
       {% set groups = [
         (t("search.group_posts"), results.posts),
         (t("search.group_projects"), results.projects),
         (t("search.group_albums"), results.albums),
       ] %}
-      {% for label, hits in groups %}
-        {% if hits %}
-          <section class="results">
-            <h2 class="label results__label">{{ label }}</h2>
-            <ul class="results__list" role="list">
-              {% for hit in hits %}
-                <li>
-                  <a class="result" href="{{ hit.url }}">
-                    <span class="result__title">{{ hit.title }}</span>
-                    {% if hit.note %}
-                      <span class="result__note">{{ hit.note|truncate(160, true, "…") }}</span>
-                    {% endif %}
-                  </a>
-                </li>
-              {% endfor %}
-            </ul>
-          </section>
+      {% for label, group in groups %}
+        {% if group %}
+          {% include "partials/search_group.html" %}
         {% endif %}
       {% endfor %}
     {% endif %}
