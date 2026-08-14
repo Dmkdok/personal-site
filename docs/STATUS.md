@@ -4,6 +4,33 @@ phase: review
 approved: true
 approved_at: 2026-08-04
 
+## Baseline I2
+
+Recorded 2026-08-14 on branch `iteration/I2-pagination-media-phaseb`, cut from `main` at `dfc8f92`
+(the roadmap commit; `8ec69a5` plus `docs/ROADMAP.md`, which had been left uncommitted).
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **233 passed**, exit 0 |
+| e2e | `uv run pytest e2e` | **60 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | 120 files already formatted |
+
+Green baseline; nothing inherited. **The 226 in the I1 close below is stale** — the tree collects 233
+unit/API tests (counted with `--collect-only`, not read off a summary line). The suite grew after
+that close; the number here is the one to beat.
+
+Progress:
+- [x] 0 baseline recorded (branch, suite result, timestamp)
+- [x] 1 delta intake agreed (in / out / deferred)
+- [x] 2 impact map written
+- [x] 3 docs amended (SPEC F3/F8/F10/F24 + F51–F56, ADR-019…022, TASKS M11–M13)
+- [x] GATE approved by the owner — «утверждаю», 2026-08-14
+- [ ] 4 implementation — **M11 in progress**, then M12, then M13
+- [ ] 5 verification green, baseline suites still green
+- [ ] 6 review clean or waived
+- [ ] 7 closed (STATUS rewritten, milestone ticked)
+
 ## Resume here
 
 **Branch `main`, and it is the only one now.** `session/2026-08-06-m3-fixes-and-e2e` was merged into
