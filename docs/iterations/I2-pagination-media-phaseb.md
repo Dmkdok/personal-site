@@ -152,6 +152,22 @@ test measures the result rather than the mechanism, so it holds whichever of the
 work. This is the second finding in Phase B whose written evidence did not survive being measured
 (F-016 was the first, in I1).
 
+### F-012: already closed before the audit was written (T113)
+
+Nothing to build. `app/services/markdown.py` has emitted
+`<pre tabindex="0" role="region" aria-label="Блок кода">` and
+`<div class="table-scroll" role="region" tabindex="0" aria-label="Таблица">` since commit `2a986ca`
+(2026-08-08), with both names from the catalogue per ADR-007, both attributes in the sanitiser's
+allow-list, and three unit tests in `tests/unit/test_markdown.py` — including one asserting that an
+author cannot write their own region. The audit was written after that commit and did not check.
+
+The one scroller in the finding's «Where» that is **not** covered is `.editor__preview`
+(`blog.css:268`), and it is deliberately left alone. The prose boxes exist only because their
+content is wide, so an always-on `tabindex` there is a stop that always has somewhere to go. The
+preview pane is permanent, its children carry their own regions, and it overflows only in the corner
+case of an unbreakable token — so the same treatment would add a dead stop to the owner's main
+screen on every visit. Recorded here rather than silently skipped.
+
 ### What the sweep does not assert
 
 `#post-body` is a 22-row textarea, taller at 360 px than the fold. Chromium leaves a partially
