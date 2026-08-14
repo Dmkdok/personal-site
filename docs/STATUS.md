@@ -26,10 +26,32 @@ Progress:
 - [x] 2 impact map written
 - [x] 3 docs amended (SPEC F3/F8/F10/F24 + F51–F56, ADR-019…022, TASKS M11–M13)
 - [x] GATE approved by the owner — «утверждаю», 2026-08-14
-- [ ] 4 implementation — **M11 in progress**, then M12, then M13
+- [ ] 4 implementation — **M11 done** (T107–T116, one commit each), **M12 next**, then M13
 - [ ] 5 verification green, baseline suites still green
 - [ ] 6 review clean or waived
 - [ ] 7 closed (STATUS rewritten, milestone ticked)
+
+### M11 closed 2026-08-15 — unit/API **237**, e2e **77**, lint and format clean
+
+Ten tasks, ten commits, every one with a check that was watched failing first. Three of the ten
+turned out to be about the audit rather than about the code, and those corrections are the part
+worth reading — all three are written up in `docs/iterations/I2-pagination-media-phaseb.md`:
+
+- **F-015** — the prescribed fix was half a fix on the wrong element. `padding-block-end` had to go
+  on `.page` (the footer is `.page__main`'s sibling and carries the very button the audit found
+  under the bar), and document length does nothing for focus on its own: Chromium scrolls a
+  tabbed-to control to the viewport edge, which is *under* the bar, so `scroll-padding-block-end` on
+  `:root` is the half that satisfies 2.4.11. Both halves watched failing alone.
+- **F-011** — the overhang does not reproduce. `backdrop-filter` on the capsule already made it a
+  containing block; the menu has been aligned all along. `position: relative` is kept so that
+  alignment does not depend on a visual effect, and the new test measures the result, not the
+  mechanism.
+- **F-012** — already closed since `2a986ca` (2026-08-08), with three unit tests. The audit was
+  written afterwards and did not check.
+
+One thing is genuinely outstanding: **the forced-colors pass on a real Windows contrast theme.**
+The automated pass under Chromium's emulation is done and recorded; the four manual steps in Edge
+are written down in `docs/qa/forced-colors.md` and are the owner's to run.
 
 ## Resume here
 
