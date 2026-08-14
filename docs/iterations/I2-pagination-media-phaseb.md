@@ -106,6 +106,34 @@ Only these, and each is a behaviour change the owner is approving with the featu
 No other existing test may be edited. A red test outside this list is a regression, not an
 expectation to update.
 
+## What the build corrected in the audit
+
+### F-015: the prescribed fix is half of one (T107)
+
+`docs/UI-AUDIT.md` prescribes `padding-block-end` on the admin page, and T107 was written to put it
+on `.page__main`. Two failing runs of the new focus sweep showed that is not enough and that the
+element it names is the wrong one.
+
+- **Wrong element.** The footer is `.page__main`'s sibling, and the control the audit itself found
+  under the bar — «Изменить ссылки» — lives in it. Padding on main opens a gap in the middle of the
+  page and moves the last control in the document by nothing. Measured: `bottom: 744` against a bar
+  top of `708`. The rule went on `.page`.
+- **Missing half.** Document length lets a control *be* scrolled clear; it does not make the browser
+  scroll it clear. Chromium scrolls a tabbed-to control just far enough to touch the viewport edge,
+  which is underneath a fixed bar: measured `bottom: 780` on every surface with the padding in place
+  and nothing else. `scroll-padding-block-end` is the property that moves that edge, and it belongs
+  on the scroll container — `:root`, not `<body>`, where it parses and does nothing.
+
+Both halves are now in `admin.css` and both were watched failing alone before being kept. The audit
+line stays as a finding; its remedy column understates the fix.
+
+### What the sweep does not assert
+
+`#post-body` is a 22-row textarea, taller at 360 px than the fold. Chromium leaves a partially
+visible element where it is, so its lower half sits off-screen — hidden by the viewport edge, not by
+author-created content. WCAG 2.4.11 is about the latter, so the check skips any control whose box
+does not fit in the viewport. Asserting on it would be asserting that the editor be short.
+
 ## Exit criteria
 
 - [ ] Every P2 finding is closed, or has an ADR (F-016 → ADR-020).

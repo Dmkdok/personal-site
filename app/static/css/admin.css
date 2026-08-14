@@ -1,6 +1,38 @@
 /* Editing surfaces. Present only when signed in — never shipped to visitors. */
 
 @layer components {
+  /* --- Clearance for the admin bar ---------------------------------------- */
+
+  /* The bar is `position: fixed` at the bottom centre, so it floats over
+     whatever the page ends with. Two different properties are needed and they
+     do different jobs (UI-AUDIT F-015):
+
+     `padding-block-end` lengthens the document so the last row of a contact
+     sheet, or the footer's own edit button, *can* be scrolled clear of the bar.
+     It goes on `.page`, after the footer, and not on `.page__main`: the footer
+     is a sibling of main and carries controls of its own, so padding on main
+     only opens a gap in the middle of the page and leaves the last control in
+     the document exactly where it was. On its own it does nothing for focus
+     either: the browser scrolls a tabbed-to control just far enough to touch
+     the viewport edge, which is underneath.
+
+     `scroll-padding-block-end` is what tells that scroll where the viewport
+     effectively ends, so a control reached by Tab stops above the bar rather
+     than behind it. This is the half that satisfies WCAG 2.4.11, and it is the
+     half a per-component margin can never provide.
+
+     It has to sit on the scroll container, which for the document is the root
+     element and not `<body>`: on `body` it parses, cascades and does nothing at
+     all. `:has()` keys it to the same class as everything else so the rule
+     cannot fire on a page with no bar to clear. */
+  :root:has(body.is-admin) {
+    scroll-padding-block-end: calc(var(--space-s) + 4.5rem);
+  }
+
+  body.is-admin .page {
+    padding-block-end: calc(var(--space-s) + 4.5rem);
+  }
+
   /* --- Login -------------------------------------------------------------- */
   .login {
     display: flex;

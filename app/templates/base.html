@@ -49,8 +49,14 @@
     {% block head_extra %}{% endblock %}
   </head>
 
+  {# `is-admin` is what lets a stylesheet reserve room for the admin bar once,
+     globally, instead of every component near the bottom of a page carrying its
+     own clearance (UI-AUDIT F-015). A visitor's HTML never carries it — the
+     class is the whole of what admin.css hangs off, and admin.css is only
+     linked above when `is_admin` too. #}
   <body
-    {% if body_class %}class="{{ body_class }}"{% endif %}
+    {% set classes = ([body_class] if body_class else []) + (["is-admin"] if is_admin else []) %}
+    {% if classes %}class="{{ classes|join(' ') }}"{% endif %}
     hx-headers='{"X-CSRF-Token": "{{ csrf_token }}"}'
   >
     <a class="skip-link" href="#main">{{ t("site.skip") }}</a>

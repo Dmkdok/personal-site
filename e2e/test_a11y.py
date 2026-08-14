@@ -702,6 +702,92 @@ def test_admin_target_sizes_at_360px(
     assert not aa_failures, json.dumps(aa_failures, ensure_ascii=False, indent=2)
 
 
+# WCAG 2.4.11 asks that a focused control not be hidden by author-created
+# content. The admin bar is fixed to the bottom centre and the page reserved no
+# clearance for it, so anything at the foot of an admin page was focusable and
+# underneath it at once (UI-AUDIT F-015).
+#
+# The rule is about controls the browser could have placed clear of the bar:
+# those it has scrolled entirely into the viewport. `#post-body` is a 22-row
+# textarea, taller at 360 px than the fold, and Chromium leaves a partially
+# visible element where it is — so its lower half is off-screen, hidden by the
+# viewport edge rather than by any author-created content. Asserting on it would
+# be asserting that the editor be short, which is not what 2.4.11 says. The
+# caret inside it is a different matter, and is what the scroll padding covers:
+# the page can still scroll, so a caret moving down carries the padding with it.
+FOCUS_AGAINST_THE_ADMIN_BAR = """
+() => {
+  const el = document.activeElement;
+  if (!el || el === document.body) return null;
+  const bar = document.querySelector('.admin-bar');
+  if (!bar) return 'no-admin-bar';
+  if (el.closest('.admin-bar')) return null;
+  const box = el.getBoundingClientRect();
+  if (box.width === 0 || box.height === 0) return null;
+  if (box.bottom > window.innerHeight) return null;
+  const barBox = bar.getBoundingClientRect();
+  const clear = box.bottom <= barBox.top
+             || box.right <= barBox.left
+             || box.left >= barBox.right;
+  if (clear) return null;
+  return {
+    tag: el.tagName.toLowerCase(),
+    id: el.id || null,
+    label: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 40),
+    top: Math.round(box.top),
+    bottom: Math.round(box.bottom),
+    barTop: Math.round(barBox.top)
+  };
+}
+"""
+
+
+def test_no_admin_control_is_obscured_by_the_admin_bar(
+    browser: Browser,
+    base_url: str,
+    admin_storage_state: str,
+    admin_surfaces: list[str],
+) -> None:
+    """F-015: the bar is fixed over the page, so the page must reserve room for it.
+
+    Swept at 360 px, where the bar is widest relative to the viewport and the
+    footer's own controls sit closest to it. The sweep tabs the whole page rather
+    than only the last stop: the bar is centred, so what it lands on depends on
+    the content, not on the tab order.
+
+    `reduced_motion` is not decoration. `base.css:69` sets `scroll-behavior:
+    smooth`, so the scroll that Tab triggers is an animation, and a rect read
+    straight after the keypress measures the element where it was before the
+    browser moved it. The site already turns that off under reduced motion, so
+    this asks for the setting rather than sleeping and hoping.
+    """
+    context = browser.new_context(
+        base_url=base_url,
+        viewport={"width": 360, "height": 780},
+        storage_state=admin_storage_state,
+        reduced_motion="reduce",
+    )
+    obscured: list[dict] = []
+    try:
+        page = context.new_page()
+        for path in admin_surfaces:
+            page.goto(path)
+            page.evaluate(REVEAL_ADMIN_AFFORDANCES)
+            page.evaluate("() => document.body.focus()")
+            for _ in range(60):
+                page.keyboard.press("Tab")
+                state = page.evaluate(FOCUS_AGAINST_THE_ADMIN_BAR)
+                assert state != "no-admin-bar", (
+                    f"{path} rendered no admin bar; this swept anonymously"
+                )
+                if state:
+                    obscured.append(state | {"page": path})
+    finally:
+        context.close()
+
+    assert not obscured, json.dumps(obscured, ensure_ascii=False, indent=2)
+
+
 def test_no_console_errors_or_failed_requests_on_the_public_pages(
     page: Page, published_album: Album
 ) -> None:

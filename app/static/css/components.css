@@ -623,16 +623,6 @@
     }
   }
 
-  /* The admin bar is fixed to the bottom centre of the viewport, and the footer
-     is the last thing on the page — on a narrow screen the bar lands squarely
-     on this button and swallows the tap. Only the owner sees either, so only
-     the owner's row reserves the clearance. */
-  @media (max-width: 640px) {
-    .site-links__edit {
-      margin-block-end: calc(var(--space-s) + 4rem);
-    }
-  }
-
   .site-links--editing {
     flex-direction: column;
     /* `wrap` is inherited from `.site-links`, and a wrapped column container
