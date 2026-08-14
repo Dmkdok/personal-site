@@ -86,25 +86,6 @@
     letter-spacing: 0;
   }
 
-  .post-flag {
-    align-self: flex-start;
-    padding: 0.15rem 0.55rem;
-    border: 1px solid var(--accent);
-    border-radius: var(--radius-pill);
-    color: var(--accent-ink);
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    font-weight: 500;
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .post-flag--live {
-    border-color: var(--success-ink);
-    color: var(--success-ink);
-  }
-
   .blog-new {
     margin-block-end: var(--space-l);
   }

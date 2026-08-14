@@ -27,7 +27,7 @@
           {% if field.invalid %}aria-invalid="true" aria-describedby="{{ field.dom_id }}-error"{% endif %}
         />
         {% if field.invalid %}
-          <p class="site-links__error" role="alert" id="{{ field.dom_id }}-error">{{ t("footer.invalid_url") }}</p>
+          <p class="form-error" role="alert" id="{{ field.dom_id }}-error">{{ t("footer.invalid_url") }}</p>
         {% endif %}
       </div>
     {% endfor %}

@@ -13,7 +13,7 @@
 <aside class="editor-meta" id="editor-meta" aria-labelledby="editor-meta-heading">
   <h2 class="label" id="editor-meta-heading">{{ t("blog.panel_title") }}</h2>
 
-  <p class="post-flag {{ 'post-flag--live' if published else '' }}">
+  <p class="status-chip {{ 'status-chip--live' if published else '' }}">
     {{ t("blog.status_published") if published else t("blog.status_draft") }}
   </p>
 

@@ -26,7 +26,7 @@
   <div class="post-card__body">
     <h{{ level }} class="card__title post-card__title">
       {{ post.title }}
-      {% if is_draft %}<span class="post-flag">{{ t("blog.draft_flag") }}</span>{% endif %}
+      {% if is_draft %}<span class="status-chip">{{ t("blog.draft_flag") }}</span>{% endif %}
     </h{{ level }}>
 
     {% if post.excerpt %}

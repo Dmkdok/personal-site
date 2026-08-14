@@ -73,6 +73,12 @@ def test_cyrillic_survives_a_multipart_submission(admin_client, db):
     assert "рецептов" in _only(db).summary
 
 
+def test_a_draft_project_carries_the_shared_status_chip(admin_client, db):
+    """One status, one chip, whichever section renders it (UI-AUDIT F-010)."""
+    _create(admin_client)
+    assert 'class="status-chip"' in admin_client.get("/dev").text
+
+
 def test_unpublished_project_is_invisible_to_visitors(admin_client, db):
     _create(admin_client)
     slug = _only(db).slug
@@ -113,6 +119,8 @@ def test_rejected_save_keeps_what_was_typed(admin_client):
     response = _create(admin_client, repo_url="javascript:alert(1)")
     assert "Foodgram" in response.text
     assert "рецептов" in response.text
+    # One rejection box for every form on the site (UI-AUDIT F-010).
+    assert 'class="form-error"' in response.text
 
 
 def test_title_is_required(admin_client, db):

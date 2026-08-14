@@ -45,14 +45,6 @@
     font-size: var(--step-4);
   }
 
-  .login__error {
-    padding: var(--space-xs) var(--space-s);
-    border-radius: var(--radius-m);
-    background-color: var(--danger-wash);
-    color: var(--danger-ink);
-    font-size: var(--step--1);
-  }
-
   .login__form {
     display: flex;
     flex-direction: column;

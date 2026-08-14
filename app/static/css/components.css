@@ -14,6 +14,40 @@
   }
 
   /* ==========================================================================
+     Status chip — one appearance for one status, on every section
+     ========================================================================= */
+  /* «Черновик» used to render as an accent outline on /dev, an accent wash on
+     /photo and an outline with a green variant on /blog: three appearances of
+     one state on three pages of one site (UI-AUDIT F-010). The outline won —
+     it is the only one of the three that already distinguished draft from
+     published.
+
+     It sits inline beside a heading on /photo and as its own line in the flex
+     column of a post card, so it carries `vertical-align` for the first and
+     `align-self` for the second; each is inert where the other applies. */
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    vertical-align: middle;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-pill);
+    color: var(--accent-ink);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    font-weight: 500;
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .status-chip--live {
+    border-color: var(--success-ink);
+    color: var(--success-ink);
+  }
+
+  /* ==========================================================================
      Navigation capsule
      ========================================================================= */
   .nav {
@@ -399,6 +433,14 @@
     background-color: var(--surface);
   }
 
+  /* Feedback in the ~100–300 ms before an htmx response lands: the press is
+     answered by the press itself rather than by the eventual swap (F-023).
+     Deliberately not in the `transition` list above — a depress that eases in
+     over 180 ms is not feedback. */
+  .button:active:not(:disabled) {
+    scale: 0.97;
+  }
+
   .button:disabled {
     opacity: 0.4;
     cursor: not-allowed;
@@ -438,6 +480,32 @@
     inline-size: 15px;
     block-size: 15px;
     flex: none;
+  }
+
+  /* A press still has to be answered where movement is unwelcome, so the size
+     change becomes a colour one: `--surface-sunken` is the token for a surface
+     pushed below its neighbours, which is what a pressed button is. */
+  @media (prefers-reduced-motion: reduce) {
+    .button:active:not(:disabled) {
+      scale: 1;
+      background-color: var(--surface-sunken);
+    }
+  }
+
+  /* ==========================================================================
+     Form error — one box, whether the form rejected a field or the whole post
+     ========================================================================= */
+  /* Four of these existed: three byte-identical, the fourth different only in
+     vertical padding, and the footer's was unpadded text (F-010). The padded
+     box won for all of them — a rejection that reads as a box is harder to miss
+     than one that reads as a line of red text, and the same class now serves a
+     form-level summary and a message bound to one field. */
+  .form-error {
+    padding: var(--space-xs) var(--space-s);
+    border-radius: var(--radius-m);
+    background-color: var(--danger-wash);
+    color: var(--danger-ink);
+    font-size: var(--step--1);
   }
 
   /* ==========================================================================
@@ -646,11 +714,6 @@
   .site-links__hint {
     color: var(--text-faint);
     font-family: var(--font-mono);
-    font-size: var(--step--1);
-  }
-
-  .site-links__error {
-    color: var(--danger-ink);
     font-size: var(--step--1);
   }
 

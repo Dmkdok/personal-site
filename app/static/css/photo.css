@@ -6,7 +6,7 @@
 
 @layer components {
   /* ==========================================================================
-     Shared bits: action rows, badges, drag handles
+     Shared bits: action rows, drag handles
      ========================================================================= */
   .photo-actions {
     display: flex;
@@ -20,21 +20,6 @@
     color: var(--text-faint);
     font-family: var(--font-mono);
     font-size: var(--step--1);
-  }
-
-  .photo-badge {
-    display: inline-block;
-    vertical-align: middle;
-    margin-inline-start: var(--space-2xs);
-    padding: 0.15rem 0.6rem;
-    border-radius: var(--radius-pill);
-    background-color: var(--accent-wash);
-    color: var(--accent-ink);
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    font-weight: 500;
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
   }
 
   .photo-handle {
@@ -155,14 +140,6 @@
 
   .album-form__heading {
     font-size: var(--step-2);
-  }
-
-  .album-form__error {
-    padding: var(--space-2xs) var(--space-s);
-    border-radius: var(--radius-m);
-    background-color: var(--danger-wash);
-    color: var(--danger-ink);
-    font-size: var(--step--1);
   }
 
   .album-form__position {

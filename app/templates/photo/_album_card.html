@@ -27,7 +27,7 @@
     <h2 class="card__title">
       <a class="album-card__link" href="/photo/{{ album.slug }}">{{ album.title }}</a>
       {% if is_admin and not album.is_published %}
-        <span class="photo-badge">{{ t("photo.draft") }}</span>
+        <span class="status-chip">{{ t("photo.draft") }}</span>
       {% endif %}
     </h2>
     {% if album.caption %}

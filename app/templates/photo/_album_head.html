@@ -7,7 +7,7 @@
     <h1 class="page-header__title album-head__title">
       {{ album.title }}
       {% if is_admin and not album.is_published %}
-        <span class="photo-badge">{{ t("photo.draft") }}</span>
+        <span class="status-chip">{{ t("photo.draft") }}</span>
       {% endif %}
     </h1>
 

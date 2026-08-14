@@ -241,6 +241,8 @@ def test_index_shows_drafts_to_the_owner(admin_client, make_post):
 
     assert "Моя заготовка" in html
     assert "Черновики" in html
+    # One status, one chip, whichever section renders it (UI-AUDIT F-010).
+    assert 'class="status-chip"' in html
 
 
 def test_index_offers_no_admin_markup_to_a_visitor(client, make_post):

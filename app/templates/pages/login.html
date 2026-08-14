@@ -15,7 +15,7 @@
       <h1 class="login__title">{{ t("auth.login_title") }}</h1>
 
       {% if error %}
-        <p class="login__error" role="alert">{{ error }}</p>
+        <p class="form-error" role="alert">{{ error }}</p>
       {% endif %}
 
       <form class="login__form" method="post" action="/login">

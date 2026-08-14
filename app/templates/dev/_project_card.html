@@ -27,7 +27,7 @@
         {{ project.title }}
       {% endif %}
       {% if is_admin and not project.is_published %}
-        <span class="badge">{{ t("dev.draft_badge") }}</span>
+        <span class="status-chip">{{ t("dev.draft_badge") }}</span>
       {% endif %}
     </h2>
 

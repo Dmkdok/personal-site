@@ -146,6 +146,8 @@ def test_unpublished_album_is_visible_to_the_admin_with_a_draft_marker(admin_cli
     response = admin_client.get(f"/photo/{draft_album.slug}")
     assert response.status_code == 200
     assert "Черновик" in response.text
+    # One status, one chip, whichever section renders it (UI-AUDIT F-010).
+    assert 'class="status-chip"' in response.text
 
 
 def test_missing_album_is_404(client):

@@ -363,6 +363,97 @@ def test_a_disabled_button_looks_disabled(page: Page) -> None:
     assert measured["cursor"] == "not-allowed", measured
 
 
+PRESS_PROBE = """
+() => {
+  const el = document.createElement('button');
+  el.className = 'button';
+  el.id = 'press-probe';
+  el.textContent = 'x';
+  document.getElementById('main').prepend(el);
+}
+"""
+
+NEXT_FRAMES = """
+() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))
+"""
+
+READ_PRESS_STATE = """
+(el) => {
+  const s = getComputedStyle(el);
+  return {
+    scale: s.scale,
+    background: s.backgroundColor,
+    active: el.matches(':active'),
+    hover: el.matches(':hover')
+  };
+}
+"""
+
+
+def _press_state(context, path: str) -> tuple[dict, dict, dict]:
+    """A `.button`'s computed state at rest, under the pointer, and pressed.
+
+    Hovered is measured as well as resting because `.button:hover` already
+    repaints the background: comparing a press against rest would pass on the
+    hover alone, and prove nothing about `:active`.
+    """
+    page = context.new_page()
+    page.goto(path)
+    page.evaluate(PRESS_PROBE)
+    probe = page.locator("#press-probe")
+    resting = probe.evaluate(READ_PRESS_STATE)
+
+    box = probe.bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    # `.button` transitions its background, and reduced motion shortens that to
+    # 0.01 ms rather than removing it — either way a value read in the same tick
+    # as the pointer event is the value from before it. Two frames is the wait.
+    page.evaluate(NEXT_FRAMES)
+    hovered = probe.evaluate(READ_PRESS_STATE)
+
+    page.mouse.down()
+    page.evaluate(NEXT_FRAMES)
+    pressed = probe.evaluate(READ_PRESS_STATE)
+    page.mouse.up()
+    return resting, hovered, pressed
+
+
+def test_a_pressed_button_answers_the_press(browser: Browser, base_url: str) -> None:
+    """UI-AUDIT F-023: feedback before the response, not instead of it.
+
+    An htmx save takes 100–300 ms, and until it lands the only thing that can
+    tell the owner the press registered is the button. Measured with a real
+    pointer press against the shipped stylesheet: `:active` cannot be forced
+    from script, and a grep would pass on a rule the cascade never reaches.
+    """
+    context = browser.new_context(base_url=base_url)
+    try:
+        resting, hovered, pressed = _press_state(context, "/")
+    finally:
+        context.close()
+
+    assert resting["scale"] == "none", resting
+    assert hovered["scale"] == "none", hovered
+    assert pressed["scale"] != "none", pressed
+    assert float(pressed["scale"].split()[0]) < 1, pressed
+
+
+def test_a_pressed_button_answers_without_moving_under_reduced_motion(
+    browser: Browser, base_url: str
+) -> None:
+    """The same feedback, expressed as colour where movement is unwelcome."""
+    context = browser.new_context(base_url=base_url, reduced_motion="reduce")
+    try:
+        _, hovered, pressed = _press_state(context, "/")
+    finally:
+        context.close()
+
+    # `none` is the unset value and `1` the explicit override; both are "the
+    # button did not move", which is the whole of what this asks.
+    assert pressed["scale"] in ("none", "1"), pressed
+    assert pressed["background"] != hovered["background"], (hovered, pressed)
+
+
 # WCAG 2.4.7 is "the indicator is visible", not "the element has an outline":
 # the search field paints its ring on the wrapping label via :focus-within. So
 # the stop is compared against itself unfocused, two levels up, and anything

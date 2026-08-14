@@ -86,7 +86,7 @@ def test_a_javascript_url_is_refused_and_the_stored_link_survives(admin_page: Pa
 
     # The form comes back with the error beside the field, and what was typed
     # is still there to be corrected rather than retyped (F37).
-    expect(admin_page.locator(".site-links__error")).to_have_text(ru("footer.invalid_url"))
+    expect(admin_page.locator(f"{BLOCK} .form-error")).to_have_text(ru("footer.invalid_url"))
     expect(_field(admin_page, "vk")).to_have_value("javascript:alert(1)")
 
     # Nothing was written: a reload still shows the address that was there, and
