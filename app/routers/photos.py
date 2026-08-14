@@ -27,6 +27,7 @@ from app.deps import CurrentAdmin, DbSession, OptionalAdmin
 from app.models.album import Album
 from app.models.photo import Photo, PhotoStatus
 from app.services import images
+from app.services.pagination import Page, page_for
 from app.services.slugs import unique_slug
 from app.templating import render, toast_headers, translate
 
@@ -143,13 +144,26 @@ def _helpers() -> dict[str, Any]:
 # --------------------------------------------------------------------------
 # Reading
 # --------------------------------------------------------------------------
-def _visible_albums(db: Session, admin: Any) -> list[Album]:
-    """Albums in the owner's order. Visitors never see unpublished ones."""
+def _published_albums(db: Session) -> int:
+    query = select(func.count()).select_from(Album).where(Album.is_published.is_(True))
+    return db.scalar(query) or 0
+
+
+def _visible_albums(db: Session, admin: Any, page: Page | None = None) -> list[Album]:
+    """Albums in the owner's order. Visitors never see unpublished ones.
+
+    Bounded for the visitor and whole for the owner (ADR-022). The owner's list
+    is what drag-reorder posts back — `_reorder_from_ids` applies the ids it
+    receives to the full row list — so paginating it would silently reorder the
+    albums that were not on the page. The visitor drags nothing.
+    """
     query = (
         select(Album).options(selectinload(Album.cover_photo)).order_by(Album.sort_order, Album.id)
     )
     if admin is None:
         query = query.where(Album.is_published.is_(True))
+        if page is not None:
+            query = query.limit(page.size).offset(page.offset)
     return list(db.scalars(query))
 
 
@@ -182,11 +196,18 @@ def _album_photos(db: Session, album: Album, admin: Any) -> list[Photo]:
 # --------------------------------------------------------------------------
 # Response shapes
 # --------------------------------------------------------------------------
-def _index_context(db: Session, admin: Any, form: dict[str, Any] | None = None) -> dict[str, Any]:
+def _index_context(
+    db: Session,
+    admin: Any,
+    form: dict[str, Any] | None = None,
+    page: Page | None = None,
+) -> dict[str, Any]:
     return {
         "active_section": "photo",
-        "albums": _visible_albums(db, admin),
+        "albums": _visible_albums(db, admin, page),
         "form": form,
+        # None for the owner, and the template renders no control for None.
+        "page": page,
         **_helpers(),
     }
 
@@ -525,8 +546,12 @@ def _move_headers(outcome: str, kind: str) -> dict[str, str]:
 # Public pages
 # ==========================================================================
 @router.get("", response_class=HTMLResponse)
-def album_index(request: Request, db: DbSession, admin: OptionalAdmin) -> HTMLResponse:
-    return render(request, "photo/index.html", _index_context(db, admin), admin=admin)
+def album_index(
+    request: Request, db: DbSession, admin: OptionalAdmin, page: str | None = None
+) -> HTMLResponse:
+    """The album index: bounded for a visitor, whole for the owner (SPEC F3)."""
+    current = page_for(_published_albums(db), page) if admin is None else None
+    return render(request, "photo/index.html", _index_context(db, admin, page=current), admin=admin)
 
 
 # ==========================================================================

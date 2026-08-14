@@ -18,6 +18,7 @@ from app.models.album import Album
 from app.models.photo import Photo, PhotoStatus
 from app.routers.photos import recover_stuck_photos
 from app.services import images
+from app.services.pagination import PAGE_SIZE
 
 PROCESS_TIMEOUT = 30.0
 
@@ -136,6 +137,48 @@ def test_index_lists_published_albums(client, album):
 
 def test_index_hides_unpublished_albums_from_visitors(client, draft_album):
     assert draft_album.title not in client.get("/photo").text
+
+
+def test_the_index_is_bounded_for_a_visitor_and_whole_for_the_owner(admin_client, client, db):
+    """SPEC F3 as amended, ADR-022.
+
+    The owner's list is what drag-reorder posts back — `_reorder_from_ids`
+    applies the ids it receives to the full row list — so a paginated owner view
+    would reorder the albums that were not on the page. The visitor drags
+    nothing, and is the one who benefits from a bounded page.
+    """
+    made = []
+    for index in range(PAGE_SIZE + 2):
+        album = Album(
+            slug=f"paged-album-{index}",
+            title=f"Альбом {index}",
+            is_published=True,
+            sort_order=index,
+        )
+        db.add(album)
+        made.append(album)
+    db.commit()
+
+    try:
+        first = client.get("/photo").text
+        second = client.get("/photo?page=2").text
+        owner = admin_client.get("/photo").text
+
+        on_first = {n for n in range(PAGE_SIZE + 2) if f'"/photo/paged-album-{n}"' in first}
+        on_second = {n for n in range(PAGE_SIZE + 2) if f'"/photo/paged-album-{n}"' in second}
+
+        assert len(on_first) == PAGE_SIZE
+        assert not (on_first & on_second)
+        assert on_first | on_second == set(range(PAGE_SIZE + 2))
+        assert 'rel="next"' in first
+
+        # The owner gets every album and no control at all.
+        assert all(f'"/photo/paged-album-{n}"' in owner for n in range(PAGE_SIZE + 2))
+        assert 'rel="next"' not in owner
+        assert 'class="pagination"' not in owner
+    finally:
+        for album in made:
+            drop_album(db, album.id)
 
 
 def test_unpublished_album_is_404_for_a_visitor(client, draft_album):

@@ -7,7 +7,7 @@
    The vocabulary is the one T108 and T109 settled — `.button` and `.meta`. No
    numbered strip: with a dozen articles per page it would be a row of digits
    nobody clicks, and the position is stated in words instead. #}
-{% if page.bounded %}
+{% if page and page.bounded %}
   <nav class="pagination" aria-label="{{ t('pagination.label') }}">
     {% if page.previous %}
       <a class="button" href="{{ page_url(request.url.path, page.previous) }}" rel="prev">

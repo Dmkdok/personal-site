@@ -15,6 +15,10 @@
     </header>
 
     {% include "photo/_board.html" %}
+
+    {# Outside the board on purpose: the board is what every admin mutation
+       swaps, and the owner's list is never bounded (ADR-022). #}
+    {% include "partials/pagination.html" %}
   </div>
 {% endblock %}
 
