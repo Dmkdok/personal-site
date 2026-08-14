@@ -210,4 +210,9 @@
       opacity: 1;
     }
   }
+
+  /* «Показать правки» (UI-AUDIT F-018). */
+  :root.show-edits .editable__edit {
+    opacity: 1;
+  }
 }

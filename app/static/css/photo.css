@@ -481,6 +481,17 @@
     pointer-events: auto;
   }
 
+  /* «Показать правки» (UI-AUDIT F-018). The scrim keeps `pointer-events: none`
+     so the photograph underneath still opens on click; its children take theirs
+     back, exactly as they do on hover. */
+  :root.show-edits .photo-item__admin {
+    opacity: 1;
+  }
+
+  :root.show-edits .photo-item__admin > * {
+    pointer-events: auto;
+  }
+
   .photo-item__tools {
     display: flex;
     flex-wrap: wrap;

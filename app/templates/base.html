@@ -8,12 +8,17 @@
        The indicator rules live in components.css instead. #}
     <meta name="htmx-config" content='{"includeIndicatorStyles": false}' />
 
-    {# Applied before first paint so the correct theme never flashes. #}
+    {# Applied before first paint so neither the theme nor the owner's reveal
+       state flashes. `show-edits` is a class rather than a data attribute
+       because the stylesheet keys ten selectors off it. #}
     <script nonce="{{ request.state.csp_nonce }}">
       (function () {
         try {
           var t = localStorage.getItem("theme");
           if (t === "dark" || t === "light") document.documentElement.dataset.theme = t;
+          if (localStorage.getItem("show-edits") === "1") {
+            document.documentElement.classList.add("show-edits");
+          }
         } catch (e) {}
       })();
     </script>
@@ -102,6 +107,9 @@
     <script src="{{ static_url('js/theme.js') }}" defer></script>
     <script src="{{ static_url('js/nav.js') }}" defer></script>
     <script src="{{ static_url('js/ui.js') }}" defer></script>
+    {% if is_admin %}
+      <script src="{{ static_url('js/edits.js') }}" defer></script>
+    {% endif %}
     {% block scripts %}{% endblock %}
   </body>
 </html>

@@ -754,6 +754,13 @@
     }
   }
 
+  /* «Показать правки» in the admin bar (UI-AUDIT F-018). Hover stays the
+     resting state — this page is the published page — but the owner can ask
+     for every affordance at once instead of sweeping the pointer to find one. */
+  :root.show-edits .site-links__edit {
+    opacity: 1;
+  }
+
   .site-links--editing {
     flex-direction: column;
     /* `wrap` is inherited from `.site-links`, and a wrapped column container

@@ -3,6 +3,19 @@
   <span class="admin-bar__dot" aria-hidden="true"></span>
   <span class="admin-bar__text">{{ t("auth.admin_mode") }}</span>
   <span class="admin-bar__spacer"></span>
+
+  {# Every in-place affordance on this site appears on hover, which is no use
+     for finding one you did not know was there (UI-AUDIT F-018). This reveals
+     all of them at once. `aria-pressed` is set here from the same storage the
+     pre-paint script reads, so the button is never a state behind the page —
+     that was F-019, and it is not to be repeated. #}
+  <button
+    class="button button--quiet"
+    type="button"
+    data-edits-toggle
+    aria-pressed="false"
+  >{{ t("auth.show_edits") }}</button>
+
   <form method="post" action="/logout">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
     <button class="button button--quiet" type="submit">{{ t("auth.logout") }}</button>
