@@ -154,6 +154,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 | [SPEC.md](docs/SPEC.md) | требования и критерии приёмки |
 | [PLAN.md](docs/PLAN.md) | архитектура и выбор стека |
 | [TASKS.md](docs/TASKS.md) | задачи по милестоунам |
+| [ROADMAP.md](docs/ROADMAP.md) | что дальше: 15 предложений, сгруппированных в итерации |
+| [UI-AUDIT.md](docs/UI-AUDIT.md) | аудит интерфейса и отложенный бэклог находок |
 | [DECISIONS.md](docs/DECISIONS.md) | ADR — почему сделано именно так |
 | [CONVENTIONS.md](docs/CONVENTIONS.md) | договорённости и уже оплаченные грабли |
 | [REVIEW.md](docs/REVIEW.md) | независимое ревью и что оно нашло |
