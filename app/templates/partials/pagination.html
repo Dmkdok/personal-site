@@ -1,0 +1,28 @@
+{# One bounded index's control, rendered by every one of them (SPEC F52).
+
+   Real links with real `href`s, never JavaScript: a page of this site has to be
+   reachable by a crawler and shareable by its address. `page_url` keeps page 1
+   at the bare path, so «Назад» from page 2 lands on /blog and not /blog?page=1.
+
+   The vocabulary is the one T108 and T109 settled — `.button` and `.meta`. No
+   numbered strip: with a dozen articles per page it would be a row of digits
+   nobody clicks, and the position is stated in words instead. #}
+{% if page.bounded %}
+  <nav class="pagination" aria-label="{{ t('pagination.label') }}">
+    {% if page.previous %}
+      <a class="button" href="{{ page_url(request.url.path, page.previous) }}" rel="prev">
+        {{ t("pagination.previous") }}
+      </a>
+    {% endif %}
+
+    <p class="meta pagination__position">
+      {{ t("pagination.position", page=page.number, pages=page.pages) }}
+    </p>
+
+    {% if page.next %}
+      <a class="button" href="{{ page_url(request.url.path, page.next) }}" rel="next">
+        {{ t("pagination.next") }}
+      </a>
+    {% endif %}
+  </nav>
+{% endif %}

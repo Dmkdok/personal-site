@@ -25,7 +25,18 @@
 
     <title>{% block title %}{{ t("site.name") }}{% endblock %}</title>
     <meta name="description" content="{% block meta_description %}{{ t("site.tagline") }}{% endblock %}" />
-    <link rel="canonical" href="{% block canonical %}{{ site_url }}{{ request.url.path }}{% endblock %}" />
+    {# On a bounded index the canonical is the page's own address, not the
+       first page's: page 2 is its own document, and pointing it at page 1
+       would ask a crawler to drop eleven articles (SPEC F52). #}
+    <link rel="canonical" href="{% block canonical %}{{ site_url }}{{ page_url(request.url.path, page.number) if page else request.url.path }}{% endblock %}" />
+    {% if page %}
+      {% if page.previous %}
+        <link rel="prev" href="{{ site_url }}{{ page_url(request.url.path, page.previous) }}" />
+      {% endif %}
+      {% if page.next %}
+        <link rel="next" href="{{ site_url }}{{ page_url(request.url.path, page.next) }}" />
+      {% endif %}
+    {% endif %}
 
     <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
     <meta property="og:site_name" content="{{ t('site.name') }}" />

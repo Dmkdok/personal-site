@@ -556,6 +556,34 @@
   }
 
   /* ==========================================================================
+     Pagination — the control every bounded index renders
+     ========================================================================= */
+  .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-s);
+    margin-block-start: var(--space-2xl);
+  }
+
+  /* Between the two buttons on a middle page, and centred when only one of them
+     is there — so the position never jumps as you page through. */
+  .pagination__position {
+    order: 0;
+    flex: 1;
+    text-align: center;
+  }
+
+  .pagination a[rel="prev"] {
+    order: -1;
+  }
+
+  .pagination a[rel="next"] {
+    order: 1;
+  }
+
+  /* ==========================================================================
      Form error — one box, whether the form rejected a field or the whole post
      ========================================================================= */
   /* Four of these existed: three byte-identical, the fourth different only in

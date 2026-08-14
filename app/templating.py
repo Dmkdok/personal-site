@@ -95,11 +95,24 @@ def upload_limits() -> dict[str, Any]:
     }
 
 
+def page_url(path: str, number: int) -> str:
+    """`pagination.page_url`, reachable from a template.
+
+    Imported inside the function for the same reason `upload_limits` does it:
+    `app.services` reads this module, so a top-level import here would close the
+    circle at import time.
+    """
+    from app.services.pagination import page_url as _page_url
+
+    return _page_url(path, number)
+
+
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 templates.env.globals.update(
     t=translate,
     static_url=static_url,
     upload_limits=upload_limits,
+    page_url=page_url,
     site_url=settings.site_url,
     lang=DEFAULT_LANG,
     # Safe defaults so every template can be rendered from any route; routes
@@ -109,6 +122,9 @@ templates.env.globals.update(
     is_admin=False,
     csrf_token="",
     query="",
+    # Only the bounded indexes set this; `base.html` reads it for the canonical
+    # and for rel=prev/next, and every other page has to render without it.
+    page=None,
 )
 templates.env.trim_blocks = True
 templates.env.lstrip_blocks = True
