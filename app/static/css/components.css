@@ -82,7 +82,21 @@
     pointer-events: none;
   }
 
+  /* `position: relative` is what the open dropdown below 768 px hangs from.
+     Without a containing block here, `.nav__links` resolves against `.nav`'s
+     padding box — the whole viewport — while the capsule spans the content box
+     inside it, and the menu overhangs by one gutter on each side (UI-AUDIT
+     F-011, which measures −20 px per side at 360 px).
+
+     The audit reports that as the shipped behaviour; it was not. `backdrop-filter`
+     below already makes this element a containing block for absolutely
+     positioned descendants, so the menu was aligned in every browser that
+     supports it. The declaration stays because that is an accident: it ties the
+     layout of the one control on every page to a visual effect that a browser,
+     a setting or a later edit can take away. The vertical offset was never
+     involved and is untouched. */
   .nav__capsule {
+    position: relative;
     pointer-events: auto;
     display: flex;
     align-items: center;

@@ -134,6 +134,24 @@ element it names is the wrong one.
 Both halves are now in `admin.css` and both were watched failing alone before being kept. The audit
 line stays as a finding; its remedy column understates the fix.
 
+### F-011: the overhang does not reproduce (T112)
+
+The audit reads `.nav__capsule` as statically positioned and concludes that the open menu resolves
+against `.nav`'s full-viewport padding box. The reasoning is right and the conclusion is not:
+`backdrop-filter` on the capsule already makes it a containing block for absolutely positioned
+descendants, so the menu has been aligned all along in every browser that supports the property.
+
+Measured three ways at 360 px: as shipped, `−1 px` per side (the capsule's own border, which is
+where `inset-inline: 0` resolves). With `position: relative` alone removed, unchanged. With
+`backdrop-filter` removed as well, `−20 px` per side — exactly the audit's overhang, and exactly one
+gutter.
+
+`position: relative` is kept anyway. Alignment of the one control that appears on every page should
+not depend on a visual effect that a browser, a user setting or a later edit can withdraw. The new
+test measures the result rather than the mechanism, so it holds whichever of the two is doing the
+work. This is the second finding in Phase B whose written evidence did not survive being measured
+(F-016 was the first, in I1).
+
 ### What the sweep does not assert
 
 `#post-body` is a 22-row textarea, taller at 360 px than the fold. Chromium leaves a partially
