@@ -19,6 +19,45 @@
   disclosure, modal dialog) · Laws of UX (Fitts, Hick, Doherty, Von Restorff, Jakob) · Apple HIG / Material 3
   touch-target guidance · MDN/W3C `forced-colors` guidance.
 
+## What has since been built — read this before planning from the findings below
+
+**The findings are kept exactly as they were written.** They were an audit, not a
+backlog entry, and rewriting them in place would destroy the record of what was
+seen. This register says which of them are closed, so nobody re-does the work; it
+is the only part of this document that is edited after the fact.
+
+| Finding | State | Where |
+|---|---|---|
+| **F-001 … F-004** (P1) | Closed | Iteration **I1**, M10 (T102–T105) |
+| **F-005, F-006** (P2, taken early) | Closed | Iteration **I1**, M10 (T106) |
+| **F-007 … F-015, F-017, F-018** (P2) | Closed | Iteration **I2**, M11 (T107–T116) |
+| **F-014** (P2) | Closed | Iteration **I2**, M12 (T120, T123) — built where the control it needed already existed |
+| **F-016** (P2) | **Closed as not-a-defect**, ADR-020 | Zero targets failed 2.5.8 at 360 px as admin; its useful half is F-017, which was built |
+| **F-023** (P3, cheap) | Closed | Iteration **I2**, M11 (T108) |
+| **F-019 … F-022, F-024 … F-026** (P3) | **Open** | Deferred by ADR-017; still the backlog |
+
+Four findings did not survive being measured, and the corrections matter more
+than the findings did:
+
+- **F-001** found **no** admin accessibility failures at all — 0 contrast
+  samples under threshold, 0 focus stops without an indicator, 0 targets under
+  2.5.8. The gap in coverage was real; the defects it predicted were not.
+- **F-011**'s overhang does not reproduce. `backdrop-filter` on the capsule
+  already makes it a containing block, so the menu has been aligned in every
+  browser that supports the property. The declaration was added anyway, as
+  insurance rather than as a fix.
+- **F-012** was already closed when the audit was written — `markdown.py` has
+  emitted named, focusable scroll regions since `2a986ca` (2026-08-08), with
+  three unit tests. The audit did not check.
+- **F-015**'s prescribed remedy is half a fix on the wrong element. It needs
+  `padding-block-end` on `.page` (not `.page__main` — the footer is its sibling
+  and carries the very control the finding names) **and**
+  `scroll-padding-block-end` on the scroll container, without which the browser
+  still scrolls a tabbed-to control to an edge that sits under the bar.
+
+Details of all four: `docs/iterations/I1-ui-audit-p1.md` and
+`docs/iterations/I2-pagination-media-phaseb.md`.
+
 ## Executive verdict
 
 This is a well-made front end, not a template. The token layer is real (one accent, one focus treatment, a

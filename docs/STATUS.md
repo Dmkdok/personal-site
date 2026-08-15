@@ -26,10 +26,10 @@ Progress:
 - [x] 2 impact map written
 - [x] 3 docs amended (SPEC F3/F8/F10/F24 + F51–F56, ADR-019…022, TASKS M11–M13)
 - [x] GATE approved by the owner — «утверждаю», 2026-08-14
-- [ ] 4 implementation — **M11 done** (T107–T116, one commit each), **M12 next**, then M13
-- [ ] 5 verification green, baseline suites still green
-- [ ] 6 review clean or waived
-- [ ] 7 closed (STATUS rewritten, milestone ticked)
+- [x] 4 implementation — M11 (T107–T116), M12 (T117–T120, T123), M13 (T121–T122), M14 (T124)
+- [x] 5 verification green, baseline suites still green — and it earned a defect, T123
+- [x] 6 review clean (`docs/REVIEW.md` run 4, PASS; one High and five Mediums found and fixed)
+- [x] 7 closed (STATUS rewritten, milestones ticked)
 
 ### M11 closed 2026-08-15 — unit/API **237**, e2e **77**, lint and format clean
 
@@ -53,40 +53,74 @@ One thing is genuinely outstanding: **the forced-colors pass on a real Windows c
 The automated pass under Chromium's emulation is done and recorded; the four manual steps in Edge
 are written down in `docs/qa/forced-colors.md` and are the owner's to run.
 
+### M12, M13 and M14 closed 2026-08-15 — iteration I2 is complete
+
+`/blog` and `/photo` render a page instead of a table (`/photo` for the visitor only, ADR-022), the
+search page says how much it found and offers the rest, and a `.heic` straight off the owner's phone
+uploads, converts and appears in the album. Fourteen tasks across three milestones, then a fourteenth
+milestone for what the review found.
+
+**Two defects were found after their tasks were ticked, and both are worth carrying forward.**
+
+- **T123 — «Показать ещё» took the caret with it.** Found in phase 5 by a test written after T120
+  was closed. The button lives inside the element it replaces, so pressing it deletes it, and htmx
+  restores focus only to something that still exists under the same id. The next Tab restarted at
+  the top of the document. Fixed with an id on the button, a `tabindex` and a one-shot
+  `data-autofocus` on the section, and `ui.js` now clears that attribute once it has honoured it.
+- **T124 — the same control was permanently dead above 200 hits.** Found by *both* reviewers
+  independently. It asked for `shown + 12` while the route clamps at `MAX_GROUP_LIMIT`, and
+  `has_more` stays true above the cap, so every press returned the same section byte for byte. The
+  shape is the lesson: **two numbers that must agree, written in two places, one of them a literal
+  in a template.** T117 had already put page size in one constant; search grew its own step and its
+  own ceiling and obeyed neither.
+
+**Phase 6 was two independent reviewers, neither of which wrote the code** — one on completeness
+against the ticked task list, one carrying the security and interface checklists against a running
+instance. Verdict PASS, one High and five Mediums, all fixed in T124, everything watched red first.
+Full record: run 4 in `docs/REVIEW.md`. What is carried rather than fixed is listed there too, with
+reasons — the honest ones being that T112's test cannot fail (`backdrop-filter` already did the work
+`position: relative` was added for), and that the counts wrap a full entity `SELECT` in a subquery
+so that one predicate serves both the count and the list.
+
+**Two of the checks written this session were themselves wrong**, both sampling a value in the same
+tick as the event that changes it — one raced `htmx:afterSettle`, one read a transitioned
+`background-color` mid-animation. Both passed once and failed once against identical code. Anything
+an animation or a settle step touches must be asserted with a retry, never with a single read.
+
+**`docs/UI-AUDIT.md` now carries a closure register at the top**, because after this iteration the
+findings below it would otherwise read as thirteen open P2s. The findings themselves are untouched:
+they were an audit, not a backlog, and editing them in place would destroy the record.
+
 ## Resume here
 
-**Branch `main`, and it is the only one now.** `session/2026-08-06-m3-fixes-and-e2e` was merged into
-`main` fast-forward on 2026-08-13 and deleted both locally and on `origin`; `origin/main` is at
-`2125d87`. The remote is `origin` → `https://github.com/Dmkdok/personal-site.git`. The dev stack
-(`db`, `web`) is up — `docker compose down` stops it.
+**Branch `iteration/I2-pagination-media-phaseb`, cut from `main` at `dfc8f92`. It is not merged and
+not pushed** — `main` itself is one commit ahead of `origin/main` (the roadmap, `dfc8f92`). The
+remote is `origin` → `https://github.com/Dmkdok/personal-site.git`. The dev stack (`db`, `web`) is
+up; `docker compose down` stops it.
 
-**Tree clean.** The deployment work below is committed to `main` (`e43913c`) and pushed. That push
-was also the first run of the `publish` workflow, and it went green: both images exist in GHCR,
-tagged `latest` and `sha-e43913c`. Portainer has something to pull.
+**Merging is the owner's call and it has a consequence worth knowing before you make it:** a push to
+`main` runs the `publish` workflow, which builds both images and moves `latest` in GHCR. CI still
+runs no tests, so `latest` follows `main` in whatever state `main` is. The local gates are the only
+gates, and they are green.
 
-One thing the local `gh` token cannot do: list the packages. It has no `read:packages` scope, so the
-tags above were read out of the workflow logs rather than the registry. The token Portainer needs
-carries exactly that scope, which is the same gap seen from the other side.
+**Iteration I2 is complete.** `docs/TASKS.md` has no unticked line, M11 through M14. The page that
+explains what was taken, what was refused, what it cost and what the build corrected in the audit is
+**`docs/iterations/I2-pagination-media-phaseb.md`**; the review is run 4 in `docs/REVIEW.md`.
 
-**M10 is complete and iteration I1 is closed.** Phase A of `docs/UI-AUDIT.md` — the four P1 findings
-plus F-005 and F-006 — is built, tested and reviewed. Gates: unit/API **226**, e2e **60**, lint and
-format clean, all run on the final tree. `docs/TASKS.md` has no unticked line. The one page that
-explains what was taken, what was refused and what it cost is
-**`docs/iterations/I1-ui-audit-p1.md`**; the review is run 3 in `docs/REVIEW.md`.
+**One intermittent was seen and is not explained.** In one full e2e run of three, the
+`admin_storage_state` fixture failed at setup: the login POSTed and answered `303`, and the page it
+redirected to came back anonymous — no admin bar, so the session cookie was issued and then not
+honoured. It did not recur on the next run, and the same fixture succeeds fifteen-odd times in every
+run. Two runs of that batch also had the app restarting underneath them, because a `git stash` cycle
+of `app/**` (used to watch a test go red) trips uvicorn's `WatchFiles` reloader — **so do that with
+the stack down, or expect `ERR_EMPTY_RESPONSE` in the middle of a suite.** Whether the login failure
+was the same disturbance or something in `end_session`'s token rotation is genuinely unknown. It is
+the first thing to chase if it shows up again; there is nothing to fix until it does.
 
-**One thing landed after that close: the nav search field**, reported by the owner from the browser
-rather than by any sweep. Three faults on one control that appears on every page — two concentric
-focus rings in two different oranges, a ring painted on the inner `<input>` and pulled 3px inside it
-so it crossed the first letter of the query, and the browser's own clear button arriving white on
-one theme and blue on the other. The ring is now on the field itself, once; the clear button is
-painted through the tokens. Three e2e cases guard it, both themes, and all three were watched
-failing against the old CSS first. Written up under «After the close» in the iteration doc.
-
-**The audit is not finished, and that is deliberate.** Thirteen P2 findings (F-007…F-018) and seven
-P3 (F-019…F-026) are deferred by **ADR-017**, not dropped. `docs/UI-AUDIT.md` is the backlog and is
-still accurate, with two corrections I1 earned: F-001 found **no** admin accessibility failures at
-all, and F-016's clipped tile controls are not a 2.5.8 conformance problem — zero targets failed at
-360 px as admin. Both are comfort questions the audit itself already routed to ADR-010.
+**The audit is now half finished, deliberately, and it says so itself.** Phase A (P1) closed in I1;
+Phase B (P2) closed in I2, with F-016 closed as not-a-defect by ADR-020. Seven P3 findings
+(F-019…F-022, F-024…F-026) remain open, deferred by ADR-017. `docs/UI-AUDIT.md` carries the register
+at the top — that is the only edit ever made to it, and the findings below it are untouched.
 
 ## The deployment, built this session
 
@@ -339,17 +373,20 @@ Each gate below carries its own last-run timestamp and the command that produced
 
 | Gate | Command | Last run | Result |
 |---|---|---|---|
-| Unit + API | `docker compose run --rm tests` | 2026-08-10, end of I1 | **226 passed**, exit 0 |
-| End-to-end | `uv run pytest e2e -q` | 2026-08-11, after the search-field fix | **60 passed**, exit 0 |
+| Unit + API | `docker compose run --rm tests` | 2026-08-15, close of I2 | **271 passed**, exit 0 |
+| End-to-end | `uv run pytest e2e` | 2026-08-15, close of I2 | **81 passed**, exit 0 |
 | Six launch flows | `uv run pytest e2e -m launch_flow` | 2026-08-08 | **6 passed**, exit 0 |
-| Lint | `uv run ruff check .` | 2026-08-10, end of I1 | clean, exit 0 |
-| Format | `uv run ruff format --check .` | 2026-08-10, end of I1 | clean, 118 files |
+| Lint | `uv run ruff check .` | 2026-08-15, close of I2 | clean, exit 0 |
+| Format | `uv run ruff format --check .` | 2026-08-15, close of I2 | clean, 127 files |
 
-No failing tests. **Iteration I1 grew the suite 224 → 226 and 40 → 57**, against a recorded baseline
-of 224/40 taken before any work started (see `## Baseline I1`); the search-field fix that followed
-the close took e2e to **60**. Not one existing test was edited: the twenty new e2e cases and the two
-new API cases are all additions, and every one of them fails without the change it guards — which is
-why the milestone counts as done rather than merely green.
+No failing tests. **Iteration I2 grew the suite 233 → 271 and 60 → 81**, against the baseline in
+`## Baseline I2` taken before the change request was read. Iteration I1 before it grew 224 → 226 and
+40 → 57, and the search-field fix that followed took e2e to 60.
+
+**Only the tests the impact map named were edited**, plus one it did not: `e2e/test_login.py`'s
+unscoped `get_by_role("alert")`, which resolves to two elements once the toast host has a permanent
+alert region on every page. Everything else new is an addition, and every addition fails without the
+change it guards — with one named exception, T112, argued in the iteration doc.
 
 `-q` is set twice, so a passing run prints dots and no summary line. **Read the exit code.** Never
 pipe a test run through `tail` or `grep`: you get the pipe's status and a red suite reads as green.

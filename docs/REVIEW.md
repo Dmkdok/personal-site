@@ -1,8 +1,193 @@
 # Review
 
-Three Phase 6 runs. **Run 3 is the current one and is below**; the earlier two
+Four Phase 6 runs. **Run 4 is the current one and is below**; the earlier three
 are kept underneath it because their findings are the reason half of M9 exists,
 and a reviewer arriving later should be able to see what was already looked at.
+
+---
+
+# Run 4 — Phase 6 against I2 (M11–M13), 2026-08-15
+
+Scope is the I2 delta only: `dfc8f92..HEAD` on `iteration/I2-pagination-media-phaseb`.
+The contract it was judged against is the impact map in
+`docs/iterations/I2-pagination-media-phaseb.md` — in an iteration the question is
+"did anything move that was not supposed to", not "is this product good".
+
+Two independent reviewers, neither of which wrote the code. One took
+completeness and correctness against the ticked task list; the other carried the
+`secure-review` and `web-design-guidelines` checklists and drove a browser
+against the running stack. `semgrep` is still not on PATH on this machine, so
+the security pass was the manual checklist.
+
+## Verdict
+
+**PASS.** No Critical. One High and five Mediums, **all fixed in this session**,
+each with a check that was watched failing first. Eight notes are carried with
+reasons rather than fixed, listed below.
+
+The High was found by both reviewers independently, which is the strongest
+signal either of them produced.
+
+## High — fixed
+
+**«Показать ещё» became a permanently dead control above 200 hits in one
+group.** The button asked for `limit = shown + 12`; `/search/group` clamps at
+`MAX_GROUP_LIMIT = 200`. `has_more` is `shown < total`, which stays true above
+the cap — so at 210 matching articles the heading froze at «200 из 210», the
+button was re-rendered for ever, and each press swapped in the same section byte
+for byte. Worse from the keyboard: `data-autofocus` is emitted only on the
+exhausted branch, so every press was silent, with the caret parked on a control
+that had done nothing.
+
+Fixed in three parts: the button renders only while `group.shown < ceiling`; at
+the ceiling the group says so («Показаны первые 200 — уточните запрос»); and the
+step and the ceiling now reach the template from the route (`_group_limits()`)
+instead of a bare `12` sitting beside a `DEFAULT_LIMIT` it had to match by hand.
+`tests/api/test_search_seo.py::test_a_group_at_the_ceiling_stops_offering_more`
+moves the ceiling rather than seeding two hundred rows.
+
+## Medium — fixed
+
+1. **A continuation announced nothing.** When more remains the swap replaces the
+   list and the count and leaves focus on the button, and neither the `<h2>` nor
+   the page's «Найдено: N» is a live region for that change: twelve more results
+   arrived and a screen-reader user heard silence. `pages/search.html` now
+   carries an empty, permanent `role="status"` region and the continuation fills
+   it out of band (`hx-swap-oob="innerHTML"`, so the region itself survives — a
+   live region created in the same breath as its content may never be announced).
+2. **The error toast could be read over the lightbox and not answered.** F-007
+   raised the host above `--z-overlay` and made errors wait for a dismissal, but
+   `lightbox.js` trapped Tab over its own three controls and called
+   `preventDefault()`. The «×» was on screen and unreachable until the picture
+   was closed. `focusable()` now includes `#toasts-alert .toast__close`, queried
+   per call because a toast can arrive while the lightbox is already open.
+3. **«Показать правки» had no visible pressed state at all** — no
+   `[aria-pressed="true"]` rule existed anywhere. On the top of a long article,
+   where nothing editable is in view, the press changed an attribute in the
+   accessibility tree and not one pixel. One rule in `admin.css`, keyed off the
+   attribute so the seen state and the announced one cannot drift, plus a
+   `forced-colors` variant.
+4. **The Russian copy still refused HEIC.** `photo.drop_note` on the album drop
+   zone and `blog.cover_hint` under the cover picker still read «JPEG, PNG или
+   WebP» after M13 accepted the format — the owner would have converted his
+   iPhone photographs by hand because the page told him to, which is the exact
+   cost R-10 exists to remove. Both fixed, and a parametrized test now holds all
+   five strings that list formats.
+5. **T111's DoD was not implemented.** `data-autofocus` was still unconditional
+   on the title field of both forms; the caret only landed correctly because
+   `ui.js` returns early when it finds `aria-invalid`. `ProjectInvalid.field` is
+   optional by design, so a rejection belonging to the whole form would have sent
+   the caret to «Название» with the message about something else. Both templates
+   now emit the attribute through `autofocus_unless_rejected()`.
+
+## Low — fixed
+
+- `·` was a user-visible character hardcoded in `search_group.html`, which
+  `CONVENTIONS.md` §Language forbids. It lives in `search.group_heading` now.
+- The comment in `admin_bar.html` claimed `aria-pressed` was "set here from the
+  same storage the pre-paint script reads". It is hardcoded `false` and corrected
+  by a deferred `edits.js`; the comment now says so, and says what does not lag
+  (the class, applied pre-paint, so there is no visual flash).
+- `editor.js` dropped any file whose `type` was empty **in silence** — no row, no
+  message. That is exactly the shape a HEIC off a phone arrives in, newly
+  reachable because of R-10. Empty types are passed to the server, whose magic
+  sniff is the authority; anything that *declares* a non-image type is still
+  refused in the browser.
+- `tests/unit/test_pagination.py::test_the_page_size_lives_in_one_place` compared
+  `page_for` against a second call to itself, so it held for every possible value
+  of `PAGE_SIZE`. Rewritten against the constant's two boundaries.
+- Four stale coordinates in the contract documents (T115, T119/ADR-022, T111,
+  T122) and two DoDs describing something other than what was built (T120's
+  `offset`-swapping-the-`<ul>`, T116's "a visitor's HTML is unchanged").
+
+## Carried, with reasons
+
+- **T112's test cannot fail without T112's change.** `backdrop-filter` already
+  made the capsule a containing block, so the menu was aligned all along; the
+  build measured this and wrote it down. `position: relative` is kept as
+  insurance against the effect being withdrawn, and the test measures the result
+  rather than the mechanism, so it holds whichever is doing the work. This is the
+  one in-scope item with no failing-first evidence, and it is deliberate.
+- **T114's manual pass on a real Windows contrast theme is still owed**, by the
+  owner, per `docs/qa/forced-colors.md`. The automated Chromium-emulation pass is
+  done, recorded, and does fail without the CSS.
+- **The counts wrap a full entity `SELECT` in a subquery** (`blog.py`,
+  `search.py`) where `photos.py` counts the cheap way. One predicate serving both
+  the count and the list is the property being bought; two predicates are free to
+  disagree, and that is the drift the search count exists to prevent. Worth
+  revisiting at a corpus where it measures.
+- **`/search/group` has no rate limit** — nor does any route on this site except
+  login. It is the most expensive anonymous route now (a `COUNT(*)` plus a rank
+  of up to 200 rows), which is worth knowing before the corpus grows.
+- **`_HEIF_BRANDS` accepts the generic MIAF brands `mif1`/`msf1`**, so an AVIF
+  still or an image sequence can be stored under a `.heic` suffix. The decode
+  still has to succeed and originals are never served over HTTP, so the
+  consequence is a mislabelled original, not a bypass.
+- **`.toast__close` is exactly 24×24 CSS px** — the WCAG 2.5.8 floor with nothing
+  in hand, which ADR-010 already accepts as the site's bar.
+- **The expanded state of a search group is not in the URL**, so reloading after
+  «Показать ещё» collapses it back to twelve. The paginated indexes do put their
+  state in the URL; search deliberately does not, because its address is a query.
+- **No QA artefact covers a paginated index or a search with hits.** The sweeps
+  in `docs/qa/` predate both. The two samples that matter were measured by hand
+  this run — `.pagination__position` resolves to the same token pair as the
+  `<time>` sample that passes at 4.65 (light) / 5.31 (dark), and the toast «×»
+  measures ≈7.4:1 — but extending the sweeps belongs to the next iteration.
+
+## What the reviewers checked and found clean
+
+- **The forbidden diff of T119 holds.** `_board()`, `album_reorder`,
+  `album_move` and `_reorder_from_ids` are outside every hunk; pagination went
+  into `photo/index.html`, outside the swap target.
+- **T115's server-side alt fallback is unchanged**, the marks and the count are
+  inside `{% if is_admin %}`, and no alt text is generated.
+- **T108's deletions are deletions** — `.badge`, `.photo-badge`, `.post-flag`,
+  `.project-form__error`, `.album-form__error`, `.login__error` and
+  `.site-links__error` are gone from the sheets, with every selector moved in the
+  same commit. `.login__error` moving into `components.css` also fixed a latent
+  unstyled error box on `/login`, which is loaded without `admin.css`.
+- **T107 leaves one clearance rule, not two.**
+- **Pagination arithmetic**: `?page=` of `0`, `-3`, `abc`, `1e5`, `page[]=2`,
+  `%2F%2Fevil` and 4000- and 5000-digit values all answer 200; `offset` agrees
+  with `limit`; 24 rows at 12 is two pages; page 1 is the bare path, so the
+  canonical is self-referential.
+- **The continuation hides exactly what the page hides.** Both go through the one
+  `_statement()`, and the total is a `count()` over that same filtered statement,
+  so the count cannot leak what the list does not show. Verified live as an
+  anonymous client: drafts and unpublished albums are absent at `limit=200` for
+  every kind, and a group an admin sees as 2 reports «1 из 1».
+- **`kind` is allow-listed before the database is touched**; `limit` clamps to
+  `[12, 200]`; an over-long `q` is truncated rather than 422'd.
+- **HEIC intake**: `validate_upload` returns the *sniffed* type, never the
+  declared one, so `image/heif` cannot reach an extension map that lacks it; the
+  120 Mp ceiling is read from the header before any decode; `pillow_heif` does
+  override `verify()`, so a truncated file is refused at intake rather than in
+  the background pool; `.tiff`, an `ftypmp42` video and a zip named `.heic` are
+  all still refused. Every upload route is admin-only.
+- **CSP is unchanged and still nonce-based**; the delta adds one external script
+  tag and zero inline handlers or `style=` attributes.
+- **No admin-only markup in a visitor's HTML**; hostile `q` is escaped in the
+  title, `og:title`, the input value and the empty state; `Vary: Cookie` is on
+  `/search`, `/search/group` and `/blog`, so no fragment can be cross-cached
+  between the owner and a visitor.
+- **Scope**: six files sit outside every impact-map row — `search.css`,
+  `uploader.js`, `blog.json`, `e2e/test_nav_dropdown.py`, `e2e/test_forced_colors.py`
+  and the re-measured `docs/qa/perf-*.json`. Each is a one-line consequence of an
+  in-scope row; none is a scope breach.
+
+## Gates at the time of this verdict
+
+| Gate | Command | Result |
+|---|---|---|
+| Unit + API | `docker compose run --rm tests` | **271 passed**, exit 0 (I2 baseline 233) |
+| End-to-end | `uv run pytest e2e` | **81 passed**, exit 0 (I2 baseline 60) |
+| Lint + format | `uv run ruff check .` / `ruff format --check .` | clean, 127 files |
+
+One run of the three taken during this phase had a single fixture error — a login that answered
+`303` and redirected to an anonymous page — which did not recur and is recorded under «Resume here»
+in `docs/STATUS.md` rather than explained away here. Two runs in that batch also had the app
+restarting underneath them: a `git stash` cycle over `app/**`, used to watch a test go red, trips
+uvicorn's `WatchFiles` reloader mid-suite.
 
 ---
 
