@@ -45,6 +45,15 @@ being operated.
 - **Size:** S. Most of the work is already written; what is missing is a scheduler and a second
   destination.
 - **Depends on:** nothing. This is first.
+- **I3 took its smallest form and this item stays OPEN.** What shipped: `scripts/backup.sh` can
+  now reach a database the checkout did not start (`BACKUP_DB_CONTAINER`), and `docs/HANDOFF.md` §5
+  specifies the appliance's own Periodic Snapshot Task plus a one-line dump that needs no checkout.
+  What did **not** ship, deliberately: the 7/4/6 retention policy, the manifest, the off-machine
+  copy, the scheduled `restore-check`, and any schedule this repository owns. **ADR-023** gives the
+  reason it is enough for now — test mode, disposable photographs — and **ADR-024** gives the
+  trigger to build the rest: the move off the NAS, which is also when the photographs stop being
+  disposable. Until then a total loss of the appliance costs the photographs, and that exposure is
+  accepted knowingly. **Do not tick this item on the strength of I3.**
 
 ### R-02 — The test suite gates the image, instead of running beside it
 
@@ -59,6 +68,10 @@ being operated.
   today because one person remembers it; CI is how that survives a distracted week.
 - **Size:** S.
 - **Depends on:** nothing.
+- **I3 built it (T127) and it is not yet proved.** `publish` declares `needs: tests`, the header
+  that boasted of running no tests is rewritten, and e2e is on `v*` tags only. The DoD asks for the
+  behaviour to be observed in both directions on a scratch branch, which needs a push; until that
+  is done, treat the gate as written rather than working.
 
 ### R-03 — Something watches the site besides the owner's browser
 
@@ -76,6 +89,11 @@ being operated.
 - **Size:** S–M.
 - **Depends on:** R-02 for the 500-notifier to be worth much (otherwise it reports defects CI should
   have caught).
+- **I3 re-shaped it (ADR-025) and took two of its three parts.** The log ceilings shipped and the
+  log now lands as a plain file on a bind-mounted dataset, which is what the owner asked for
+  instead of the notifier (T126). The external `/healthz` check is specified in `docs/HANDOFF.md`
+  §7 but **not yet created** (T129). The 500 / failed-photo notifier and the Telegram bot were
+  declined for this machine and carry ADR-024's trigger — the move to a dedicated server.
 
 ### R-04 — A way to make contact that is not a social network
 

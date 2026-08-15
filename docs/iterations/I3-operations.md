@@ -209,17 +209,45 @@ deliberately not touched — the bound *is* the problem. Taken as **T130**.
 ## Exit criteria
 
 - [x] Two consecutive full e2e runs pass, exit 0 both times — the baseline's own failure mode does
-      not recur. *(2026-08-15, after T125: 81 passed exit 0, twice.)*
-- [ ] unit/API at **271 or better**, lint and format clean. *(272 exit 0 after T125; re-checked at
-      the close.)*
-- [ ] No photograph can be left in-flight by a failure the pipeline does not report (T130).
+      not recur. *(2026-08-15, after T125: 81 passed exit 0, twice. Re-run at the close after all
+      five tasks: **81 passed exit 0, twice again**, 186 s and 187 s.)*
+- [x] unit/API at **271 or better**, lint and format clean. *(**277 exit 0** at the close — 271
+      baseline, +1 T125, +2 T130, +3 T126. Lint and format clean over 53 files.)*
+- [x] No photograph can be left in-flight by a failure the pipeline does not report (T130). *(The
+      render-and-record sequence is inside the guard; two tests, one per named window, both watched
+      failing on "never left the pipeline" first.)*
 - [ ] The owner has opened `app.log` on the NAS share and read a real line out of it, and a grep of
-      that file for every value in `.env` finds nothing.
-- [ ] `docker compose config` shows a log ceiling on every service in both deployment files.
+      that file for every value in `.env` finds nothing. **— owner's, needs the appliance.**
+      *The grep half was rehearsed locally: a real 178-line `app.log` produced by the API suite
+      with `LOG_DIR` set, containing no `SECRET_KEY`, `ADMIN_PASSWORD`, `DATABASE_URL` or
+      `ADMIN_USERNAME`, and nothing credential-shaped. `POSTGRES_PASSWORD` matched only because the
+      development value is the word `portfolio`, which is also the logger tag; on the server the
+      value is random and the grep means something.*
+- [x] `docker compose config` shows a log ceiling on every service in both deployment files.
+      *(Both rendered 2026-08-15: `max-size: 10m` / `max-file: "3"` on `db`, `web` and `caddy` in
+      each, plus `LOG_DIR: /data/logs` and the `/data/logs` mount on `web`.)*
 - [ ] A red commit has been observed *not* publishing an image, and a green one publishing.
-- [ ] `scripts/backup.sh` has been run in both modes, and a restore rehearsed from its output.
+      **— owner's, needs a push to GitHub.** *What is proved locally: all three gate commands pass
+      against a `.env` generated exactly as the workflow generates it.*
+- [x] `scripts/backup.sh` has been run in both modes, and a restore rehearsed from its output.
+      *(2026-08-15. Host checkout and `BACKUP_DB_CONTAINER=dmkdok-portfolio-db-1`, both exit 0,
+      artefact names identical to a pre-change run. `restore-check.sh` over the container-mode
+      pair: 4 albums, 24 photos, 4 posts, 3 projects, 7 site_content rows, 84 files, PASSED.)*
 - [ ] A Periodic Snapshot Task exists on the appliance and has taken at least one snapshot, listed
-      here.
+      here. **— owner's, TrueNAS interface.** *Specified in `docs/HANDOFF.md` §5.*
 - [ ] The external `/healthz` check has been seen going red when `web` is stopped.
-- [ ] Every deferral in the Intake has an ADR, and **R-01 is left open in `docs/ROADMAP.md`** with a
+      **— owner's, TrueNAS interface.** *Specified in `docs/HANDOFF.md` §7.*
+- [x] Every deferral in the Intake has an ADR, and **R-01 is left open in `docs/ROADMAP.md`** with a
       note pointing at ADR-024 — this iteration takes its smallest form, it does not close it.
+      *(ADR-023…ADR-026 all present; R-01, R-02 and R-03 each carry an `I3` note, and R-01's says
+      in as many words not to tick it on the strength of this iteration.)*
+
+## What is left, and why it is not ticked
+
+Four criteria above are open and **all four are the owner's own hands** — two in the TrueNAS
+interface, one needing a push to GitHub, one needing the NAS share. The code and the documentation
+for all of them are written and committed; none of them is ticked on that basis. That is deliberate:
+T073 was ticked once with half its DoD unmet and the bill arrived in T086.
+
+Accordingly **T127, T128 and T129 are left unticked in `docs/TASKS.md`**, and M15 is not a closed
+milestone. T125, T126 and T130 are done and ticked.

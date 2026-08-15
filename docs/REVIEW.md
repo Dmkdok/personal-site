@@ -1,8 +1,96 @@
 # Review
 
-Four Phase 6 runs. **Run 4 is the current one and is below**; the earlier three
+Five Phase 6 runs. **Run 5 is the current one and is below**; the earlier four
 are kept underneath it because their findings are the reason half of M9 exists,
 and a reviewer arriving later should be able to see what was already looked at.
+
+---
+
+# Run 5 — Phase 6 against I3 (M15), 2026-08-15
+
+Scope is the I3 delta only: `8c75582..HEAD` on `iteration/I3-operations`, judged
+against the impact map in `docs/iterations/I3-operations.md`.
+
+**This run is weaker than the four below it, and the difference is worth
+stating.** Runs 1–4 used reviewers that had not written the code. This one was a
+single pass by the session that implemented the work, so it can catch a diff that
+strayed outside its owned paths — and did check that — but it cannot catch what
+the implementer did not think to look for. If the owner wants Run 5 redone
+independently before this branch merges, that is a reasonable call; nothing below
+depends on it having been done.
+
+## Verdict
+
+**PASS on what was run. Three of the six tasks are not finished and are not
+ticked** — their remaining halves are owner actions on the appliance and on
+GitHub, and no part of this review claims them.
+
+## Regression against the impact map
+
+| Item | Proof named in the map | Status |
+|------|------------------------|--------|
+| **T125** dedup race | API test patching `renditions_of` to empty the disk between the two globs; 201 + `PENDING` | Pass — `tests/api/test_photo.py::test_a_known_frame_whose_files_vanish_mid_request_is_re_rendered`, shipped `4255ec4` |
+| **T130** stuck after the render | two tests, one per named window, each asserting `FAILED` with a reason rather than a spinning tile | Pass — both watched failing first on `AssertionError: photo N never left the pipeline`, the traceback naming `submit_with_session` swallowing the raise |
+| **T126** the log as a file | unset writes nothing and adds no handler; set reaches `app.log`; unwritable still starts and warns | Pass — `tests/unit/test_logging.py`, 3 cases, watched failing on `ImportError` first |
+| **T126** mount and ceilings | `docker compose config` renders both files with `max-size`/`max-file` on every service and the log mount on `web` | Pass — both rendered, ceiling on all three services in each, `LOG_DIR: /data/logs` and the `/data/logs` target on `web` |
+| **T127** CI gates the image | a red push observed not publishing, then a green one publishing | **Not run** — needs a push to GitHub. What *was* proved: the three gate commands pass against a `.env` generated exactly as the workflow generates it, 277 exit 0 |
+| **T128** dump on the server | run both ways, artefact names diffed against a pre-change run, then `restore-check.sh` over the output | Pass for the script — host-checkout and container-name runs both exit 0, names identical, rehearsal passed on 4 albums / 24 photos / 84 files |
+| **T128** snapshots | the task exists on the appliance and has taken a snapshot | **Not run** — TrueNAS interface, owner's |
+| **T129** external check | the check goes red when `web` is stopped | **Not run** — TrueNAS interface, owner's |
+
+**No existing test was edited**, and no test's expectations changed — the
+prediction the map made in Phase 2. The `app/` diff is three files: `photos.py`
+(the `try` boundary plus two rollbacks, no logic moved, `recover_stuck_photos`
+untouched), `config.py` (one setting), `main.py` (the handler). The development
+`docker-compose.yml` is not in the diff, as the DoD required.
+
+## Security
+
+**No secret reaches the log file.** A real `app.log` was produced by running the
+API suite with `LOG_DIR` set — 178 lines, including the deliberate 500 and two
+photo failures — and grepped for the value of every credential in `.env`.
+`SECRET_KEY`, `ADMIN_PASSWORD`, `DATABASE_URL` and `ADMIN_USERNAME`: absent.
+Nothing matching `password=`, `passwd`, `secret_key=` or a `postgresql+psycopg://`
+URL appears anywhere in the file.
+
+`POSTGRES_PASSWORD` reported a match, and it is a false positive worth recording
+rather than hiding: the *development* password is literally the word
+`portfolio`, which matches the logger tag `[portfolio]` on every line. The three
+matches were all log prefixes. On the server the value is a generated random
+string, so the same grep there is meaningful in a way it cannot be here.
+
+The CI `.env` generation was checked for the trap the DoD named: it does not copy
+`.env.example`, and `ADMIN_PASSWORD=change-me` is still refused by
+`app/config.py`. No workflow secret is echoed; the generated values are created
+and destroyed inside the job.
+
+## Notes — recorded, not fixed
+
+1. **`RotatingFileHandler` is not multi-process safe.** Two uvicorn workers
+   rotating the same `app.log` can interleave badly. Both deployment files run a
+   single uvicorn process with no `--workers`, so this is a constraint on a
+   future change, not a defect today. Worth knowing before anyone adds workers.
+2. **`logging.basicConfig` is a no-op when something has already put a handler on
+   the root logger.** That is pre-existing and unchanged by T126 — the file
+   handler is added with `addHandler` and is unaffected — but it is why the unit
+   test has to set the level itself under pytest.
+3. **The `e2e` job in the workflow has never executed.** It is tag-triggered and
+   no `v*` tag has been pushed since it was written. It does not gate `publish`,
+   so a broken one costs a red job on a release and nothing else — but it should
+   be read as untested code until a tag proves otherwise.
+
+## Gates at the time of this verdict
+
+| Gate | Command | Result |
+|---|---|---|
+| Unit + API | `docker compose run --rm tests` | **277 passed**, exit 0 (baseline 271) |
+| End-to-end | `uv run pytest e2e` | **81 passed**, exit 0 — **twice consecutively** |
+| Lint | `docker compose run --rm tests ruff check .` | clean, exit 0 |
+| Format | `docker compose run --rm tests ruff format --check .` | clean, 53 files, exit 0 |
+
+The baseline's intermittent 500 in the dedup upload path did not recur in either
+run. The one unexplained `admin_storage_state` login failure recorded in the I2
+close did not recur either.
 
 ---
 

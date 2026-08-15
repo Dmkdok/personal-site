@@ -55,10 +55,36 @@ Progress:
       appliance's own snapshots plus one command (ADR-023/024), the declined notifier replaced by
       the log file on disk (ADR-025)
 - [x] **GATE approved by the owner — «утверждаю», 2026-08-15**
-- [ ] 4 implementation — T125 **done**; then T130, T126; T127/T128/T129 independent
-- [ ] 5 verification green, baseline suites still green
-- [ ] 6 review clean or waived
-- [ ] 7 closed (STATUS rewritten, milestone ticked)
+- [x] 4 implementation — T125, T130, T126 complete; T127, T128, T129 written and committed, each
+      with a half only the owner can run
+- [x] 5 verification green, baseline suites still green — unit/API **277** exit 0, e2e **81** exit 0
+      twice, lint and format clean over 53 files
+- [x] 6 review — `docs/REVIEW.md` run 5, PASS on what was run, and it says plainly that it is a
+      self-review rather than an independent one
+- [ ] 7 closed — **M15 cannot be ticked**: three tasks have owner-only halves outstanding
+
+### I3 close, 2026-08-15 — unit/API **277**, e2e **81 twice**, lint and format clean
+
+Five tasks implemented in the ordered sequence, each with its check watched failing first:
+
+- **T130** (`6867154`) — `process_photo` committed `PROCESSING` and then ran four more steps
+  *outside* its `try`. A raise in any of them was swallowed by `submit_with_session`, whose rollback
+  cannot undo a commit that already happened, so the row spun until the next restart with no retry
+  offered. The render-and-record sequence moved inside the guard; each handler rolls back before
+  `_fail` writes, so a raise from the database work cannot make `_fail`'s own commit raise in turn.
+  Two tests, one per named window. `recover_stuck_photos` deliberately untouched.
+- **T126** (`0ec22c1`) — `LOG_DIR`, empty by default, adds a `RotatingFileHandler` (5 MB × 4)
+  *beside* the stdout stream. An unwritable path warns and starts anyway. Both deployment files
+  gained a `logs` mount on `web` and an explicit `max-size`/`max-file` on every service; both render
+  under `docker compose config`. `docker-compose.yml` untouched, as the DoD required.
+- **T127** (`729fce3`) — `publish` now declares `needs: tests`. **Not ticked.**
+- **T128 + T129** (`66455ca`) — `BACKUP_DB_CONTAINER` on `backup.sh`, run both ways with the
+  artefact names diffed and a restore rehearsed; `HANDOFF.md` §5 and §7 rewritten. **Not ticked.**
+
+**Three tasks are not done and were not ticked**, because their remaining halves cannot be run from
+a session: T127's proof needs a push to GitHub, T128's snapshot task and T129's external check are
+created in the TrueNAS interface. The written-but-never-run tick is the T073 mistake this project
+already paid for once in T086.
 
 ## Baseline I2
 
@@ -155,32 +181,50 @@ is `origin` → `https://github.com/Dmkdok/personal-site.git`. The dev stack (`d
 `docker compose down` stops it. Docker Desktop is not always running on this host — start it and
 wait for `docker info` before the first suite.
 
-**Iteration I3 is open and the gate is passed** («утверждаю», 2026-08-15). Its page —  intake,
-the re-cut, the impact map, both pipeline defects and the exit criteria — is
+**Two traps this session hit, both cheap to avoid.** A full e2e run started immediately after
+`docker compose restart web` fails all 81 at fixture setup, because the site is not answering yet —
+wait for `/healthz` first. And Git Bash rewrites container-absolute paths on this host, so
+`docker compose run -e LOG_DIR=/tmp/x` arrives inside the container as `C:/Users/...`; prefix the
+command with `MSYS_NO_PATHCONV=1`. The same conversion makes `tar` treat a `C:/...` `BACKUP_DIR` as
+a remote host and fail — give `scripts/backup.sh` a POSIX-relative path.
+
+**Iteration I3's code is finished. The iteration is not, and M15 is not ticked.** Its page —
+intake, the re-cut, the impact map, both pipeline defects and the exit criteria — is
 **`docs/iterations/I3-operations.md`**. Milestone **M15** in `docs/TASKS.md`, six tasks:
 
 | | | State |
 |---|---|---|
 | **T125** | the dedup race: an upload could answer 500 | **done**, `4255ec4` |
-| **T130** | a photo failing *after* the render spins instead of failing | open — **next** |
-| **T126** | the log as a file on disk + log ceilings | open |
-| **T127** | the suite gates the published image | open |
-| **T128** | a dump that runs on the server + snapshot task | open |
-| **T129** | an external check on `/healthz` | open |
+| **T130** | a photo failing *after* the render spins instead of failing | **done**, `6867154` |
+| **T126** | the log as a file on disk + log ceilings | **done**, `0ec22c1` |
+| **T127** | the suite gates the published image | code done `729fce3` — **needs a push to prove** |
+| **T128** | a dump that runs on the server + snapshot task | script + docs done `66455ca` — **needs the snapshot task** |
+| **T129** | an external check on `/healthz` | docs done `66455ca` — **needs the cron job** |
 
-**Gates after T125:** unit/API **272** exit 0, lint and format clean (52 files), and **two
-consecutive full e2e runs at 81 passed, exit 0** — the baseline's intermittent 500 does not recur.
+**Gates at the close (2026-08-15):** unit/API **277** exit 0, e2e **81 passed exit 0 twice
+consecutively**, six launch flows 6 passed, lint and format clean over 53 files. The baseline's
+intermittent 500 did not recur, and neither did the unexplained login failure recorded below.
 
-**Three tasks need the owner's own hands and cannot be finished from a session alone:** T128's
-Periodic Snapshot Task and T129's external check are created in the TrueNAS interface, and T127's
-proof needs a push to GitHub. Do the code and the documentation, then stop and say exactly what is
-left for him — do not tick them on a written-but-never-run basis. That is the T073 mistake this
-project has already paid for once.
+**What is left is the owner's and only the owner's — do not tick any of it from a session.**
 
-**Merging is the owner's call and it has a consequence worth knowing before you make it:** a push to
-`main` runs the `publish` workflow, which builds both images and moves `latest` in GHCR. **Until
-T127 lands, CI runs no tests**, so `latest` follows `main` in whatever state `main` is. The local
-gates are the only gates. The sane order is T127 first, then the push.
+1. **T127** — push a scratch branch, dispatch the workflow with a deliberately red commit and watch
+   `publish` skip, then with a green one and watch it build. `gh workflow run publish.yml --ref
+   <branch>`. A scratch branch does not move `latest`: the `latest` tag is enabled only on the
+   default branch, so a dispatched green run publishes `sha-` tags only.
+2. **T128** — create the Periodic Snapshot Task in the TrueNAS interface. The dataset, schedule and
+   retention are specified in `docs/HANDOFF.md` §5; paste the resulting listing into the iteration
+   page.
+3. **T129** — create the cron job in `docs/HANDOFF.md` §7 and **verify it by stopping `web`**, not
+   by watching it go green.
+4. **T126's last mile** — create the `logs` dataset (`chown 1000:1000`), set `LOGS_HOST_DIR` in
+   Portainer, redeploy, then open `app.log` over the share and grep it for every value in the stack's
+   variables. `LOGS_HOST_DIR` is a **required** variable in `deploy/portainer-stack.yml`: the stack
+   will refuse to deploy until it is set.
+
+**Merging is the owner's call and the consequence is now different from what it was.** A push to
+`main` runs `publish`, which since T127 runs the suite and the lint gate first and builds nothing if
+they fail. `latest` still follows `main` — but only a green `main`. The sane order is still to prove
+T127 on a scratch branch before trusting it.
 
 **Iteration I2 is complete.** `docs/TASKS.md` has no unticked line, M11 through M14. Its page is
 **`docs/iterations/I2-pagination-media-phaseb.md`**; the review is run 4 in `docs/REVIEW.md`.

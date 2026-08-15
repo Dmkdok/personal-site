@@ -357,15 +357,18 @@ see or set. It is the first thing to suspect when a large upload fails there and
 
 ## 7. Verification status
 
-Last run 2026-08-07, end of the second session, on the owner's machine.
+Last run 2026-08-15, at the close of iteration I3, on the owner's machine.
 
 | Gate | Command | Result |
 |---|---|---|
-| Unit + API | `docker compose run --rm tests` | **193 passed**, exit 0 |
-| End-to-end | `uv run pytest e2e` | **36 passed**, exit 0 |
+| Unit + API | `docker compose run --rm tests` | **277 passed**, exit 0 |
+| End-to-end | `uv run pytest e2e` | **81 passed**, exit 0 — run twice consecutively |
 | Six launch flows | `uv run pytest e2e -m launch_flow` | **6 passed**, exit 0 |
-| Lint | `uv run ruff check .` | clean |
-| Format | `uv run ruff format --check .` | clean |
+| Lint | `docker compose run --rm tests ruff check .` | clean, exit 0 |
+| Format | `docker compose run --rm tests ruff format --check .` | clean, 53 files |
+
+Since T127 these also run in CI on every push to `main`, and `publish` will not build an image
+without them. They are still worth running locally before a push: a red CI run costs a round trip.
 
 Beware `-q` is set twice, so a passing run prints dots and no summary line. **Read the exit code.**
 Never pipe a test run through `tail` or `grep` — you get the pipe's status and a red suite reads as
