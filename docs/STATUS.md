@@ -224,24 +224,27 @@ intermittent 500 did not recur, and neither did the unexplained login failure re
    page.
 3. **T129** — create the cron job in `docs/HANDOFF.md` §7 and **verify it by stopping `web`**, not
    by watching it go green.
-4. **T126's last mile** — create the `logs` dataset and `chown -R 1000:1000` it, then open `app.log`
-   over the share and grep it for every value in the stack's variables. **This does not block a
-   deploy, and it is already proved not to.** The 2026-08-15 deploy went out with no `logs` dataset,
-   and the running container says so itself:
+4. ~~**T126's last mile**~~ — **done 2026-08-15.** `app.log` is live on the appliance at
+   `/mnt/tank/app_data/_dev_/portfolio/logs`, 1000:1000, carrying the same lines as stdout, and the
+   grep against the production stack variables is clean (the only match is the admin *username* in
+   `admin account ready: admin`, a line from M2 — not a credential).
+
+   **`logs` is a plain directory, not a dataset, and that was the right call.** A dataset buys
+   nothing: the recursive snapshot task on the parent already covers it, `atime=off` is inherited,
+   and the application caps the file at 5 MB × 4 itself. The session initially insisted on a dataset
+   out of convention, hit TrueNAS refusing to create one over an existing path, and was heading for
+   a root cron job to `rmdir` it — the owner's question ("why can't the log write the way the photos
+   do?") cut that off. The answer was ownership, never ZFS.
+
+   **The deploy before the chown proved the non-negotiable in production**, which is worth keeping:
+   the stack came up with the directory still root-owned and logged
 
    ```
    WARNING [portfolio] LOG_DIR /data/logs is not usable
    ([Errno 13] Permission denied: '/data/logs/app.log'); logging to stdout only
    ```
 
-   — then it migrated, seeded the admin and served 200s. That is the non-negotiable working in
-   production, not in a unit test.
-
-   Docker left an **empty root-owned directory** at `/mnt/tank/app_data/_dev_/portfolio/logs`. Leave
-   it empty: ZFS mounts cleanly over an empty directory, so creating the dataset in the TrueNAS UI
-   and chowning it to 1000 is all that is needed, and the log appears on the next deploy. **Do not
-   just `chown` that directory instead** — a plain directory that then fills with `app.log` makes
-   creating the dataset later messier for no gain.
+   — then migrated, seeded the admin and served 200s. A log path is not the reason the site is down.
 
 **Merging is the owner's call and the consequence is now different from what it was.** A push to
 `main` runs `publish`, which since T127 runs the suite and the lint gate first and builds nothing if

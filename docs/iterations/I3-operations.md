@@ -216,13 +216,19 @@ deliberately not touched — the bound *is* the problem. Taken as **T130**.
 - [x] No photograph can be left in-flight by a failure the pipeline does not report (T130). *(The
       render-and-record sequence is inside the guard; two tests, one per named window, both watched
       failing on "never left the pipeline" first.)*
-- [ ] The owner has opened `app.log` on the NAS share and read a real line out of it, and a grep of
-      that file for every value in `.env` finds nothing. **— owner's, needs the appliance.**
-      *The grep half was rehearsed locally: a real 178-line `app.log` produced by the API suite
-      with `LOG_DIR` set, containing no `SECRET_KEY`, `ADMIN_PASSWORD`, `DATABASE_URL` or
-      `ADMIN_USERNAME`, and nothing credential-shaped. `POSTGRES_PASSWORD` matched only because the
-      development value is the word `portfolio`, which is also the logger tag; on the server the
-      value is random and the grep means something.*
+- [x] The owner has opened `app.log` on the NAS share and read a real line out of it, and a grep of
+      that file for every value in `.env` finds nothing. *(2026-08-15, on the appliance. The log
+      directory was chowned to 1000:1000 and `web` restarted; `app.log` appeared at 654 bytes owned
+      by 1000:1000, carrying real lines in the stdout format — `INFO [portfolio] database migrated
+      to head`, `INFO [portfolio] admin account ready: admin`. Grepped against the **production**
+      stack variables: `SECRET_KEY`, `ADMIN_PASSWORD`, `POSTGRES_PASSWORD`, `SITE_URL` and the three
+      host paths all absent, and no `password=`, `passwd`, `secret_key=` or `postgresql+psycopg://`
+      anywhere in the file.*
+
+      **One match, and it is not a secret:** `ADMIN_USERNAME` (`admin`) appears in
+      `admin account ready: admin`, a startup line `ensure_admin_user` has written since M2. A
+      username is not a credential — the login form accepts any string — and the line predates this
+      iteration. Recorded here so the next person running this grep is not alarmed by it.
 - [x] `docker compose config` shows a log ceiling on every service in both deployment files.
       *(Both rendered 2026-08-15: `max-size: 10m` / `max-file: "3"` on `db`, `web` and `caddy` in
       each, plus `LOG_DIR: /data/logs` and the `/data/logs` mount on `web`.)*

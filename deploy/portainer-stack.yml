@@ -33,14 +33,17 @@
 #                           The application writes app.log here, so it can be
 #                           read over the share without a Docker client. Unlike
 #                           the two above this one has a default and does NOT
-#                           block a deploy: if the dataset does not exist yet,
-#                           Docker creates a root-owned directory at that path,
-#                           the unprivileged application cannot write to it, and
-#                           it logs a warning and carries on to stdout — a log
-#                           path is never the reason the site is down. Create the
-#                           dataset and `chown -R 1000:1000` it when you want the
-#                           file; ZFS mounts cleanly over the empty directory
-#                           Docker left, and the log appears on the next deploy.
+#                           block a deploy: if the directory is missing or not
+#                           writable, Docker creates a root-owned one at that
+#                           path, the unprivileged application cannot write to
+#                           it, and it logs a warning and carries on to stdout —
+#                           a log path is never the reason the site is down.
+#                           **It needs to be a directory owned by uid 1000, and
+#                           nothing more — not its own dataset.** The recursive
+#                           snapshot task on the parent already covers it,
+#                           `atime=off` is inherited, and the application caps
+#                           the file itself at 5 MB x 4. `chown -R 1000:1000` is
+#                           the whole of it.
 #
 #   Release
 #     IMAGE_TAG             latest, or a sha-<short> tag to pin  (default latest)

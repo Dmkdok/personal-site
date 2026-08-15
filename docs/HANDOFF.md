@@ -270,13 +270,26 @@ is why the stack publishes `HTTP_PORT` (8080) instead. The router reaches it the
 
 **Once, before the first deploy:**
 
-1. Datasets under `tank/app_data/_dev_/portfolio`: `media`, `pgdata`, `backups`, `logs` — beside
+1. Datasets under `tank/app_data/_dev_/portfolio`: `media`, `pgdata`, `backups` — beside
    `_dev_/raskladka`, following this appliance's own convention for the owner's projects. The image
-   runs unprivileged as uid 1000, so `chown -R 1000:1000` the media **and** the logs datasets, or
-   every upload fails on permissions and the log silently falls back to stdout (T126). The media and
-   pgdata datasets block a deploy if unset; `logs` does not — `LOGS_HOST_DIR` carries a default and
-   a missing directory there degrades to stdout rather than refusing to start.
-   `atime=off` on all four, `recordsize=16K` on `pgdata`. Note the parent carries
+   runs unprivileged as uid 1000, so `chown -R 1000:1000` the media dataset or every upload fails
+   on permissions. `atime=off` on all three, `recordsize=16K` on `pgdata`.
+
+   **`logs` is deliberately a plain directory inside the parent dataset, not a dataset of its own**
+   (created 2026-08-15). A dataset would buy nothing here: the Periodic Snapshot Task in §5 is
+   recursive on the parent, so a directory inside it is already snapshotted; `atime=off` is
+   inherited; and the application caps the file at 5 MB × 4 by itself, so a quota is pointless. All
+   it needs is `chown -R 1000:1000` — without that the application warns and falls back to stdout
+   (T126), which is a degradation, not an outage. `LOGS_HOST_DIR` also carries a default, so unlike
+   media and pgdata it never blocks a deploy.
+
+   That choice has a second, unplanned benefit. Because `logs` adds **no new mount boundary**, it
+   does not fall into the trap the separate datasets do: a tool that bind-mounted `/mnt/tank` before
+   a dataset existed never sees that dataset, which is why the File Browser app shows `media`,
+   `pgdata` and `backups` as empty until it is restarted. `logs` is ordinary content of the parent,
+   so anything that can see the parent can see `app.log`.
+
+   Note the parent carries
    NFSv4 ACLs, under which a plain `chown` is enough only because TrueNAS's default ACL gives
    `owner@` full control; verify by writing, not by reading the mode bits.
 2. Portainer → Registries → add `ghcr.io`, username your GitHub name, password a personal access
