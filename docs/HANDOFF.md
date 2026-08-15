@@ -273,7 +273,9 @@ is why the stack publishes `HTTP_PORT` (8080) instead. The router reaches it the
 1. Datasets under `tank/app_data/_dev_/portfolio`: `media`, `pgdata`, `backups`, `logs` — beside
    `_dev_/raskladka`, following this appliance's own convention for the owner's projects. The image
    runs unprivileged as uid 1000, so `chown -R 1000:1000` the media **and** the logs datasets, or
-   every upload fails on permissions and the log silently falls back to stdout (T126).
+   every upload fails on permissions and the log silently falls back to stdout (T126). The media and
+   pgdata datasets block a deploy if unset; `logs` does not — `LOGS_HOST_DIR` carries a default and
+   a missing directory there degrades to stdout rather than refusing to start.
    `atime=off` on all four, `recordsize=16K` on `pgdata`. Note the parent carries
    NFSv4 ACLs, under which a plain `chown` is enough only because TrueNAS's default ACL gives
    `owner@` full control; verify by writing, not by reading the mode bits.

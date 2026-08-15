@@ -216,10 +216,12 @@ intermittent 500 did not recur, and neither did the unexplained login failure re
    page.
 3. **T129** — create the cron job in `docs/HANDOFF.md` §7 and **verify it by stopping `web`**, not
    by watching it go green.
-4. **T126's last mile** — create the `logs` dataset (`chown 1000:1000`), set `LOGS_HOST_DIR` in
-   Portainer, redeploy, then open `app.log` over the share and grep it for every value in the stack's
-   variables. `LOGS_HOST_DIR` is a **required** variable in `deploy/portainer-stack.yml`: the stack
-   will refuse to deploy until it is set.
+4. **T126's last mile** — create the `logs` dataset and `chown -R 1000:1000` it, then open `app.log`
+   over the share and grep it for every value in the stack's variables. **This does not block a
+   deploy.** `LOGS_HOST_DIR` carries a default (`/mnt/tank/app_data/_dev_/portfolio/logs`) rather
+   than `:?`, so a stack deployed before the dataset exists comes up normally: Docker creates a
+   root-owned directory there, the unprivileged application cannot write it, and it warns and logs
+   to stdout only. ZFS then mounts cleanly over that empty directory when the dataset is created.
 
 **Merging is the owner's call and the consequence is now different from what it was.** A push to
 `main` runs `publish`, which since T127 runs the suite and the lint gate first and builds nothing if

@@ -29,9 +29,18 @@
 #   Storage — ZFS datasets, created before the first deploy
 #     MEDIA_HOST_DIR        /mnt/<pool>/portfolio/media    (must be owned by uid 1000)
 #     PGDATA_HOST_DIR       /mnt/<pool>/portfolio/pgdata
-#     LOGS_HOST_DIR         /mnt/<pool>/portfolio/logs     (must be owned by uid 1000)
+#     LOGS_HOST_DIR         /mnt/<pool>/portfolio/logs     (optional, see below)
 #                           The application writes app.log here, so it can be
-#                           read over the share without a Docker client.
+#                           read over the share without a Docker client. Unlike
+#                           the two above this one has a default and does NOT
+#                           block a deploy: if the dataset does not exist yet,
+#                           Docker creates a root-owned directory at that path,
+#                           the unprivileged application cannot write to it, and
+#                           it logs a warning and carries on to stdout — a log
+#                           path is never the reason the site is down. Create the
+#                           dataset and `chown -R 1000:1000` it when you want the
+#                           file; ZFS mounts cleanly over the empty directory
+#                           Docker left, and the log appears on the next deploy.
 #
 #   Release
 #     IMAGE_TAG             latest, or a sha-<short> tag to pin  (default latest)
@@ -114,8 +123,11 @@ services:
       # dataset must be chowned to it before the first deploy.
       - ${MEDIA_HOST_DIR:?set it to a dataset, e.g. /mnt/pool/portfolio/media}:/data/media
       # The log where a human can reach it. Same uid-1000 rule as the media
-      # dataset: the image runs unprivileged and cannot chown its way in.
-      - ${LOGS_HOST_DIR:?set it to a dataset, e.g. /mnt/pool/portfolio/logs}:/data/logs
+      # dataset: the image runs unprivileged and cannot chown its way in. This
+      # one carries a default rather than `:?` on purpose — a missing logs
+      # dataset degrades to stdout with a warning, and refusing the whole deploy
+      # over it would make the log the reason the site is down.
+      - ${LOGS_HOST_DIR:-/mnt/tank/app_data/_dev_/portfolio/logs}:/data/logs
     # `--forwarded-allow-ips` must name the proxy and nothing else. With "*"
     # uvicorn rewrites the peer address from any client's own X-Forwarded-For,
     # which hands the login throttle a fresh budget on every attempt. The default
