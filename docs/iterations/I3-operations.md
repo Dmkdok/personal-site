@@ -33,11 +33,17 @@ already declined with something concrete: **the log file sticking out of the con
 open it on disk and see what went wrong.** What follows is the re-cut. Five tasks, two of which
 touch application code, and the expensive half of R-01 deferred by ADR-024 rather than built.
 
+**A sixth task, T130, was added after T125 shipped.** Building the fix put the neighbouring code
+under a microscope and found a second, quieter way for the same disappearance to strand a
+photograph — this time after the render rather than before it. It is written up beside T125's
+defect below.
+
 ### In
 
 | Item | What it is |
 |---|---|
 | **T125** | The deduplication race: uploading a photograph can answer 500 |
+| **T130** | The same disappearance after the render: a photograph spins instead of failing |
 | **R-01** *(smallest form)* | Snapshots the appliance already knows how to take, plus the one command it cannot supply |
 | **R-02** | The suite gates the image instead of running beside it |
 | **R-03** *(re-shaped)* | The log as a file on disk, bounded; an external check on `/healthz` |
@@ -61,6 +67,9 @@ touch application code, and the expensive half of R-01 deferred by ADR-024 rathe
 
 - **T125** — a photograph whose stored renditions disappear between the two globs is re-rendered
   and answers 201, never 500. A test fails without the fix.
+- **T130** — a photograph whose pipeline raises *after* the render settles at `FAILED` with a
+  reason the owner can retry from, not at `PROCESSING` until the next restart. A test fails
+  without the fix, one per named window.
 - **R-01** — a Periodic Snapshot Task exists on the appliance and has taken a snapshot; a logical
   dump can be produced **on the server** by one pasted command, and has been; `docs/HANDOFF.md` §5
   says what each covers and where each falls short.
@@ -78,14 +87,15 @@ touch application code, and the expensive half of R-01 deferred by ADR-024 rathe
   destination for output and therefore a new place a secret could land; the review greps for it.
 - **A log path is never the reason the site is down.** An unwritable `LOG_DIR` degrades to stdout
   with a warning; it does not raise at startup.
-- Nothing in `app/` changes except the T125 fix and the file handler. This iteration is about the
-  outside of the application, not the inside.
+- Nothing in `app/` changes except the two pipeline fixes (T125, T130) and the file handler. This
+  iteration is about the outside of the application, not the inside.
 
 ## Impact map
 
 | Item | Touches | SPEC: changes / preserves | Existing coverage | Class | Regression proof |
 |------|---------|---------------------------|-------------------|-------|------------------|
 | **T125** dedup race | `app/routers/photos.py` → `photo_upload` (known-asset branch), `_assign_renditions`; `app/services/images.py` → `stored_from_asset` | changes none; preserves **F42** (one stored original, no second copy), **F40** (media grouped by owner), ADR-014's ladder guarantee | `tests/api/test_blog.py::test_a_second_upload_of_known_bytes_writes_no_second_original`, `tests/unit/test_photo_pipeline.py::test_a_frame_reused_under_a_richer_profile_gets_the_missing_rungs`, `::test_missing_rungs_names_only_what_is_absent` — all cover the *happy* dedup path; **none covers a hit whose files have gone** | **Local** — one branch of one route plus a two-line guard | New API test patching `images.renditions_of` to answer non-empty once and empty after, reproducing the window between `find_asset` and `stored_from_asset`; asserts 201 + `PENDING`. Watched failing first. The three tests above must pass unchanged. |
+| **T130** stuck after the render | `app/routers/photos.py` → `process_photo` (the scope of its existing `try`) | changes none; preserves **F27** (a restart requeues what it caught mid-pipeline) and F42 | `tests/api/test_photo.py::test_a_restart_requeues_a_photo_left_pending`, `::test_a_restart_fails_a_photo_whose_original_is_gone`, `::test_a_failed_photo_can_be_retried`, `::test_the_grid_stops_polling_once_nothing_is_pending` — all cover failures raised *inside* the guard; **none covers one raised after it** | **Local** — the boundary of one `try`, no logic moved | Two tests, one per named window, each patching a step to raise and asserting `FAILED` with a reason rather than a tile that spins. Watched failing first. The four tests above pass unchanged. |
 | **R-03a** the log as a file (T126) | `app/config.py` → `Settings` (new `log_dir`); `app/main.py` → module-level logging setup; `.env.example` | adds **F58**; preserves the existing stdout stream and its format exactly — the handler is *added*, never substituted | `tests/unit/` reaches `Settings`; **nothing today asserts anything about logging** | **Cross-cutting policy** — it is two lines of code, but they change where every log line in the application goes | New unit test: with `LOG_DIR` unset nothing is written and the handler set is unchanged; with it set to a temp dir a line reaches `app.log`; with it set to an unwritable path the application **still starts** and warns. Watched failing first. |
 | **R-03b** the mount and the ceilings (T126) | `deploy/portainer-stack.yml`, `docker-compose.prod.yml` — one volume plus `logging:` on every service | adds **F60**; preserves every existing mount and the uid-1000 ownership rule the media dataset already follows | none | **Local** config | `docker compose config` renders both files; the rendered output names `max-size` and `max-file` on each service and the log mount on `web`. |
 | **R-02** CI gates the image (T127) | `.github/workflows/publish.yml` (new `tests` job + `needs`), plus a generated `.env` step | changes risk 6 at `SPEC.md:247` ("No CI"); adds **F59** | the suite itself; **nothing tests the workflow** | **Contract** — the workflow is the contract between a push and a published tag | Push a deliberately red commit to a scratch branch and watch `publish` not run; then green and watch it publish. Both recorded. |
@@ -96,18 +106,22 @@ touch application code, and the expensive half of R-01 deferred by ADR-024 rathe
 ### Ordering
 
 1. **T125 first, alone.** It is the red baseline; everything after it is measured against a suite
-   that passes twice in a row.
-2. **T126 second** — it is the only other task that touches `app/`, and it wants a clean suite under
-   it before it changes where every log line goes.
-3. **T127, T128, T129 are independent** of each other and of everything above. T128 and T129 are
+   that passes twice in a row. *(Done — commit `T125: an upload decides from the same glob it
+   assigns from`.)*
+2. **T130 next**, while the same code is still in view — it is the neighbouring function in the
+   same file, and it was found by reading it.
+3. **T126 after both** — the last task that touches `app/`, and it wants a clean suite under it
+   before it changes where every log line goes.
+4. **T127, T128, T129 are independent** of each other and of everything above. T128 and T129 are
    both partly work on the appliance and are naturally done in one sitting on it.
 
-No two rows touch the same symbol, so nothing has to be merged.
+T125 and T130 touch the same file and neither touches the other's symbol; nothing else overlaps at
+all, so nothing has to be merged.
 
 ### Tests whose expectations change
 
 **None.** Every row above either adds coverage or touches files the suite does not reach. That is a
-meaningful claim in one direction and an uncomfortable one in the other: **three of the five tasks
+meaningful claim in one direction and an uncomfortable one in the other: **three of the six tasks
 change shell scripts, deployment configuration and documentation that no automated test in this
 repository executes.** Their verification is running them and recording the output, which is why the
 acceptance criteria above say "run, not merely written".
@@ -148,11 +162,57 @@ Two things make it worth fixing rather than recording:
   the background pool, which is exactly the right answer when the renditions are absent. The empty
   case should reach it too, instead of falling into the branch that assumes they are present.
 
+**Fixed.** The branch is now chosen from the same `StoredImage` that gets assigned, so the decision
+and the assignment cannot read two different directories; an empty ladder falls in with the
+incomplete one and goes to the pool. `_assign_renditions` refuses an empty description by name
+rather than reaching `ordered[0]`. The test empties the disk the instant the ladder is judged
+complete — the only window that actually crashes — and was watched failing with the recorded
+traceback first.
+
+## The second one, found while fixing the first
+
+`process_photo` sets `PROCESSING` and **commits** before its `try`, then runs four more steps
+*outside* it:
+
+```python
+photo.status = PhotoStatus.PROCESSING
+db.add(photo); db.commit()          # ← the row is now in-flight, on disk
+
+try:
+    stored = images.generate_derivatives(...)
+except ...:
+    _fail(db, photo, ...); return   # ← the only reported failure
+
+_assign_renditions(photo, stored)                       # can raise (T125 named it)
+images.record_asset(db, images.file_digest(...), stored) # can raise FileNotFoundError
+db.commit()
+```
+
+A raise in any of the last three is caught by `submit_with_session`, which rolls back and logs —
+but the rollback cannot undo a commit that already happened, so the row stays `PROCESSING`. The
+owner is offered a retry on `FAILED` only, so what he actually sees is **a tile that spins and a
+grid that never stops polling**, until the next restart, on a site whose whole premise this
+iteration is that it runs unattended for weeks.
+
+Two live windows, and both are the same disappearance T125 was about:
+
+- `_assign_renditions` raising on an empty description — T125 made that raise *named* rather than
+  an `IndexError`; it did not make it impossible.
+- `images.file_digest` raising `FileNotFoundError` when the original goes between
+  `generate_derivatives` and the digest — the same `images.release` / `--prune` race, one door
+  further along.
+
+The fix is scope, not logic: the render-and-record sequence moves inside the guard that already
+exists. `recover_stuck_photos` is the backstop that bounds this to "until the next restart" and is
+deliberately not touched — the bound *is* the problem. Taken as **T130**.
+
 ## Exit criteria
 
-- [ ] Two consecutive full e2e runs pass, exit 0 both times — the baseline's own failure mode does
-      not recur.
-- [ ] unit/API at **271 or better**, lint and format clean.
+- [x] Two consecutive full e2e runs pass, exit 0 both times — the baseline's own failure mode does
+      not recur. *(2026-08-15, after T125: 81 passed exit 0, twice.)*
+- [ ] unit/API at **271 or better**, lint and format clean. *(272 exit 0 after T125; re-checked at
+      the close.)*
+- [ ] No photograph can be left in-flight by a failure the pipeline does not report (T130).
 - [ ] The owner has opened `app.log` on the NAS share and read a real line out of it, and a grep of
       that file for every value in `.env` finds nothing.
 - [ ] `docker compose config` shows a log ceiling on every service in both deployment files.
