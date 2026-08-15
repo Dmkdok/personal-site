@@ -175,11 +175,19 @@ they were an audit, not a backlog, and editing them in place would destroy the r
 
 ## Resume here
 
-**Branch `iteration/I3-operations`, cut from `8c75582` (the I2 close). It is not merged and not
-pushed** — `main` itself is one commit ahead of `origin/main` (the roadmap, `dfc8f92`). The remote
-is `origin` → `https://github.com/Dmkdok/personal-site.git`. The dev stack (`db`, `web`) is up;
-`docker compose down` stops it. Docker Desktop is not always running on this host — start it and
-wait for `docker info` before the first suite.
+**I3 is merged, pushed and deployed.** `main` = `38456e5`, fast-forwarded from
+`iteration/I3-operations` (33 commits) and pushed to `origin`
+(`https://github.com/Dmkdok/personal-site.git`). The `publish` run on that push
+(`31895713071`) is **the first release in this project's history whose image was gated by a test
+run** — `tests` green, then both images built and `latest` moved to `sha-38456e5`.
+
+**The NAS stack is running that image, deployed 2026-08-15 via the Portainer API** (stack `id=1`
+`portfolio`, endpoint 3, Portainer 2.44.0 on `https://192.168.1.20:31015`). All three containers
+healthy; `https://profile.dmkdok.crazedns.ru:8443` answers 200 on `/`, `/photo`, `/blog`, `/dev`,
+and `/healthz` answers 200 on both the LAN and the public address.
+
+The dev stack (`db`, `web`) is up locally; `docker compose down` stops it. Docker Desktop is not
+always running on this host — start it and wait for `docker info` before the first suite.
 
 **Two traps this session hit, both cheap to avoid.** A full e2e run started immediately after
 `docker compose restart web` fails all 81 at fixture setup, because the site is not answering yet —
@@ -218,10 +226,22 @@ intermittent 500 did not recur, and neither did the unexplained login failure re
    by watching it go green.
 4. **T126's last mile** — create the `logs` dataset and `chown -R 1000:1000` it, then open `app.log`
    over the share and grep it for every value in the stack's variables. **This does not block a
-   deploy.** `LOGS_HOST_DIR` carries a default (`/mnt/tank/app_data/_dev_/portfolio/logs`) rather
-   than `:?`, so a stack deployed before the dataset exists comes up normally: Docker creates a
-   root-owned directory there, the unprivileged application cannot write it, and it warns and logs
-   to stdout only. ZFS then mounts cleanly over that empty directory when the dataset is created.
+   deploy, and it is already proved not to.** The 2026-08-15 deploy went out with no `logs` dataset,
+   and the running container says so itself:
+
+   ```
+   WARNING [portfolio] LOG_DIR /data/logs is not usable
+   ([Errno 13] Permission denied: '/data/logs/app.log'); logging to stdout only
+   ```
+
+   — then it migrated, seeded the admin and served 200s. That is the non-negotiable working in
+   production, not in a unit test.
+
+   Docker left an **empty root-owned directory** at `/mnt/tank/app_data/_dev_/portfolio/logs`. Leave
+   it empty: ZFS mounts cleanly over an empty directory, so creating the dataset in the TrueNAS UI
+   and chowning it to 1000 is all that is needed, and the log appears on the next deploy. **Do not
+   just `chown` that directory instead** — a plain directory that then fills with `app.log` makes
+   creating the dataset later messier for no gain.
 
 **Merging is the owner's call and the consequence is now different from what it was.** A push to
 `main` runs `publish`, which since T127 runs the suite and the lint gate first and builds nothing if
