@@ -370,9 +370,13 @@ def _assign_renditions(photo: Photo, stored: images.StoredImage) -> None:
 
     A 3000px original yields 640/1600/2560; an 800px one yields only 640; a
     500px one yields a single rendition at its own width, because nothing is
-    ever upscaled. Every case still has to leave a servable thumbnail.
+    ever upscaled. Every case still has to leave a servable thumbnail — so a
+    description carrying none is refused here, by name. It used to reach
+    `ordered[0]` and leave the caller holding an IndexError to explain.
     """
     ordered = [stored.derivatives[width] for width in sorted(stored.derivatives)]
+    if not ordered:
+        raise ValueError(f"no renditions on disk for {stored.original_path!r}")
     photo.thumb_path = ordered[0]
     photo.medium_path = ordered[1] if len(ordered) > 1 else ordered[0]
     photo.large_path = ordered[-1]
@@ -789,14 +793,27 @@ def photo_upload(
             original_path=known.original_path,
             sort_order=(last or 0) + 1,
         )
-        if images.missing_rungs(known, images.PHOTO):
+        # Three globs of the same directory stand behind this decision:
+        # `find_asset` looked to prove the asset is usable, `missing_rungs`
+        # looks to decide whether its ladder is complete, and the paths written
+        # to the row come from a third look inside `stored_from_asset`. The
+        # disk is free to change between any two of them — a concurrent album
+        # delete calls `images.release`, and `scripts/media_orphans.py --prune`
+        # needs no concurrency at all. So the branch is chosen from the *same*
+        # description that gets assigned, never from an earlier look at a
+        # directory that has since emptied. An empty ladder is not a special
+        # case here: it is the extreme of an incomplete one, and the pool is
+        # already the answer to that.
+        rungs = images.missing_rungs(known, images.PHOTO)
+        stored = images.stored_from_asset(known)
+        if rungs or not stored.derivatives:
             photo.status = PhotoStatus.PENDING
             db.add(photo)
             db.commit()
             background.submit_with_session(process_photo, photo.id)
         else:
             photo.status = PhotoStatus.READY
-            _assign_renditions(photo, images.stored_from_asset(known))
+            _assign_renditions(photo, stored)
             db.add(photo)
             db.commit()
             _ensure_cover(db, photo)

@@ -560,6 +560,56 @@ def test_the_same_frame_uploaded_twice_is_stored_once(admin_client, db, album):
     assert all(path.is_file() for path in files_of(second))
 
 
+def test_a_known_frame_whose_files_vanish_mid_request_is_re_rendered(
+    admin_client, db, album, monkeypatch
+):
+    """T125: three globs stand behind one dedup decision, and they can disagree.
+
+    `find_asset` globs the renditions to prove the asset is usable at all;
+    `missing_rungs` globs them again to prove the ladder is complete; and the
+    paths actually written to the row come from a *third* glob, inside
+    `stored_from_asset`. Between the last two the files can go — a concurrent
+    album delete calls `images.release`, and `scripts/media_orphans.py --prune`
+    needs no concurrency at all. The upload then answered **500 with an HTML
+    body** to a client parsing JSON, because `_assign_renditions` indexed an
+    empty list.
+
+    An empty ladder is not a special case: it is the extreme of an incomplete
+    one, and the pool is already the answer to that.
+    """
+    frame = make_jpeg(seed=8803)
+    first = settled(db, upload(admin_client, album.id, frame, "a.jpg", "image/jpeg").json()["id"])
+
+    real_renditions = images.renditions_of
+    real_missing = images.missing_rungs
+    gone = False
+
+    def vanishing(stem: str) -> dict[int, str]:
+        return {} if gone else real_renditions(stem)
+
+    def then_let_them_go(asset, profile):
+        """Judge the ladder complete, then empty the disk before it is read."""
+        nonlocal gone
+        rungs = real_missing(asset, profile)
+        gone = True
+        return rungs
+
+    monkeypatch.setattr(images, "renditions_of", vanishing)
+    monkeypatch.setattr(images, "missing_rungs", then_let_them_go)
+
+    response = upload(admin_client, album.id, frame, "b.jpg", "image/jpeg")
+
+    assert response.status_code == 201
+    assert response.json()["status"] == PhotoStatus.PENDING.value
+
+    # And the recovery is a real one: the pool re-renders it, and F42 still
+    # holds — the second row points at the first one's original, not a copy.
+    second = settled(db, response.json()["id"])
+    assert second.status is PhotoStatus.READY
+    assert second.original_path == first.original_path
+    assert second.thumb_path
+
+
 def test_deleting_one_of_two_photos_sharing_a_file_keeps_the_file(admin_client, db, album):
     frame = make_jpeg(seed=8802)
 
