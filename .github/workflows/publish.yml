@@ -1,13 +1,20 @@
-# Builds the two images the server runs and pushes them to GHCR.
+# Runs the gates, then builds the two images the server runs and pushes them to
+# GHCR — in that order, and only in that order.
 #
 # The application and the proxy that fronts it are released together under one
 # tag, so a redeploy can never pair new templates with an old Caddyfile. The
 # package is private, like the repository; Portainer authenticates to ghcr.io
 # with a personal access token carrying `read:packages`.
 #
-# This workflow does not run the test suite — the gates are run locally before a
-# release, per docs/HANDOFF.md §7. `latest` therefore follows `main` whatever
-# state it is in; pin IMAGE_TAG to a sha- tag in Portainer if that matters.
+# `publish` declares `needs: tests`, so a red unit/API suite or a lint failure
+# publishes nothing and moves no tag: `latest` can only ever point at a commit
+# whose gates were green (F59). Before this, the gates were local-only and
+# `latest` followed `main` in whatever state `main` was.
+#
+# The Playwright suite is deliberately *not* in that gate. It needs a running
+# stack and a browser download, and it is slow enough to make every push to
+# `main` expensive; it runs on `v*` tags, where the extra minutes are affordable,
+# and it reports rather than blocks.
 
 name: publish
 
@@ -21,7 +28,44 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate .env
+        # Not a copy of .env.example. That file ships ADMIN_PASSWORD=change-me
+        # and SECRET_KEY=change-me-…, both of which the application refuses at
+        # startup on purpose — the placeholder is not weakened to make CI
+        # easier, so CI generates real values instead. None of them is a
+        # secret: this database is created and destroyed inside this job.
+        run: |
+          {
+            echo "ENV=local"
+            echo "SECRET_KEY=$(openssl rand -hex 32)"
+            echo "ADMIN_USERNAME=admin"
+            echo "ADMIN_PASSWORD=$(openssl rand -hex 16)"
+            echo "SITE_URL=http://localhost:8000"
+            echo "POSTGRES_USER=portfolio"
+            echo "POSTGRES_PASSWORD=portfolio"
+            echo "POSTGRES_DB=portfolio"
+            echo "DATABASE_URL=postgresql+psycopg://portfolio:portfolio@db:5432/portfolio"
+            echo "MEDIA_ROOT=/data/test-media"
+          } > .env
+
+      # One command per step, none of them piped: a run sent through `tail` or
+      # `grep` returns the pipe's exit code, and a red suite reads as green.
+      - name: Unit and API suite
+        run: docker compose run --rm tests
+
+      - name: Lint
+        run: docker compose run --rm tests ruff check .
+
+      - name: Format
+        run: docker compose run --rm tests ruff format --check .
+
   publish:
+    needs: tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -68,3 +112,43 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  e2e:
+    # Tags only, and out of `publish`'s way: this reports on a release, it does
+    # not gate one. See the header.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Generate .env
+        run: |
+          {
+            echo "ENV=local"
+            echo "SECRET_KEY=$(openssl rand -hex 32)"
+            echo "ADMIN_USERNAME=admin"
+            echo "ADMIN_PASSWORD=$(openssl rand -hex 16)"
+            echo "SITE_URL=http://localhost:8000"
+            echo "POSTGRES_USER=portfolio"
+            echo "POSTGRES_PASSWORD=portfolio"
+            echo "POSTGRES_DB=portfolio"
+            echo "DATABASE_URL=postgresql+psycopg://portfolio:portfolio@localhost:5432/portfolio"
+            echo "MEDIA_ROOT=./data/media"
+          } > .env
+
+      - name: Start the stack
+        run: docker compose up -d --wait db web
+
+      - name: Install Playwright
+        run: uv run playwright install --with-deps chromium
+
+      # Playwright talks HTTP to the container, so it runs from the host — the
+      # "never run pytest on the host" rule is about Starlette's TestClient.
+      - name: Playwright suite
+        run: uv run pytest e2e
+
+      - if: always()
+        run: docker compose logs web

@@ -202,10 +202,13 @@ port and it speaks plain HTTP behind something that already has one. ADR-018 rec
 
 ### 6.1 TrueNAS Scale behind a Keenetic router — the current target
 
-The server holds no source and no configuration files. GitHub Actions builds two images on every
-push to `main` — the application, and `caddy:2-alpine` with this repository's `Caddyfile` baked in —
-and pushes both to GHCR under one tag, so the proxy configuration can never lag the templates it
-fronts. Portainer is handed one compose file and a set of variables.
+The server holds no source and no configuration files. GitHub Actions runs the unit/API suite and
+the lint gate on every push to `main`, and only then builds two images — the application, and
+`caddy:2-alpine` with this repository's `Caddyfile` baked in — and pushes both to GHCR under one
+tag, so the proxy configuration can never lag the templates it fronts. A red suite publishes nothing
+and moves no tag, so `latest` can only point at a commit whose gates were green (F59, T127). The
+Playwright suite is not in that gate; it runs on `v*` tags. Portainer is handed one compose file and
+a set of variables.
 
 Ports 80 and 443 on that host belong to the TrueNAS web interface and are not ours to take, which
 is why the stack publishes `HTTP_PORT` (8080) instead. The router reaches it there.
