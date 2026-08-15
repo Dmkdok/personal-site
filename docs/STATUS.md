@@ -54,8 +54,8 @@ Progress:
 - [x] 3b delta re-cut on the owner's instruction — eight tasks to five, R-01 reduced to the
       appliance's own snapshots plus one command (ADR-023/024), the declined notifier replaced by
       the log file on disk (ADR-025)
-- [ ] GATE approved by the owner
-- [ ] 4 implementation — T125 first and alone, then T126; T127/T128/T129 independent
+- [x] **GATE approved by the owner — «утверждаю», 2026-08-15**
+- [ ] 4 implementation — T125 **done**; then T130, T126; T127/T128/T129 independent
 - [ ] 5 verification green, baseline suites still green
 - [ ] 6 review clean or waived
 - [ ] 7 closed (STATUS rewritten, milestone ticked)
@@ -149,18 +149,40 @@ they were an audit, not a backlog, and editing them in place would destroy the r
 
 ## Resume here
 
-**Branch `iteration/I2-pagination-media-phaseb`, cut from `main` at `dfc8f92`. It is not merged and
-not pushed** — `main` itself is one commit ahead of `origin/main` (the roadmap, `dfc8f92`). The
-remote is `origin` → `https://github.com/Dmkdok/personal-site.git`. The dev stack (`db`, `web`) is
-up; `docker compose down` stops it.
+**Branch `iteration/I3-operations`, cut from `8c75582` (the I2 close). It is not merged and not
+pushed** — `main` itself is one commit ahead of `origin/main` (the roadmap, `dfc8f92`). The remote
+is `origin` → `https://github.com/Dmkdok/personal-site.git`. The dev stack (`db`, `web`) is up;
+`docker compose down` stops it. Docker Desktop is not always running on this host — start it and
+wait for `docker info` before the first suite.
+
+**Iteration I3 is open and the gate is passed** («утверждаю», 2026-08-15). Its page —  intake,
+the re-cut, the impact map, both pipeline defects and the exit criteria — is
+**`docs/iterations/I3-operations.md`**. Milestone **M15** in `docs/TASKS.md`, six tasks:
+
+| | | State |
+|---|---|---|
+| **T125** | the dedup race: an upload could answer 500 | **done**, `4255ec4` |
+| **T130** | a photo failing *after* the render spins instead of failing | open — **next** |
+| **T126** | the log as a file on disk + log ceilings | open |
+| **T127** | the suite gates the published image | open |
+| **T128** | a dump that runs on the server + snapshot task | open |
+| **T129** | an external check on `/healthz` | open |
+
+**Gates after T125:** unit/API **272** exit 0, lint and format clean (52 files), and **two
+consecutive full e2e runs at 81 passed, exit 0** — the baseline's intermittent 500 does not recur.
+
+**Three tasks need the owner's own hands and cannot be finished from a session alone:** T128's
+Periodic Snapshot Task and T129's external check are created in the TrueNAS interface, and T127's
+proof needs a push to GitHub. Do the code and the documentation, then stop and say exactly what is
+left for him — do not tick them on a written-but-never-run basis. That is the T073 mistake this
+project has already paid for once.
 
 **Merging is the owner's call and it has a consequence worth knowing before you make it:** a push to
-`main` runs the `publish` workflow, which builds both images and moves `latest` in GHCR. CI still
-runs no tests, so `latest` follows `main` in whatever state `main` is. The local gates are the only
-gates, and they are green.
+`main` runs the `publish` workflow, which builds both images and moves `latest` in GHCR. **Until
+T127 lands, CI runs no tests**, so `latest` follows `main` in whatever state `main` is. The local
+gates are the only gates. The sane order is T127 first, then the push.
 
-**Iteration I2 is complete.** `docs/TASKS.md` has no unticked line, M11 through M14. The page that
-explains what was taken, what was refused, what it cost and what the build corrected in the audit is
+**Iteration I2 is complete.** `docs/TASKS.md` has no unticked line, M11 through M14. Its page is
 **`docs/iterations/I2-pagination-media-phaseb.md`**; the review is run 4 in `docs/REVIEW.md`.
 
 **One intermittent was seen and is not explained.** In one full e2e run of three, the
