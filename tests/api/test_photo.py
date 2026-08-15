@@ -528,6 +528,64 @@ def test_a_failed_photo_can_be_retried(admin_client, db, album):
     assert settled(db, photo.id).status is PhotoStatus.READY
 
 
+def test_a_render_that_leaves_no_renditions_fails_the_photo_instead_of_stranding_it(
+    admin_client, db, album, monkeypatch
+):
+    """T130: `PROCESSING` is committed before the guard, and the guard was short.
+
+    `_assign_renditions` refuses a description carrying no renditions — T125
+    made that raise *named* rather than an `IndexError`; it did not make it
+    impossible. The raise landed in `submit_with_session`, whose `db.rollback()`
+    cannot undo a commit that already happened, so the row stayed `PROCESSING`
+    until the next restart: a tile that spins, a grid that never stops polling,
+    and no way out, because retry is offered on `FAILED` only.
+    """
+
+    def rendered_into_nothing(original_relative: str, *, profile=images.PHOTO):
+        """Reports success and leaves nothing behind — the disk emptied under it."""
+        return images.StoredImage(original_path=original_relative)
+
+    monkeypatch.setattr(images, "generate_derivatives", rendered_into_nothing)
+
+    response = upload(admin_client, album.id, make_jpeg(900, 600), "shot.jpg", "image/jpeg")
+    photo = settled(db, response.json()["id"])
+
+    assert photo.status is PhotoStatus.FAILED
+    assert photo.error
+
+    # What the owner actually sees: a grid that has stopped polling, and a way out.
+    grid = admin_client.get(f"/photo/admin/albums/{album.id}/grid").text
+    assert "every 2s" not in grid
+    assert "Повторить обработку" in grid
+
+
+def test_an_original_that_goes_before_the_digest_fails_the_photo_instead_of_stranding_it(
+    admin_client, db, album, monkeypatch
+):
+    """T130, the second window: the same disappearance, one door further along.
+
+    `images.release` from a concurrent album delete — or
+    `scripts/media_orphans.py --prune`, which needs no concurrency at all — can
+    take the original between `generate_derivatives` and `file_digest`. That
+    `FileNotFoundError` was raised outside the guard and stranded the row in the
+    same way.
+    """
+
+    def already_gone(path):
+        raise FileNotFoundError(path)
+
+    monkeypatch.setattr(images, "file_digest", already_gone)
+
+    response = upload(admin_client, album.id, make_jpeg(900, 600), "shot.jpg", "image/jpeg")
+    photo = settled(db, response.json()["id"])
+
+    assert photo.status is PhotoStatus.FAILED
+    assert photo.error
+
+    grid = admin_client.get(f"/photo/admin/albums/{album.id}/grid").text
+    assert "every 2s" not in grid
+
+
 # --------------------------------------------------------------------------
 # Absences the brief asks for
 # --------------------------------------------------------------------------

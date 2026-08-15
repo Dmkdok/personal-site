@@ -412,12 +412,41 @@ def process_photo(db: Session, photo_id: int) -> None:
     db.add(photo)
     db.commit()
 
+    # The whole render-and-record sequence sits inside the guard, not just the
+    # render. `PROCESSING` is committed above, so a raise past this point cannot
+    # be undone by `submit_with_session`'s rollback: the row would stay in
+    # flight until the next restart, and retry is offered on `FAILED` only — a
+    # tile that spins and a grid that never stops polling (T130). Two live
+    # windows, both the disappearance T125 closed one door on: an empty
+    # description refused by `_assign_renditions`, and an original taken between
+    # the render and `file_digest` by `images.release` or `--prune`.
+    #
+    # Each handler rolls back before `_fail` writes: the attempt may have left
+    # half of READY pending on the session, and a raise from the database work
+    # itself would otherwise make `_fail`'s own commit raise too — stranding the
+    # row exactly as before.
     try:
         stored = images.generate_derivatives(photo.original_path, profile=images.PHOTO)
+
+        _assign_renditions(photo, stored)
+        photo.status = PhotoStatus.READY
+        photo.error = None
+        db.add(photo)
+
+        # Hashed from the file rather than carried down from the request: retry
+        # and startup recovery reach this function without the bytes, and the
+        # digest has to mean the same thing however the photo got here.
+        images.record_asset(
+            db,
+            images.file_digest(settings.originals_dir / photo.original_path),
+            stored,
+        )
+        db.commit()
     except (FileNotFoundError, OSError) as exc:
         # A missing original is a different problem from a bad one: say which.
         missing = isinstance(exc, FileNotFoundError)
         logger.warning("photo %s could not be processed: %s", photo_id, exc)
+        db.rollback()
         _fail(
             db,
             photo,
@@ -426,23 +455,9 @@ def process_photo(db: Session, photo_id: int) -> None:
         return
     except Exception:
         logger.exception("photo %s could not be processed", photo_id)
+        db.rollback()
         _fail(db, photo, translate("photo.processing_failed"))
         return
-
-    _assign_renditions(photo, stored)
-    photo.status = PhotoStatus.READY
-    photo.error = None
-    db.add(photo)
-
-    # Hashed from the file rather than carried down from the request: retry and
-    # startup recovery reach this function without the bytes, and the digest has
-    # to mean the same thing however the photo got here.
-    images.record_asset(
-        db,
-        images.file_digest(settings.originals_dir / photo.original_path),
-        stored,
-    )
-    db.commit()
 
     _ensure_cover(db, photo)
 
