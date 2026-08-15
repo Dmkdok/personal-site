@@ -207,10 +207,10 @@ intermittent 500 did not recur, and neither did the unexplained login failure re
 
 **What is left is the owner's and only the owner's — do not tick any of it from a session.**
 
-1. **T127** — push a scratch branch, dispatch the workflow with a deliberately red commit and watch
-   `publish` skip, then with a green one and watch it build. `gh workflow run publish.yml --ref
-   <branch>`. A scratch branch does not move `latest`: the `latest` tag is enabled only on the
-   default branch, so a dispatched green run publishes `sha-` tags only.
+1. ~~**T127**~~ — **done 2026-08-15.** Proved on `scratch/t127-proof` by dispatch: red run
+   `31895410780` → `tests` failure, `publish` skipped, no image; green run `31895508616` → `tests`
+   success, both `publish` jobs success, `sha-0849b46` published and `latest` untouched. Branch
+   deleted.
 2. **T128** — create the Periodic Snapshot Task in the TrueNAS interface. The dataset, schedule and
    retention are specified in `docs/HANDOFF.md` §5; paste the resulting listing into the iteration
    page.

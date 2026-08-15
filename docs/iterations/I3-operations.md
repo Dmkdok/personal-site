@@ -226,9 +226,15 @@ deliberately not touched — the bound *is* the problem. Taken as **T130**.
 - [x] `docker compose config` shows a log ceiling on every service in both deployment files.
       *(Both rendered 2026-08-15: `max-size: 10m` / `max-file: "3"` on `db`, `web` and `caddy` in
       each, plus `LOG_DIR: /data/logs` and the `/data/logs` mount on `web`.)*
-- [ ] A red commit has been observed *not* publishing an image, and a green one publishing.
-      **— owner's, needs a push to GitHub.** *What is proved locally: all three gate commands pass
-      against a `.env` generated exactly as the workflow generates it.*
+- [x] A red commit has been observed *not* publishing an image, and a green one publishing.
+      *(2026-08-15, on `scratch/t127-proof`, dispatched with `gh workflow run`. Red —
+      [run 31895410780](https://github.com/Dmkdok/personal-site/actions/runs/31895410780):
+      `tests` **failure**, `publish` **skipped**, `e2e` skipped, no image. Green —
+      [run 31895508616](https://github.com/Dmkdok/personal-site/actions/runs/31895508616):
+      `tests` **success**, both `publish` matrix jobs **success**, `e2e` correctly skipped because
+      the ref is not a `v*` tag. The green run published `ghcr.io/dmkdok/personal-site:sha-0849b46`
+      and `…-caddy:sha-0849b46` and **nothing else — `latest` did not move**, because
+      `enable={{is_default_branch}}` is false off `main`. Scratch branch deleted afterwards.)*
 - [x] `scripts/backup.sh` has been run in both modes, and a restore rehearsed from its output.
       *(2026-08-15. Host checkout and `BACKUP_DB_CONTAINER=dmkdok-portfolio-db-1`, both exit 0,
       artefact names identical to a pre-change run. `restore-check.sh` over the container-mode
@@ -244,10 +250,12 @@ deliberately not touched — the bound *is* the problem. Taken as **T130**.
 
 ## What is left, and why it is not ticked
 
-Four criteria above are open and **all four are the owner's own hands** — two in the TrueNAS
-interface, one needing a push to GitHub, one needing the NAS share. The code and the documentation
-for all of them are written and committed; none of them is ticked on that basis. That is deliberate:
-T073 was ticked once with half its DoD unmet and the bill arrived in T086.
+Three criteria above are open and **all three are the owner's own hands** — two in the TrueNAS
+interface, one needing the NAS share. The code and the documentation for all of them are written and
+committed; none of them is ticked on that basis. That is deliberate: T073 was ticked once with half
+its DoD unmet and the bill arrived in T086.
 
-Accordingly **T127, T128 and T129 are left unticked in `docs/TASKS.md`**, and M15 is not a closed
-milestone. T125, T126 and T130 are done and ticked.
+**T127 was closed on 2026-08-15**, after the gate was watched stopping a red commit and letting a
+green one through, on a scratch branch that could not move `latest`. Accordingly **T128 and T129 are
+left unticked in `docs/TASKS.md`**, and M15 is not a closed milestone. T125, T126, T127 and T130 are
+done and ticked.
