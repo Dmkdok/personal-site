@@ -29,6 +29,9 @@
 #   Storage — ZFS datasets, created before the first deploy
 #     MEDIA_HOST_DIR        /mnt/<pool>/portfolio/media    (must be owned by uid 1000)
 #     PGDATA_HOST_DIR       /mnt/<pool>/portfolio/pgdata
+#     LOGS_HOST_DIR         /mnt/<pool>/portfolio/logs     (must be owned by uid 1000)
+#                           The application writes app.log here, so it can be
+#                           read over the share without a Docker client.
 #
 #   Release
 #     IMAGE_TAG             latest, or a sha-<short> tag to pin  (default latest)
@@ -38,10 +41,21 @@
 #   LOGIN_WINDOW_MINUTES, TRUSTED_PROXY_IPS, CADDY_TRUSTED_PROXIES.
 # ---------------------------------------------------------------------------
 
+# Docker's default json-file driver is unbounded. On an appliance meant to run
+# for weeks unattended that is a disk filling up quietly, so every service below
+# carries this ceiling — 30 MB of container log each, and no more (F60). The
+# application's own file log is capped separately, inside the image.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:18-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-portfolio}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?generate one, do not reuse the development password}
@@ -66,6 +80,7 @@ services:
   web:
     image: ghcr.io/dmkdok/personal-site:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    logging: *logging
     depends_on:
       db:
         condition: service_healthy
@@ -83,6 +98,10 @@ services:
       DATABASE_URL: >-
         postgresql+psycopg://${POSTGRES_USER:-portfolio}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-portfolio}
       MEDIA_ROOT: /data/media
+      # A copy of the log on disk, beside stdout rather than instead of it, so
+      # the owner can open it over the share (F58). An unwritable path here
+      # degrades to stdout with a warning; it never stops the site.
+      LOG_DIR: /data/logs
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-50}
       MAX_BATCH_FILES: ${MAX_BATCH_FILES:-50}
       SESSION_MAX_AGE_DAYS: ${SESSION_MAX_AGE_DAYS:-30}
@@ -94,6 +113,9 @@ services:
       # cannot take them. The image runs unprivileged as uid 1000, so the
       # dataset must be chowned to it before the first deploy.
       - ${MEDIA_HOST_DIR:?set it to a dataset, e.g. /mnt/pool/portfolio/media}:/data/media
+      # The log where a human can reach it. Same uid-1000 rule as the media
+      # dataset: the image runs unprivileged and cannot chown its way in.
+      - ${LOGS_HOST_DIR:?set it to a dataset, e.g. /mnt/pool/portfolio/logs}:/data/logs
     # `--forwarded-allow-ips` must name the proxy and nothing else. With "*"
     # uvicorn rewrites the peer address from any client's own X-Forwarded-For,
     # which hands the login throttle a fresh budget on every attempt. The default
@@ -113,6 +135,7 @@ services:
     # redeploy moves both or neither.
     image: ghcr.io/dmkdok/personal-site-caddy:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    logging: *logging
     depends_on:
       web:
         condition: service_healthy

@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     site_url: str = "http://localhost:8000"
     media_root: Path = Path("/data/media")
 
+    # Where a copy of the log is written, in addition to stdout. Empty means
+    # stdout only, which is what development and the test suite want: nothing
+    # new appears on a developer's disk unless this is set. On the server it
+    # points at a bind-mounted dataset, so the log can be opened over the share
+    # without a Docker client (F58).
+    log_dir: str = ""
+
     # The size the owner actually exports at. Peak memory per file rises with
     # it; `images.MAX_PIXELS` is the backstop, not this.
     max_upload_mb: int = 50

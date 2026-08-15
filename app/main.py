@@ -3,6 +3,7 @@
 import logging
 import secrets
 from contextlib import asynccontextmanager
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from urllib.parse import quote
 
@@ -20,7 +21,54 @@ from app.routers import auth, blog, pages, photos, projects, search, seo
 from app.security import CSRF_EXEMPT_PATHS, CSRF_HEADER, SAFE_METHODS, csrf_ok, ensure_admin_user
 from app.templating import templates, translate
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(name)s] %(message)s")
+LOG_FORMAT = "%(levelname)s [%(name)s] %(message)s"
+
+# 5 MB per file, four files at most: the log the owner reads is the recent one,
+# and 20 MB is small beside the photographs sharing the appliance while still
+# holding weeks of an unattended site's INFO lines. The ceiling exists so that
+# nothing on this host can grow without bound (F60); the container's own log is
+# capped separately, by the `logging:` block in both deployment files.
+LOG_MAX_BYTES = 5 * 1024 * 1024
+LOG_BACKUP_COUNT = 3
+
+
+def _configure_logging() -> None:
+    """Console always; a file beside it when LOG_DIR is set.
+
+    The file handler is *added* to the stream, never substituted for it, so
+    `docker logs` keeps showing exactly what it showed before — same format,
+    same lines.
+
+    A log path is never the reason the site is down: a directory that cannot be
+    created or written degrades to stdout with a warning instead of raising at
+    startup, when the alternative would be a site that is down because a mount
+    was missing.
+    """
+    logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+
+    if not settings.log_dir:
+        return
+
+    directory = Path(settings.log_dir)
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+        handler = RotatingFileHandler(
+            directory / "app.log",
+            maxBytes=LOG_MAX_BYTES,
+            backupCount=LOG_BACKUP_COUNT,
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        logging.getLogger("portfolio").warning(
+            "LOG_DIR %s is not usable (%s); logging to stdout only", directory, exc
+        )
+        return
+
+    handler.setFormatter(logging.Formatter(LOG_FORMAT))
+    logging.getLogger().addHandler(handler)
+
+
+_configure_logging()
 logger = logging.getLogger("portfolio")
 
 APP_DIR = Path(__file__).resolve().parent

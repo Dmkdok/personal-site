@@ -5,16 +5,34 @@
 # published on the host, the code is baked into the image instead of mounted,
 # and ENV=production makes session cookies Secure.
 
+# Docker's default json-file driver is unbounded, which on a machine left alone
+# for weeks is a disk filling up quietly. Every service below carries the same
+# ceiling — 30 MB of container log each, and no more (F60). The application's
+# own file log is capped separately, inside the image.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     ports: !override []
+    logging: *logging
 
   web:
     ports: !override []
+    logging: *logging
     environment:
       ENV: production
+      # A copy of the log on disk beside stdout, not instead of it (F58). An
+      # unwritable path degrades to stdout with a warning rather than stopping
+      # the site.
+      LOG_DIR: /data/logs
     volumes: !override
       - ${MEDIA_HOST_DIR:-./data/media}:/data/media
+      # Same uid-1000 rule as the media directory: the image runs unprivileged.
+      - ${LOGS_HOST_DIR:-./data/logs}:/data/logs
     # `--forwarded-allow-ips` must name the proxy, never "*". With "*" uvicorn
     # rewrites the peer address from any client's own `X-Forwarded-For`, which
     # hands the login throttle (F17) a fresh budget on every attempt. The
@@ -27,6 +45,7 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    logging: *logging
     depends_on:
       web:
         condition: service_healthy
