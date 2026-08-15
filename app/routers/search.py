@@ -22,6 +22,18 @@ GROUP_LABELS = {
 MAX_GROUP_LIMIT = 200
 
 
+def _group_limits() -> dict[str, int]:
+    """What the template needs in order to render an honest control.
+
+    Both numbers were literals in `search_group.html` before — the step as a
+    bare `12` beside a `DEFAULT_LIMIT` it had to match, and the ceiling not at
+    all, so a group past 200 kept a «Показать ещё» that asked for more and got
+    the same 200 rows back forever. Read at call time, so a test can move
+    either one.
+    """
+    return {"step": search_service.DEFAULT_LIMIT, "ceiling": MAX_GROUP_LIMIT}
+
+
 @router.get("/search", response_class=HTMLResponse)
 def search_page(
     request: Request,
@@ -53,6 +65,7 @@ def search_page(
             # The page renders the groups; nothing was swapped, so no group may
             # claim the caret. See `partials/search_group.html`.
             "swapped": False,
+            **_group_limits(),
             "min_length": search_service.MIN_QUERY_LENGTH,
             "max_length": search_service.MAX_QUERY_LENGTH,
             "was_truncated": len(" ".join(q.split())) > search_service.MAX_QUERY_LENGTH,
@@ -92,6 +105,7 @@ def search_group(
             "label": translate(GROUP_LABELS[kind]),
             "query": query,
             "swapped": True,
+            **_group_limits(),
         },
         admin=admin,
     )

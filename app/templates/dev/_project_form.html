@@ -15,6 +15,16 @@
   {%- if error_id %} aria-invalid="true"{% endif -%}
 {%- endmacro %}
 
+{# A fresh form wants the caret in its first field; a rejected one wants it on
+   whatever was wrong, and `ui.js` puts it there. The attribute used to be
+   unconditional and the two only stayed out of each other's way because that
+   handler returns early when it finds `aria-invalid`. `ProjectInvalid.field` is
+   optional by design, so a rejection belonging to the whole form would have
+   sent the caret to «Название» with the error about something else. #}
+{% macro autofocus_unless_rejected() -%}
+  {%- if not form.error %} data-autofocus{% endif -%}
+{%- endmacro %}
+
 {% macro field_error(name) -%}
   {%- if form.error_field == name %}
     <p class="form-error" id="{{ form.dom_id }}-{{ name }}-error">{{ form.error }}</p>
@@ -42,7 +52,7 @@
   <div class="field">
     <label class="field__label" for="{{ form.dom_id }}-title">{{ t("dev.field_title") }}</label>
     <input class="field__input" id="{{ form.dom_id }}-title" name="title" type="text"
-           value="{{ values.title }}" required data-autofocus{{ described("title") }} />
+           value="{{ values.title }}" required{{ autofocus_unless_rejected() }}{{ described("title") }} />
     {{ field_error("title") }}
   </div>
 

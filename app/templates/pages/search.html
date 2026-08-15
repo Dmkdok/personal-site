@@ -37,6 +37,12 @@
          the answer without traversing the list (UI-AUDIT F-014). #}
       <p class="search-note" role="status">{{ t("search.found", total=results.total) }}</p>
 
+      {# Empty, and it stays on the page. «Показать ещё» swaps one group and
+         leaves the caret on itself, so this is the only thing that can report
+         what arrived; `search_group.html` fills it out of band. It has to exist
+         before the change it announces, which is why it is not created then. #}
+      <p class="visually-hidden" id="search-status" role="status"></p>
+
       {% set groups = [
         (t("search.group_posts"), results.posts),
         (t("search.group_projects"), results.projects),

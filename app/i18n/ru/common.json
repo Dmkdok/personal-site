@@ -59,9 +59,11 @@
     "group_posts": "Статьи",
     "group_projects": "Проекты",
     "group_albums": "Альбомы",
-    "group_count": "{shown} из {total}",
+    "group_heading": "{label} · {shown} из {total}",
     "found": "Найдено: {total}",
-    "more": "Показать ещё"
+    "more": "Показать ещё",
+    "more_shown": "{label}: показано {shown} из {total}",
+    "capped": "Показаны первые {limit} — уточните запрос, чтобы найти остальное"
   },
   "pagination": {
     "label": "Страницы",

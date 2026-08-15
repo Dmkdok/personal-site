@@ -178,12 +178,16 @@ def test_the_continuation_says_where_the_caret_should_land(client, db):
         assert re.search(r'<section[^>]*id="results-post"[^>]*tabindex="-1"', page)
         assert "data-autofocus" not in page
 
-        # Still capped: the button comes back, so htmx has an id to restore to.
+        # Still capped: the button comes back, so htmx has an id to restore to,
+        # and the page's own status region is updated out of band — the caret
+        # stays on the button, so nothing else would say what arrived.
         partial = client.get(
             "/search/group", params={"q": "Эльбрус", "kind": "post", "limit": DEFAULT_LIMIT + 2}
         ).text
         assert 'id="more-post"' in partial
         assert "data-autofocus" not in partial
+        assert 'id="search-status" hx-swap-oob="innerHTML"' in partial
+        assert f"{DEFAULT_LIMIT + 2} из {total}" in partial
 
         # Nothing left to ask for: the button is gone and the section takes over.
         exhausted = client.get(
@@ -191,6 +195,48 @@ def test_the_continuation_says_where_the_caret_should_land(client, db):
         ).text
         assert "Показать ещё" not in exhausted
         assert "data-autofocus" in exhausted
+    finally:
+        for item in made:
+            db.delete(db.merge(item))
+        db.commit()
+
+
+def test_a_group_at_the_ceiling_stops_offering_more(client, db, monkeypatch):
+    """The route clamps `limit`; the button has to know that, or it lies.
+
+    `has_more` is `shown < total`, which stays true above the cap — so the
+    control was re-rendered for ever, asking for a limit the server refused and
+    swapping in the same section byte for byte. Visible, focusable, and inert.
+    The ceiling is moved rather than seeding two hundred rows.
+    """
+    monkeypatch.setattr("app.routers.search.MAX_GROUP_LIMIT", DEFAULT_LIMIT + 1)
+    total = DEFAULT_LIMIT + 5
+    made = [
+        Post(
+            slug=f"ceiling-{index}",
+            title=f"Потолочная запись {index} про Эльбрус",
+            excerpt="Текст",
+            body_md="Текст",
+            body_html="<p>Текст</p>",
+            status=PostStatus.PUBLISHED,
+            published_at=datetime.now(UTC),
+        )
+        for index in range(total)
+    ]
+    db.add_all(made)
+    db.commit()
+
+    try:
+        # One below the ceiling: there is a next step, so the button is honest.
+        assert "Показать ещё" in client.get("/search", params={"q": "Эльбрус"}).text
+
+        at_ceiling = client.get(
+            "/search/group", params={"q": "Эльбрус", "kind": "post", "limit": total}
+        ).text
+
+        assert f"{DEFAULT_LIMIT + 1} из {total}" in at_ceiling
+        assert "Показать ещё" not in at_ceiling
+        assert "Показаны первые" in at_ceiling
     finally:
         for item in made:
             db.delete(db.merge(item))

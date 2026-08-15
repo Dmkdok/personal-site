@@ -253,10 +253,22 @@
     slides = [];
   }
 
+  /**
+   * The stops the tab trap cycles over.
+   *
+   * The lightbox's own three, plus the dismiss control of any error toast — a
+   * toast is painted deliberately above the overlay (UI-AUDIT F-007), and since
+   * errors now wait to be dismissed rather than expiring, a trap that excludes
+   * the «×» leaves a message a keyboard user can read and cannot answer until
+   * they close the picture. Queried per call because a toast can arrive while
+   * the lightbox is already open, which is the case that matters.
+   */
   function focusable() {
-    return [prevButton, nextButton, closeButton].filter(function (button) {
+    var own = [prevButton, nextButton, closeButton].filter(function (button) {
       return !button.disabled;
     });
+    var dismissals = document.querySelectorAll("#toasts-alert .toast__close");
+    return own.concat(Array.prototype.slice.call(dismissals));
   }
 
   function trapTab(event) {

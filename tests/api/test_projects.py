@@ -138,6 +138,15 @@ def test_a_rejected_url_marks_the_url_field_and_not_the_title(admin_client):
     # The field that is not at fault says nothing about being at fault.
     assert "aria-invalid" not in _control(html, "title")
 
+    # And it no longer asks for the caret either. The attribute used to be
+    # unconditional, and only `ui.js` returning early on `aria-invalid` kept the
+    # two apart — a rejection carrying no field at all, which `ProjectInvalid`
+    # allows, would have gone straight back to «Название».
+    assert "data-autofocus" not in html
+
+    # A form that has not been rejected still opens with the caret in it.
+    assert "data-autofocus" in _control(admin_client.get("/dev/admin/new").text, "title")
+
 
 def test_a_field_keeps_its_hint_when_it_is_marked_invalid(admin_client):
     """Two ids in one `aria-describedby`, not a second attribute the browser drops."""

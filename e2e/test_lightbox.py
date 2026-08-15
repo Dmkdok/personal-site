@@ -76,6 +76,41 @@ def test_lightbox_is_fully_operable_from_the_keyboard(page: Page, published_albu
     }
 
 
+def test_an_error_raised_over_the_lightbox_can_be_dismissed_from_the_keyboard(
+    page: Page, published_album: Album
+) -> None:
+    """The toast is painted above the overlay on purpose; the trap has to agree.
+
+    F-007 made errors wait to be dismissed instead of expiring, and lifted the
+    host over `--z-overlay` so a failure behind an open photograph is visible.
+    The trap cycled over the lightbox's own three controls and called
+    `preventDefault()`, so the «×» was on screen, and unreachable, until the
+    picture was closed.
+    """
+    page.goto(f"/photo/{published_album.slug}")
+    page.get_by_role("list", name=ru("photo.grid_label")).get_by_role("link").first.click()
+
+    dialog = page.get_by_role("dialog", name=ru("photo.lightbox_label"))
+    expect(dialog).to_be_visible()
+
+    # The same entry point `ui.js` gives the rest of the site.
+    page.evaluate("() => window.portfolioToast('Не удалось сохранить', 'error')")
+    dismiss = page.locator("#toasts-alert .toast__close")
+    expect(dismiss).to_be_visible()
+
+    reached = False
+    for _ in range(6):
+        page.keyboard.press("Tab")
+        if dismiss.evaluate("(el) => el === document.activeElement"):
+            reached = True
+            break
+    assert reached, "the dismiss control is inside the overlay and outside the tab trap"
+
+    page.keyboard.press("Enter")
+    expect(dismiss).to_have_count(0)
+    expect(dialog).to_be_visible()
+
+
 def test_lightbox_closes_on_a_backdrop_click(page: Page, published_album: Album) -> None:
     """F5's pointer half, so the keyboard test above is not the only proof."""
     page.goto(f"/photo/{published_album.slug}")

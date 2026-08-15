@@ -43,7 +43,7 @@
     "cover_remove": "Убрать обложку",
     "cover_none": "Обложки нет — карточка будет текстовой.",
     "cover_alt": "Обложка статьи",
-    "cover_hint": "JPEG, PNG или WebP. Загрузится сразу после выбора файла.",
+    "cover_hint": "JPEG, PNG, WebP или HEIC. Загрузится сразу после выбора файла.",
 
     "status_draft": "Черновик",
     "status_published": "Опубликовано",

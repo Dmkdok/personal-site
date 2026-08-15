@@ -360,8 +360,13 @@
   }
 
   function upload(files) {
+    // An empty `type` is passed on rather than dropped: browsers report HEIC's
+    // MIME type inconsistently, and this filter used to discard a photograph
+    // straight off a phone in silence — no row, no message, nothing to retry.
+    // The magic sniff on the server is the authority (F51), and a refusal there
+    // at least says so. Anything that *declares* a non-image type still goes.
     var images = Array.prototype.filter.call(files || [], function (file) {
-      return file && file.type && file.type.indexOf("image/") === 0;
+      return file && (!file.type || file.type.indexOf("image/") === 0);
     });
     if (!images.length) return;
 

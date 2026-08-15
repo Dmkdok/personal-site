@@ -12,6 +12,7 @@ from PIL import Image
 
 from app.config import settings
 from app.services import images
+from app.templating import translate
 
 KIND = "test-pipeline"
 
@@ -310,6 +311,31 @@ def test_a_tiff_is_still_refused():
     """Accepting one more format is not accepting whatever Pillow can open."""
     with pytest.raises(images.ImageRejected):
         images.validate_upload("scan.tiff", "image/tiff", make_image(400, 300, "TIFF"))
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "photo.drop_note",
+        "photo.file_wrong_type",
+        "blog.cover_hint",
+        "blog.image_wrong_type",
+        "image.wrong_type",
+    ],
+)
+def test_every_string_that_lists_the_accepted_formats_lists_all_of_them(key):
+    """Copy is a gate too — the one the owner reads before he tries.
+
+    Two of these were left saying «JPEG, PNG или WebP» after HEIC was accepted,
+    which is the failure R-10 exists to prevent in its most expensive form: the
+    owner converts the file himself because the drop zone told him to. Named by
+    key rather than swept, so adding a sixth is a deliberate act.
+    """
+    text = translate(key)
+
+    assert "HEIC" in text, key
+    for known in ("JPEG", "PNG", "WebP"):
+        assert known in text, key
 
 
 @pytest.mark.parametrize(

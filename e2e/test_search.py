@@ -190,7 +190,12 @@ def test_showing_the_rest_of_a_group_keeps_the_caret(
 
     # The caret is in the group that replaced it — which begins with the heading
     # stating the new count — and not on <body>.
-    assert page.evaluate("() => document.activeElement.id") == "results-post"
+    #
+    # Waited for, not sampled: the caret moves on `htmx:afterSettle`, which is a
+    # tick or two behind the swap that the assertions above are satisfied by. A
+    # bare `page.evaluate` here reads whichever of the two won the race, and this
+    # test has been seen passing and failing on the same code because of it.
+    expect(group).to_be_focused()
 
 
 def test_empty_and_unmatched_queries_have_their_own_states(page: Page, run_token: str) -> None:

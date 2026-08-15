@@ -61,6 +61,14 @@ def test_page_one_is_the_bare_path():
 
 
 def test_the_page_size_lives_in_one_place():
-    assert page_for(total=100, requested="1") == Page(
-        number=1, pages=page_for(100, 1).pages, total=100, size=PAGE_SIZE
-    )
+    """The default comes from the constant, and the arithmetic follows it.
+
+    This line used to compare `page_for` against a second call to itself for the
+    page count, which held for every possible value of `PAGE_SIZE` and therefore
+    asserted nothing about it. Both boundaries are named against the constant
+    now: one row over it is a second page, and exactly it is still one.
+    """
+    page = page_for(total=PAGE_SIZE + 1, requested="1")
+
+    assert page == Page(number=1, pages=2, total=PAGE_SIZE + 1, size=PAGE_SIZE)
+    assert page_for(total=PAGE_SIZE, requested="1").pages == 1

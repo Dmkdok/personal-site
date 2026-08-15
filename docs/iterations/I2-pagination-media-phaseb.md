@@ -83,7 +83,7 @@ counted with `--collect-only` rather than read off a summary line.
 ### `/photo` is paginated for the visitor and whole for the owner
 
 `_board.html` is the swap target of six mutating endpoints, and `album_reorder`
-(`app/routers/photos.py:657-663`) applies the posted ids against the **global** row list through
+(`app/routers/photos.py:700`) applies the posted ids against the **global** row list through
 `_reorder_from_ids`. Slicing that list would make drag-reorder mean something different on page 2
 than on page 1, and would put a page parameter into six endpoints that do not have one today.
 
@@ -208,12 +208,50 @@ where the caret goes**, either by keeping an id or by nominating a successor. Th
 time on this project that a swap has dropped focus to `<body>` — the reorder buttons in run 1 of
 the review, the rejected-save forms in M9 — and the first two both ended with an id.
 
+## What the review found
+
+Two independent reviewers over the same delta, neither of which wrote the code. Full record: run 4
+in `docs/REVIEW.md`; the fixes are T124. Three things are worth carrying forward from it.
+
+**The one High was found by both of them, independently.** «Показать ещё» asked for `shown + 12`
+while `/search/group` clamps at 200, and `has_more` is `shown < total`, which stays true above the
+cap — so a group of 210 kept a button that returned the same section for ever. The shape of the
+mistake is worth more than the mistake: **two numbers that have to agree, written in two places, one
+of them a literal in a template.** T117 stated that page size lives in one constant and the
+pagination primitive obeyed it; search grew its own step and its own ceiling and obeyed neither.
+
+**A control that keeps focus has to say what it did.** The T123 fix moved the caret only in the
+exhausted case, which left the ordinary case — twelve more results arrive, focus stays on the button
+— announcing nothing at all. The answer is a live region that **outlives** the swap, filled out of
+band; a region created together with its content is the failure F-007 already documented on the
+toast host, and it was one swap away from being repeated here.
+
+**Two of the checks written in this session were themselves wrong**, and both in the same way: they
+sampled a value in the same tick as the event that changes it. One raced `htmx:afterSettle`, one
+read a transitioned `background-color` while it was still animating. Both passed once and failed
+once against identical code. The rule this project keeps re-learning: **anything an animation or a
+settle step touches must be asserted with a retry, never with one read.**
+
 ## Exit criteria
 
-- [ ] Every P2 finding is closed, or has an ADR (F-016 → ADR-020).
-- [ ] `/blog`, `/photo` and `/search` bound what they render, and say so in the page.
-- [ ] A `.heic` file uploads and appears; a `.tiff` is still refused before a byte is sent.
-- [ ] Contrast re-measured after the `.label` split; no sample below threshold.
-- [ ] The forced-colors pass is recorded in `docs/qa/` with what was done, on what, and when.
-- [ ] Unit/API ≥ **233**, e2e ≥ **60**, lint and format clean, all on the final tree.
-- [ ] Each in-scope item has a check that fails without the change.
+- [x] Every P2 finding is closed, or has an ADR (F-016 → ADR-020). The register of what closed what
+      is now in `docs/UI-AUDIT.md` itself, at the top — the findings below it are untouched.
+- [x] `/blog`, `/photo` and `/search` bound what they render, and say so in the page. Search says it
+      twice over: the group heading states «shown из total», and the ceiling states itself (T124).
+- [x] A `.heic` file uploads and appears; a `.tiff` is still refused before a byte is sent. The
+      copy that tells the owner which formats are accepted now agrees with the gate that enforces
+      them, which it did not until T124.
+- [x] Contrast re-measured after the `.label` split; no sample below threshold — 76 samples per
+      theme for a visitor, 82 for the owner, zero failures.
+- [x] The forced-colors pass is recorded in `docs/qa/` with what was done, on what, and when.
+      **Half of it is the owner's:** the automated Chromium-emulation pass is done and recorded in
+      `forced-colors.json`; the four steps on a real Windows contrast theme are written out in
+      `docs/qa/forced-colors.md` and cannot be automated from here.
+- [x] Unit/API ≥ **233**, e2e ≥ **60**, lint and format clean, all on the final tree. Reached
+      **271** and **81** — see the gates table in `docs/STATUS.md`.
+- [x] Each in-scope item has a check that fails without the change, **with one exception, named**:
+      T112's test cannot fail, because `backdrop-filter` already did the work that
+      `position: relative` was added to do. The declaration is kept as insurance and the test
+      measures the result rather than the mechanism, so it holds whichever of the two is carrying
+      it. Everything else in this iteration — including both fixes found after the tasks were
+      ticked — was watched red first.

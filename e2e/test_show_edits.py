@@ -48,6 +48,34 @@ def test_the_toggle_reveals_the_footer_affordance_and_remembers(admin_page: Page
     expect(admin_page.locator(".site-links__edit")).to_have_css("opacity", "0")
 
 
+def test_the_pressed_toggle_looks_pressed(admin_page: Page) -> None:
+    """A state announced only to assistive technology is a state most people miss.
+
+    On the top of a long article nothing editable is in the viewport, so the
+    press changes an attribute and — before this — not one visible pixel. The
+    rule is keyed off `aria-pressed` so the seen state and the announced one
+    cannot drift, which is what F-019 was.
+    """
+    admin_page.goto("/")
+    toggle = _toggle(admin_page)
+
+    resting = toggle.evaluate("(el) => getComputedStyle(el).backgroundColor")
+
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-pressed", "true")
+
+    # Retried, not sampled: `background-color` is transitioned on `.button`, so
+    # reading it in the same tick as the click returns the value it is animating
+    # *from* — which is the resting one, and the assertion then fails against
+    # correct CSS.
+    expect(toggle).not_to_have_css("background-color", resting)
+    pressed = toggle.evaluate("(el) => getComputedStyle(el).backgroundColor")
+    assert pressed not in ("rgba(0, 0, 0, 0)", "transparent"), pressed
+
+    toggle.click()
+    expect(toggle).to_have_attribute("aria-pressed", "false")
+
+
 def test_the_toggle_reveals_the_photo_tools(admin_page: Page, published_album: Album) -> None:
     admin_page.goto(f"/photo/{published_album.slug}")
 

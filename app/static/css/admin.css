@@ -146,6 +146,24 @@
     inline-size: var(--space-2xs);
   }
 
+  /* «Показать правки» pressed. Without this the only thing the press changes is
+     an attribute in the accessibility tree: on the top of a long article, where
+     no editable region is in view, the control looks like it did nothing. Keyed
+     off `aria-pressed` rather than a second class, so the visible state and the
+     announced one cannot drift — which is the whole of F-019. */
+  .admin-bar .button[aria-pressed="true"] {
+    color: var(--accent-ink);
+    background-color: var(--accent-wash);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+
+  @media (forced-colors: active) {
+    .admin-bar .button[aria-pressed="true"] {
+      border-style: solid;
+      border-color: Highlight;
+    }
+  }
+
   /* --- Editable copy blocks ----------------------------------------------- */
   .editable {
     position: relative;

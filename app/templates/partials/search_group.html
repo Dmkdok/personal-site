@@ -13,8 +13,10 @@
   tabindex="-1"
   {% if swapped and not group.has_more %}data-autofocus{% endif %}
 >
+  {# Separator included, because a user-visible character in a template is a
+     string nobody can find or change (ADR-007, CONVENTIONS §Language). #}
   <h2 class="label results__label">
-    {{ label }} · {{ t("search.group_count", shown=group.shown, total=group.total) }}
+    {{ t("search.group_heading", label=label, shown=group.shown, total=group.total) }}
   </h2>
 
   <ul class="results__list" role="list">
@@ -30,7 +32,7 @@
     {% endfor %}
   </ul>
 
-  {% if group.has_more %}
+  {% if group.has_more and group.shown < ceiling %}
     {# The press destroys the button — it is inside its own swap target. htmx
        restores focus after a swap only to an element that still exists under the
        same id, so the id is what keeps the caret here when there is more to ask
@@ -40,9 +42,24 @@
       class="button results__more"
       id="more-{{ group.kind }}"
       type="button"
-      hx-get="/search/group?q={{ query|urlencode }}&kind={{ group.kind }}&limit={{ group.shown + 12 }}"
+      hx-get="/search/group?q={{ query|urlencode }}&kind={{ group.kind }}&limit={{ group.shown + step }}"
       hx-target="#results-{{ group.kind }}"
       hx-swap="outerHTML"
     >{{ t("search.more") }}</button>
+  {% elif group.has_more %}
+    {# At the ceiling. The route clamps `limit` there, so another press would
+       return this same section byte for byte — a control that is visible,
+       focusable and permanently inert. Say what happened instead. #}
+    <p class="meta results__capped">{{ t("search.capped", limit=ceiling) }}</p>
   {% endif %}
 </section>
+{% if swapped and group.has_more %}
+  {# The swap replaces the list and the count, and leaves focus on the button
+     that asked for them — so nothing tells a screen-reader user that twelve
+     more results arrived. This updates the page's own status region out of
+     band: `innerHTML`, so the region itself survives the swap. A live region
+     created in the same breath as its content may never be announced at all. #}
+  <p id="search-status" hx-swap-oob="innerHTML">
+    {{ t("search.more_shown", label=label, shown=group.shown, total=group.total) }}
+  </p>
+{% endif %}

@@ -51,7 +51,7 @@
     "undescribed_count": "Без описания: {count} из {total}",
 
     "drop_title": "Перетащите фотографии сюда",
-    "drop_note": "JPEG, PNG или WebP, до 50 МБ каждая. За один раз — не больше 50 файлов.",
+    "drop_note": "JPEG, PNG, WebP или HEIC, до 50 МБ каждая. За один раз — не больше 50 файлов.",
     "choose_files": "Выбрать файлы",
     "choose_files_label": "Файлы для загрузки",
     "queue_label": "Очередь загрузки",
