@@ -160,6 +160,25 @@ Added 2026-08-14 from `docs/ROADMAP.md` (R-05, R-10, R-12) and the P2 backlog of
 | F55 | The owner can see everything he can edit | Given a signed-in owner on any page with in-place editing, when he asks for the edit affordances to be shown, then every editable region on that page reveals its control at once, the choice survives a reload without a flash of the wrong state, and the resting appearance of the site for a visitor is unchanged |
 | F56 | Interface state survives a high-contrast theme | Given Windows High Contrast (forced colours), when a thumbnail, a navigation link or an entry is hovered or focused, then its state is expressed by a property the mode preserves, so no control is left without a visible focus indicator |
 
+### Added by iteration I3 — operations
+
+Added 2026-08-15 from `docs/ROADMAP.md` (R-01, R-02, R-03). These are the first requirements in
+this document that describe the site being *operated* rather than used. Intake, impact map and exit
+criteria: `docs/iterations/I3-operations.md`.
+
+**R-01 is deliberately taken in its smallest honest form** (ADR-023, ADR-024): while the site is in
+test mode on the NAS, carrying throwaway photographs, the appliance's own snapshots are the backup
+and this repository ships only the one command the appliance cannot supply. The engineered form —
+a schedule owned by the repo, a retention policy, a self-describing set — waits for the move to a
+dedicated server.
+
+| ID | Requirement | Acceptance |
+|----|-------------|------------|
+| F57 | A copy of everything can be taken, and put back | Given the deployed site, when the owner wants a restorable copy, then the appliance holds dated snapshots covering both the media dataset and the database dataset, taken on a schedule he did not have to remember; and a logical dump of the database plus an archive of the media is **one documented command on the server**, where the stack has no compose project to run it from |
+| F58 | The owner can read the log without a terminal | Given a fault he wants to understand, when he opens the storage the site already writes to, then the application's log is a plain file under it, carrying the same lines the container prints — no `docker logs`, no shell on the appliance — and no secret, session token or password appears in it |
+| F59 | The published image is one the suite passed | Given a push that would publish, when the unit/API suite or the lint gate fails, then no image is built and no tag moves; `latest` can only ever point at a commit whose gates were green |
+| F60 | Logs cannot fill the disk | Given any service in either deployment, when it has been running and logging for a long time, then both the container's log driver and the application's own log file are bounded by an explicit maximum size and file count, so no volume of output can exhaust the volume that holds the photographs |
+
 
 ## Non-functional
 
@@ -195,7 +214,15 @@ Added 2026-08-14 from `docs/ROADMAP.md` (R-05, R-10, R-12) and the P2 backlog of
 **Operations**
 - Everything runs with one `docker compose up`.
 - Media and database data live on host bind mounts so that `docker compose down -v` cannot destroy photographs.
-- A documented backup command covering both the database and the media directory.
+- A documented backup command covering both the database and the media directory, runnable **where
+  the site actually runs** and not only from a development checkout (F57). *Amended by I3: the
+  command existed but could not execute on the deployment, because it reaches the database through
+  a compose project the server does not have.*
+- Dated snapshots of the media and database datasets, taken by the storage appliance on its own
+  schedule (F57). *The repository does not own this schedule while the site is on the NAS —
+  ADR-023.*
+- The application's log readable as a file on the storage the site already writes to (F58), and
+  bounded log output on every service in every deployment (F60).
 
 ## Content / data model
 
@@ -244,7 +271,7 @@ Restated from the brief so they are testable as "must not be present": 3D/WebGL/
 3. **Storage growth** — ~1500 photos plus three derivatives each is roughly 20–25 GB. Mitigation: bind mount to the host disk, documented in the handoff so the owner sizes the VPS accordingly.
 4. **"Simple but very stylish" is subjective** — mitigation: the design system is built and shown first (M1), before feature work, so direction is corrected early rather than at the end.
 5. **Russian full-text search quality** — Postgres stemming is good but not perfect for Russian. Accepted for v1; the alternative (an external search engine) contradicts the simplicity constraint.
-6. **No CI and a single admin** — a bad manual edit has no review step. Mitigation: drafts for articles, publish toggles for albums and projects, and a documented backup command.
+6. **A single admin** — a bad manual edit has no review step. Mitigation: drafts for articles, publish toggles for albums and projects, and the appliance's dated snapshots to roll back to. *Amended by I3: this read "No CI and a single admin". CI now runs the suite and gates the published image (F59), so the unreviewed-change risk is narrower than it was — it is a content risk, not a code risk.*
 7. **Assumption:** the owner runs Docker Desktop on Windows for local review; the media bind mount must therefore work on a Windows host path as well as on Linux.
 8. **Assumption:** originals are retained on disk but never exposed for download.
 

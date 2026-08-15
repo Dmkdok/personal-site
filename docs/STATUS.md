@@ -4,6 +4,62 @@ phase: review
 approved: true
 approved_at: 2026-08-04
 
+## Baseline I3
+
+Recorded 2026-08-15 on branch `iteration/I3-operations`, cut from `iteration/I2-pagination-media-phaseb`
+at `8c75582` (the I2 close). Every command below was run in this session, on this tree.
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **271 passed**, exit 0 |
+| e2e | `uv run pytest e2e` | **80 passed + 1 error**, exit 1 · then **81 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | clean, 127 files |
+
+**The baseline is not green, and the failure is inherited.** Two full e2e runs, twenty minutes
+apart, on identical code: the first ended `80 passed, 1 error`, the second `81 passed, exit 0`. The
+error is a fixture setup, not an assertion — a photograph upload answered **500**:
+
+```
+File "/app/app/routers/photos.py", line 799, in photo_upload
+    _assign_renditions(photo, images.stored_from_asset(known))
+File "/app/app/routers/photos.py", line 376, in _assign_renditions
+    photo.thumb_path = ordered[0]
+IndexError: list index out of range
+```
+
+The deduplication branch reads the disk **twice**. `images.find_asset` globs the renditions and
+drops the row if they have gone — its docstring says why: "Reusing it would hand the caller URLs
+that 404." Twelve lines later `images.stored_from_asset` globs the same directory again, and between
+the two globs the files were removed. `_assign_renditions` then takes `ordered[0]` without checking
+that the list is non-empty, although its own docstring promises "Every case still has to leave a
+servable thumbnail." Taken into I3 as **T125**, first task.
+
+**It predates I2.** I2's hunks in `app/services/images.py` are HEIC only (the magic table, the brand
+list, `store_original`'s extension map); its hunks in `app/routers/photos.py` stop at line ~632,
+and the upload route begins at 767. `find_asset`, `missing_rungs`, `stored_from_asset` and
+`_assign_renditions` are untouched by the iteration — they are M9 code from 2026-08-08.
+
+**Note for whoever reads the I2 close:** commit `8c75582` records the e2e gate as "81 passed exit 0",
+which was true of the run it was written from. It is not true of every run. T124 fixed two *other*
+intermittent e2e checks (both sampling a value in the same tick as the event that changes it); this
+one is a third, in the application rather than in the test, and was not known when that commit was
+written.
+
+Progress:
+- [x] 0 baseline recorded (branch, suite result, timestamp)
+- [x] 1 delta intake agreed (in / out / deferred)
+- [x] 2 impact map written
+- [x] 3 docs amended (SPEC F57–F60 + Operations and risk 6, ADR-023…026, TASKS M15)
+- [x] 3b delta re-cut on the owner's instruction — eight tasks to five, R-01 reduced to the
+      appliance's own snapshots plus one command (ADR-023/024), the declined notifier replaced by
+      the log file on disk (ADR-025)
+- [ ] GATE approved by the owner
+- [ ] 4 implementation — T125 first and alone, then T126; T127/T128/T129 independent
+- [ ] 5 verification green, baseline suites still green
+- [ ] 6 review clean or waived
+- [ ] 7 closed (STATUS rewritten, milestone ticked)
+
 ## Baseline I2
 
 Recorded 2026-08-14 on branch `iteration/I2-pagination-media-phaseb`, cut from `main` at `dfc8f92`
