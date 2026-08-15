@@ -3,8 +3,14 @@
 #
 #   ./scripts/backup.sh            → writes into ./data/backups
 #   BACKUP_DIR=/mnt/x ./scripts/backup.sh
+#   BACKUP_DB_CONTAINER=portfolio-db-1 BACKUP_DIR=/mnt/x ./scripts/backup.sh
 #
-# Restore is documented in docs/HANDOFF.md.
+# The third form is for a host where the stack was not started from this
+# checkout — the appliance runs it from Portainer, so there is no compose
+# project to `exec` into. Everything else is identical, including the artefact
+# names and layout that scripts/restore-check.sh parses.
+#
+# Restore is documented in docs/HANDOFF.md §5.
 
 set -euo pipefail
 
@@ -12,15 +18,23 @@ cd "$(dirname "$0")/.."
 
 BACKUP_DIR="${BACKUP_DIR:-./data/backups}"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-COMPOSE="docker compose"
 
 PG_USER="${POSTGRES_USER:-portfolio}"
 PG_DB="${POSTGRES_DB:-portfolio}"
 
+# Which way we reach the database, and the only thing that differs between a
+# development checkout and the server. Unset — the default — is exactly what it
+# has always been.
+if [ -n "${BACKUP_DB_CONTAINER:-}" ]; then
+  DB_EXEC=(docker exec -i "$BACKUP_DB_CONTAINER")
+else
+  DB_EXEC=(docker compose exec -T db)
+fi
+
 mkdir -p "$BACKUP_DIR"
 
 echo "→ dumping database"
-$COMPOSE exec -T db pg_dump -U "$PG_USER" -d "$PG_DB" --clean --if-exists \
+"${DB_EXEC[@]}" pg_dump -U "$PG_USER" -d "$PG_DB" --clean --if-exists \
   | gzip > "$BACKUP_DIR/db-$STAMP.sql.gz"
 
 echo "→ archiving media"

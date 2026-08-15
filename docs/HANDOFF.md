@@ -139,10 +139,21 @@ visitors.
 ```bash
 make backup                       # → ./data/backups
 BACKUP_DIR=/mnt/x ./scripts/backup.sh
+BACKUP_DB_CONTAINER=<name> BACKUP_DIR=/mnt/x ./scripts/backup.sh
 ```
 
 Writes `db-<timestamp>.sql.gz` (a `pg_dump --clean --if-exists`) and `media-<timestamp>.tar.gz`,
-then prunes both older than 30 days. Run it from a cron entry on the server.
+then prunes both older than 30 days.
+
+The third form is the only difference between a development checkout and a host where the stack was
+started by something other than this checkout. Unset, the script reaches the database with
+`docker compose exec -T db`, exactly as it always has; set, it reaches the named container with
+`docker exec -i` instead. Nothing else changes — same artefact names, same layout, same prune — so
+`restore-check.sh` reads either run's output without knowing which produced it.
+
+> Verified 2026-08-15 (T128): run from the host checkout and run again by container name against
+> the same dev stack, both exit 0, artefact names identical to a pre-change run. The rehearsal below
+> was then run over the container-mode pair — 4 albums, 24 photos, 84 files, nothing missing.
 
 **Restore.** The database dump is self-cleaning, so it can be replayed over a running database:
 
@@ -170,6 +181,50 @@ in the archive — the check that catches a database and a media archive taken f
 runs, which is the failure mode that matters. The scratch database is dropped afterwards.
 
 > Rehearsed 2026-08-07 and passed: 13 rows restored, 44 files, nothing missing (T086).
+
+### On the appliance, where there is no checkout
+
+The stack there is deployed from Portainer, so there is no compose project, no `make`, and no
+`scripts/`. Two things cover it, and **both are needed** — neither is a substitute for the other.
+
+**1. Snapshots, taken by the appliance itself.** Storage → Snapshots → Periodic Snapshot Tasks:
+
+| Field | Value |
+|---|---|
+| Dataset | `tank/app_data/_dev_/portfolio` — **recursive**, so `media`, `pgdata`, `backups` and `logs` are all covered by one task |
+| Schedule | Daily |
+| Retention | 2 weeks |
+| Naming schema | the default `auto-%Y-%m-%d_%H-%M` |
+| Allow taking empty snapshots | on — otherwise a quiet day silently takes nothing |
+
+A snapshot of a *running* Postgres is **crash-consistent, not clean**: the database will replay its
+WAL and come up, but the snapshot restores only onto the same major version and the same on-disk
+layout. That is why the dump below is not optional. Snapshots are also on the same pool as the
+thing they protect — they survive a mistake, not a dead pool.
+
+**2. A logical dump, one pasted command.** No checkout needed:
+
+```bash
+docker exec -i $(docker ps -qf name=portfolio.*db) pg_dump -U portfolio -d portfolio \
+  --clean --if-exists | gzip > /mnt/tank/app_data/_dev_/portfolio/backups/db-$(date +%Y%m%d-%H%M%S).sql.gz
+```
+
+It writes into the `backups` dataset, which the snapshot task above then covers, and the artefact is
+named exactly as `scripts/backup.sh` names it — so it can be carried to a machine that has a
+checkout and fed straight to `make restore-check`.
+
+**The three secrets are not in any of this, by design.** `SECRET_KEY`, `ADMIN_PASSWORD` and
+`POSTGRES_PASSWORD` live only in the Portainer stack definition. They are not in the repository, not
+in a file on the host, and not in a backup artefact. After a rebuild they are **regenerated, not
+restored** — a new `SECRET_KEY` invalidates existing admin sessions, which costs one sign-in, and
+`POSTGRES_PASSWORD` must be set to whatever the restored database expects, or set in both places at
+once.
+
+**What this deliberately is not.** No repository-owned schedule, no retention policy beyond the two
+above, no manifest, no off-machine copy, and no restore rehearsal on the appliance. While the site
+is in test mode on the NAS carrying disposable photographs, that is the accepted level (ADR-023);
+the engineered form waits for the move to a dedicated server (ADR-024), and **R-01 stays open in
+`docs/ROADMAP.md` until then.**
 
 ### Media maintenance
 
@@ -215,10 +270,11 @@ is why the stack publishes `HTTP_PORT` (8080) instead. The router reaches it the
 
 **Once, before the first deploy:**
 
-1. Datasets under `tank/app_data/_dev_/portfolio`: `media`, `pgdata`, `backups` — beside
+1. Datasets under `tank/app_data/_dev_/portfolio`: `media`, `pgdata`, `backups`, `logs` — beside
    `_dev_/raskladka`, following this appliance's own convention for the owner's projects. The image
-   runs unprivileged as uid 1000, so `chown -R 1000:1000` the media dataset or every upload fails
-   on permissions. `atime=off` on all three, `recordsize=16K` on `pgdata`. Note the parent carries
+   runs unprivileged as uid 1000, so `chown -R 1000:1000` the media **and** the logs datasets, or
+   every upload fails on permissions and the log silently falls back to stdout (T126).
+   `atime=off` on all four, `recordsize=16K` on `pgdata`. Note the parent carries
    NFSv4 ACLs, under which a plain `chown` is enough only because TrueNAS's default ACL gives
    `owner@` full control; verify by writing, not by reading the mode bits.
 2. Portainer → Registries → add `ghcr.io`, username your GitHub name, password a personal access
@@ -251,17 +307,9 @@ Two things the KeenDNS documentation does not state at all: whether the cloud pr
 size, and whether it forwards `X-Forwarded-For`. Those are exactly checks 2 and 3 in §7, and they
 are why those checks exist.
 
-**Backups do not work the way §5 describes on this host** — `make backup` needs a checkout and
-`make`, and there is neither. Durability comes from TrueNAS periodic snapshot tasks on both
-datasets, plus a scheduled logical dump into `backups`:
-
-```bash
-docker exec <db-container> pg_dump -U portfolio --clean --if-exists portfolio | gzip > /mnt/<pool>/portfolio/backups/db-$(date +%Y%m%d).sql.gz
-```
-
-Both are needed. A ZFS snapshot of a running Postgres is crash-consistent — the database will
-replay its WAL and come up — but it restores only onto the same major version and the same layout,
-which a dump does not care about.
+**Backups on this host are a Periodic Snapshot Task plus one pasted dump command** — `make backup`
+wants a checkout and `make`, and there is neither. Both are specified in **§5, "On the appliance,
+where there is no checkout"**, including why neither one alone is enough.
 
 ### 6.2 A server that faces the internet itself
 
@@ -348,6 +396,49 @@ they need the live route, the real router and a browser.
 4. **A restore rehearsal from server artefacts.** Bring the newest dump and a media snapshot up as
    a separate stack and open a few album pages. `make restore-check` does this locally; on the
    appliance it is done by hand, because there is no checkout to run it from.
+
+### Watching it while nobody is looking
+
+The site runs unattended for weeks. Two things watch it, and it is worth knowing exactly what each
+one does and does not cover.
+
+**The container healthcheck** already in `deploy/portainer-stack.yml` polls `/healthz` every 10
+seconds from *inside* the container. It is what `depends_on: service_healthy` reads, and Docker
+restarts nothing on its own — so it tells Portainer the container is unwell and tells the owner
+nothing at all.
+
+**The external check** is the one that reaches a human. It lives on the appliance, outside the
+stack, so a stack that will not come up at all is still noticed. System Settings → Advanced → Cron
+Jobs:
+
+| Field | Value |
+|---|---|
+| Description | `portfolio /healthz` |
+| Command | `curl --fail --silent --show-error --max-time 10 --output /dev/null http://localhost:8080/healthz` |
+| Run As User | `root` |
+| Schedule | every 10 minutes |
+| Hide Standard Output | **on** — a healthy run must be silent, or this mails every 10 minutes and is muted within a day |
+| Hide Standard Error | **off** — this is the whole point: curl writes the failure here |
+
+It polls the published `HTTP_PORT`, so it exercises the router-facing path — Caddy *and* the
+application — rather than the application alone. A stopped `web` answers 502 through Caddy and
+`--fail` turns that into a non-zero exit and a line on stderr; a stopped stack answers nothing and
+`--max-time` turns that into the same.
+
+This needs the appliance's email alerts configured (System Settings → Alert Settings → Email), or
+the failure exists only in the job's run history, which nobody reads. That is a weaker signal, not
+no signal — but it is not what "something watches it" is supposed to mean.
+
+**Verify it by breaking it, not by watching it pass.** Stop the `web` container in Portainer, wait
+for the next run, and confirm the failure arrives. Then start it again and confirm the noise stops.
+A check that has only ever been seen green is a check nobody has tested.
+
+**There is no notifier for a 500 or a failed photograph, and there is not meant to be yet.**
+ADR-025 records why: the owner wants a Telegram bot for this and wants it on a dedicated server, not
+on the appliance. Until then the place to look is the log — `app.log` on the `logs` dataset, put
+there by T126 (F58), readable over the share without a Docker client. A photograph that fails now
+says so on its own tile and offers a retry (T130), so the two things most likely to go wrong are
+both visible without a terminal.
 
 ---
 
