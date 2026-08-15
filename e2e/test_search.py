@@ -158,6 +158,41 @@ def test_search_from_the_pill_groups_matches_by_content_type(
     expect(page.get_by_role("heading", name=album_title, level=1)).to_be_visible()
 
 
+def test_showing_the_rest_of_a_group_keeps_the_caret(
+    page: Page, admin_api: AdminApi, trash: Trash, run_token: str
+) -> None:
+    """«Показать ещё» replaces the section it sits in — including itself.
+
+    htmx restores focus after a swap only to an element that still exists under
+    the same id, so a button with no id that removes itself takes the caret with
+    it: the next Tab starts again from the top of the document. The control is
+    new in this iteration (UI-AUDIT F-014); the black hole under it would have
+    been too.
+    """
+    posts = [
+        trash.post(admin_api.create_post(f"E2E счёт {index} {run_token}")) for index in range(14)
+    ]
+    for post in posts:
+        admin_api.publish_post(post, body_md=f"Текст {run_token}.")
+
+    page.goto(f"/search?q={run_token}")
+    group = page.locator("#results-post")
+    expect(group.get_by_role("listitem")).to_have_count(12)
+
+    more = page.get_by_role("button", name=ru("search.more"))
+    more.focus()
+    expect(more).to_be_focused()
+    more.press("Enter")
+
+    # Everything is shown now, so the button is gone with nothing left to ask for.
+    expect(group.get_by_role("listitem")).to_have_count(14)
+    expect(more).to_have_count(0)
+
+    # The caret is in the group that replaced it — which begins with the heading
+    # stating the new count — and not on <body>.
+    assert page.evaluate("() => document.activeElement.id") == "results-post"
+
+
 def test_empty_and_unmatched_queries_have_their_own_states(page: Page, run_token: str) -> None:
     """F10: guidance for an empty query, an explicit dead end for a miss."""
     page.goto("/search")

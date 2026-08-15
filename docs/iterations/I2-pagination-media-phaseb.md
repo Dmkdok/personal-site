@@ -175,6 +175,39 @@ visible element where it is, so its lower half sits off-screen — hidden by the
 author-created content. WCAG 2.4.11 is about the latter, so the check skips any control whose box
 does not fit in the viewport. Asserting on it would be asserting that the editor be short.
 
+## What verification found
+
+### «Показать ещё» took the caret with it (T123)
+
+Found in Phase 5, by a test written after T120 had been ticked and watched failing before anything
+was changed: `document.activeElement.id` came back `''` after the press. The button is **inside**
+its own swap target — it asks for the whole group and the group is replaced by the answer — so it
+deletes itself, and htmx restores focus after a swap only to an element that still exists under the
+same id. The button had none. The next Tab therefore started again at the top of the document, on a
+control this iteration had just added in the name of the audit.
+
+Three parts, because there are two outcomes and they want different answers:
+
+- `id="more-{{ kind }}"` on the button — enough on its own while there is still more to ask for,
+  since htmx then finds the replacement under the same id and the caret never moves.
+- `tabindex="-1"` on the section and a `data-autofocus` that only the **continuation** emits. When
+  nothing is left, the button does not come back, so the group that replaced it takes the caret —
+  and the group begins with the heading stating the new count, which is the sentence a
+  screen-reader user needs at that moment. `search_group.html` takes a `swapped` flag for this,
+  false from the page: an attribute that fired on a plain page load would move the caret of anyone
+  who merely arrived at `/search`.
+- `ui.js` now removes `data-autofocus` once it has honoured it. An `outerHTML` swap leaves the
+  handler scoped to the whole document, and search is the first surface with three sibling
+  fragments: without this, a spent attribute on the posts group out-ranks the fresh one on albums,
+  and the second «Показать ещё» sends the caret to the wrong group. Five other fragments use the
+  same attribute; each is re-rendered with it on every swap, so a one-shot reading costs them
+  nothing.
+
+The lesson is narrower than the fix: **a control that replaces the element it lives in must say
+where the caret goes**, either by keeping an id or by nominating a successor. This is the third
+time on this project that a swap has dropped focus to `<body>` — the reorder buttons in run 1 of
+the review, the rejected-save forms in M9 — and the first two both ended with an id.
+
 ## Exit criteria
 
 - [ ] Every P2 finding is closed, or has an ADR (F-016 → ADR-020).

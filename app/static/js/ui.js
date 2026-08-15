@@ -206,7 +206,16 @@
     var wanted =
       (scope.matches && scope.matches("[data-autofocus]") && scope) ||
       scope.querySelector("[data-autofocus]");
-    if (wanted && wanted !== document.activeElement) wanted.focus();
+    if (!wanted) return;
+
+    // The attribute is an instruction about the fragment that has just arrived,
+    // and the server re-emits it on every fragment that wants it. Left in place
+    // after it has been honoured it becomes a standing claim on the caret: the
+    // scope here is the whole document for an `outerHTML` swap, so a later swap
+    // somewhere else would find this element first and focus it instead of its
+    // own. Search has three groups side by side, which is where that bites.
+    wanted.removeAttribute("data-autofocus");
+    if (wanted !== document.activeElement) wanted.focus();
   });
 
   document.body.addEventListener("htmx:sendError", function () {

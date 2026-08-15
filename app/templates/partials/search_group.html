@@ -4,8 +4,15 @@
    how to build a row, and the count and the button cannot drift from the list
    they describe.
 
-   `group`, `label` and `query` come from the caller. #}
-<section class="results" id="results-{{ group.kind }}">
+   `group`, `label` and `query` come from the caller; `swapped` says whether this
+   is the continuation rather than the page, which is what decides where the
+   caret goes — see the button below. #}
+<section
+  class="results"
+  id="results-{{ group.kind }}"
+  tabindex="-1"
+  {% if swapped and not group.has_more %}data-autofocus{% endif %}
+>
   <h2 class="label results__label">
     {{ label }} · {{ t("search.group_count", shown=group.shown, total=group.total) }}
   </h2>
@@ -24,8 +31,14 @@
   </ul>
 
   {% if group.has_more %}
+    {# The press destroys the button — it is inside its own swap target. htmx
+       restores focus after a swap only to an element that still exists under the
+       same id, so the id is what keeps the caret here when there is more to ask
+       for; when there is not, the section's `data-autofocus` catches it instead.
+       Neither, and the caret falls to <body>. #}
     <button
       class="button results__more"
+      id="more-{{ group.kind }}"
       type="button"
       hx-get="/search/group?q={{ query|urlencode }}&kind={{ group.kind }}&limit={{ group.shown + 12 }}"
       hx-target="#results-{{ group.kind }}"

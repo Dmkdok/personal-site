@@ -1,5 +1,6 @@
 """Site-wide search and the SEO endpoints."""
 
+import re
 from datetime import UTC, datetime
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 from app.models.album import Album
 from app.models.post import Post, PostStatus
 from app.models.project import Project
+from app.routers.search import MAX_GROUP_LIMIT
 from app.services.search import DEFAULT_LIMIT
 
 
@@ -139,6 +141,78 @@ def test_a_capped_group_states_the_real_total_and_offers_the_rest(client, db):
         for item in made:
             db.delete(db.merge(item))
         db.commit()
+
+
+def test_the_continuation_says_where_the_caret_should_land(client, db):
+    """«Показать ещё» sits inside the element it replaces, so it deletes itself.
+
+    Three attributes decide where the caret goes next, and a visitor driving the
+    site from the keyboard notices immediately if any of them is missing: the
+    button's `id`, which is the only thing htmx can restore focus by; the
+    section's `tabindex`, which makes it a place focus can be put at all; and
+    `data-autofocus`, which `ui.js` honours on a swapped fragment — emitted only
+    by the continuation, and only once the button is gone. On the page itself no
+    group may claim the caret, or landing on `/search` would move it.
+    """
+    total = DEFAULT_LIMIT + 5
+    made = [
+        Post(
+            slug=f"caret-{index}",
+            title=f"Каретная запись {index} про Эльбрус",
+            excerpt="Текст",
+            body_md="Текст",
+            body_html="<p>Текст</p>",
+            status=PostStatus.PUBLISHED,
+            published_at=datetime.now(UTC),
+        )
+        for index in range(total)
+    ]
+    db.add_all(made)
+    db.commit()
+
+    try:
+        page = client.get("/search", params={"q": "Эльбрус"}).text
+        assert 'id="more-post"' in page
+        # Named on the section itself: `<main>` carries a `tabindex="-1"` of its
+        # own, so a bare substring here would pass with the attribute deleted.
+        assert re.search(r'<section[^>]*id="results-post"[^>]*tabindex="-1"', page)
+        assert "data-autofocus" not in page
+
+        # Still capped: the button comes back, so htmx has an id to restore to.
+        partial = client.get(
+            "/search/group", params={"q": "Эльбрус", "kind": "post", "limit": DEFAULT_LIMIT + 2}
+        ).text
+        assert 'id="more-post"' in partial
+        assert "data-autofocus" not in partial
+
+        # Nothing left to ask for: the button is gone and the section takes over.
+        exhausted = client.get(
+            "/search/group", params={"q": "Эльбрус", "kind": "post", "limit": DEFAULT_LIMIT + 12}
+        ).text
+        assert "Показать ещё" not in exhausted
+        assert "data-autofocus" in exhausted
+    finally:
+        for item in made:
+            db.delete(db.merge(item))
+        db.commit()
+
+
+def test_the_continuation_hides_exactly_what_the_page_hides(client, content):
+    """`/search/group` is a second door into the same query, and it is public.
+
+    The page's own filter is tested above; this asserts the new route did not
+    arrive with a different one. `limit` is pushed to the ceiling so nothing can
+    hide behind the cap rather than behind the predicate.
+    """
+    for kind in ("post", "project", "album"):
+        response = client.get(
+            "/search/group", params={"q": "Эльбрус", "kind": kind, "limit": MAX_GROUP_LIMIT}
+        )
+
+        assert response.status_code == 200
+        assert "Черновик про Эльбрус" not in response.text, kind
+        assert "Скрытый Эльбрус" not in response.text, kind
+        assert "Эльбрус, черновой отбор" not in response.text, kind
 
 
 def test_no_results_state(client, content):

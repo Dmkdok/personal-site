@@ -50,6 +50,9 @@ def search_page(
             "active_section": None,
             "query": query,
             "results": results,
+            # The page renders the groups; nothing was swapped, so no group may
+            # claim the caret. See `partials/search_group.html`.
+            "swapped": False,
             "min_length": search_service.MIN_QUERY_LENGTH,
             "max_length": search_service.MAX_QUERY_LENGTH,
             "was_truncated": len(" ".join(q.split())) > search_service.MAX_QUERY_LENGTH,
@@ -84,6 +87,11 @@ def search_group(
     return render(
         request,
         "partials/search_group.html",
-        {"group": group, "label": translate(GROUP_LABELS[kind]), "query": query},
+        {
+            "group": group,
+            "label": translate(GROUP_LABELS[kind]),
+            "query": query,
+            "swapped": True,
+        },
         admin=admin,
     )
