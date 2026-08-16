@@ -53,8 +53,9 @@
       >{{ t("auth.mode_edit") }}</button>
     </div>
 
-    {# T133 adds «Кабинет» here. It is absent until the route exists rather than
-       rendered dead: a menu item that goes nowhere is worse than one fewer. #}
+    {# The cabinet (F62). A link rather than a button: it goes to a page, and
+       the owner should be able to open it in a new tab like any other. #}
+    <a class="button button--quiet owner-menu__item" href="/me">{{ t("me.title") }}</a>
 
     <form class="owner-menu__form" method="post" action="/logout">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />

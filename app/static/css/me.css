@@ -1,0 +1,56 @@
+/* The cabinet (F62). Five lists, no forms and one button — see ADR-029 for why
+   it is a summary rather than an admin panel. Served only to a signed-in owner,
+   because only a signed-in owner can reach the page at all. */
+
+@layer components {
+  .cabinet__group + .cabinet__group {
+    margin-block-start: var(--space-l);
+  }
+
+  .cabinet__label {
+    display: block;
+    margin-block-end: var(--space-xs);
+  }
+
+  .cabinet__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  /* Wraps at 360 px, where the retry drops under the title it belongs to. The
+     row gap is what keeps the two targets more than 24 px apart when it does
+     (WCAG 2.5.8, measured by `test_a11y.py`). */
+  .cabinet__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2xs) var(--space-s);
+    padding-block-end: var(--space-xs);
+    border-block-end: 1px solid var(--line);
+  }
+
+  .cabinet__link {
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .cabinet__link:hover {
+    color: var(--accent-ink);
+  }
+
+  /* Why the photograph failed, in the pipeline's own words. */
+  .cabinet__reason {
+    flex: 1 1 12rem;
+  }
+
+  .cabinet__retry {
+    margin-inline-start: auto;
+  }
+
+  .cabinet__credentials {
+    display: block;
+    margin-block-start: var(--space-xl);
+    max-inline-size: 48ch;
+  }
+}

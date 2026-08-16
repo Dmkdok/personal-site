@@ -207,3 +207,50 @@ Actual value: 1»* for the footer's edit button in «Просмотр».
    `auth.mode_view` and `auth.mode_edit`. The class and the `localStorage` key stay `show-edits` —
    they mean exactly what they did, and renaming them would move the owner's remembered choice for
    nothing.
+
+## T133 landed — the cabinet, and one check that could not be written where the plan put it
+
+Done 2026-08-16. `GET /me` answers **404** without a session and **200** with one, listing drafts,
+unpublished albums, unpublished projects, failed photographs with their retry, and photographs with
+no description — each linking to the page that edits it. Suites afterwards: **285 unit/API** (277
+before, `+8`), **92 e2e** (88 before, `+4`), lint and format clean over 118 files, all exit 0.
+Watched failing first: `/me` answering the 404 page to the owner, and the three cabinet e2e checks
+red against it.
+
+1. **A failed photograph cannot be arranged through the interface, so that check is an API test.**
+   The DoD asked for an e2e check creating "a draft, an unpublished album and a failed photograph".
+   The first two are one API call each; the third is not reachable from the UI at all. A file that
+   will not decode is refused **422 by `verify_decodable` before any row is inserted**, and every
+   file that *does* decode gets at least one rendition by design — `Profile.widths_for` adds the
+   source's own width when every rung is above it — so there is no valid upload whose processing
+   fails. `e2e/test_me.py` covers the draft, the album, the project and an undescribed photograph on
+   one screen; `tests/api/test_me.py` covers the failed one and its retry with the database, exactly
+   as `tests/api/test_photo.py` arranges the same state. **The coverage is complete; only its
+   address moved**, and the reason is written at the top of the API file so nobody re-litigates it.
+2. **The retry is `hx-swap="none"`, deliberately.** `photo_retry` answers with the album's own grid
+   aimed at `#photo-grid`, which is not on this page — the cabinet reuses the endpoint and must not
+   change it. `hx-swap="delete"` would tidy the row away and drop the caret on `<body>`, which is
+   F-002 and this iteration's fourth non-negotiable. So the body is discarded, the toast the route
+   already sends is the feedback, and the row goes on the next visit.
+3. **An unpublished project links to the board, not to `/dev/{slug}`.** `project_detail` answers 404
+   when `body_html` is empty *even to the owner* — "a project with no long description has no page
+   of its own" — so a straight link would have led half of them to a 404. `/dev#project-{id}` is
+   where a project is published and reordered anyway.
+4. **`app/static/css/me.css` is a file the DoD's path list did not name.** CONVENTIONS requires one
+   stylesheet per feature area, pulled in from that page's `head_extra`; the alternative was reusing
+   search's `.results` primitives, which would have coupled two pages through a third area's file.
+   Everything else on the page is `.container`, `.page-header`, `.label`, `.meta`, `.button` and
+   `partials/empty_state.html`.
+5. **The «Кабинет» item is in `owner_menu.html`**, which is what `partials/nav.html` — the file the
+   DoD names — includes. It is a link rather than a button: it goes to a page, and the owner should
+   be able to open it in a new tab like any other.
+6. **The undescribed list is `READY` only.** A photograph that never finished processing is already
+   in the list above it, and asking for a description of it is asking twice about one problem.
+7. **Seen on the owner's real data and left alone.** With 24 photographs missing a description the
+   section is 24 rows all reading «Снимок в альбоме «X»», told apart only by where they lead. That
+   is a line for the next intake, not a diff in this task — and it is evidence for exactly the
+   trigger ADR-029 records: the pain, if it comes, is photographs at scale.
+8. **ADR-029's consequences say `/me` joins "the parametrized admin-read case in
+   `test_authz_sweep.py`". It does not, and must not.** That case asserts redirect-to-login
+   semantics (`303/401/403`), which this route deliberately does not have. The impact map above
+   already said so; both statements are in the record, and the impact map is the one that was built.

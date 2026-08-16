@@ -224,7 +224,7 @@ def published_album(admin_api: AdminApi, trash: Trash, run_token: str) -> Album:
 def admin_surfaces(
     admin_api: AdminApi, trash: Trash, run_token: str, published_album: Album
 ) -> list[str]:
-    """The four signed-in screens, as paths, for the accessibility sweeps.
+    """The signed-in screens, as paths, for the accessibility sweeps.
 
     Every gate in `test_a11y.py` used to run against anonymous pages, so the
     editor, the photo tile tools, the upload queue and the admin bar — the
@@ -234,9 +234,14 @@ def admin_surfaces(
     The album is published rather than draft so the same fixture serves the
     anonymous sweeps; what makes these paths *admin* is the session they are
     opened in, not the state of the content.
+
+    `/me` joins the list rather than replacing anything: it exists only for the
+    owner, so no anonymous sweep can ever cover it (ADR-029). The draft post
+    created here is one of the things it lists, so the page is never swept
+    empty.
     """
     post = trash.post(admin_api.create_post(f"E2E админ-свип {run_token}"))
-    return ["/", "/dev", f"/photo/{published_album.slug}", f"/blog/{post.slug}/edit"]
+    return ["/", "/dev", f"/photo/{published_album.slug}", f"/blog/{post.slug}/edit", "/me"]
 
 
 @pytest.fixture(scope="session")

@@ -1,0 +1,35 @@
+{# One section of the cabinet: what is waiting, and where it is dealt with.
+   `group` comes from the caller — `group.key` names both the heading's i18n key
+   and the kind of thing listed. #}
+<section class="cabinet__group">
+  <h2 class="label cabinet__label">
+    {{ t("me.group", label=t("me." ~ group.key), count=group.items|length) }}
+  </h2>
+
+  <ul class="cabinet__list" role="list">
+    {% for item in group.items %}
+      <li class="cabinet__item">
+        <a class="cabinet__link" href="{{ item.url }}">{{ item.title }}</a>
+        {% if item.note %}
+          <span class="meta cabinet__reason">{{ item.note }}</span>
+        {% endif %}
+
+        {% if item.retry_photo_id %}
+          {# The retry route answers with the album's own grid, aimed at
+             `#photo-grid` — which is on the album page and not on this one. So
+             the response body is discarded and the toast it sends is the
+             feedback: `hx-swap="none"` also leaves the caret exactly where it
+             was, which `delete` would not (F-002). The row goes on the next
+             visit, when the photograph is no longer failed. #}
+          <button
+            class="button button--quiet cabinet__retry"
+            type="button"
+            id="me-retry-{{ item.retry_photo_id }}"
+            hx-post="/photo/admin/photos/{{ item.retry_photo_id }}/retry"
+            hx-swap="none"
+          >{{ t("photo.retry") }}</button>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</section>

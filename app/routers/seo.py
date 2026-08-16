@@ -33,6 +33,7 @@ def robots() -> PlainTextResponse:
             "Allow: /",
             "Disallow: /admin/",
             "Disallow: /login",
+            "Disallow: /me",
             "Disallow: /search",
             "",
             f"Sitemap: {settings.site_url.rstrip('/')}/sitemap.xml",
