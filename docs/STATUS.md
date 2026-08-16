@@ -1,8 +1,50 @@
 # Status
 
-phase: review
+phase: iteration I4 — implementation (M16 in progress)
 approved: true
 approved_at: 2026-08-04
+i4_delta_approved_at: 2026-08-16
+
+## Baseline I4
+
+Recorded 2026-08-16 on `iteration/I4-editing-mode`, cut from `main` at `a0d1ecf` (the I3 close,
+merged and deployed). Every command below was run in this session, on this tree, none piped.
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **277 passed**, exit 0 |
+| e2e | `uv run pytest e2e` | **81 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | **1 file would be reformatted**, exit 1 |
+
+**Two inherited findings, neither caused by this iteration.**
+
+1. **`.env` was unparseable, so every `docker compose` command failed** — not only the suite:
+   `failed to read .env: line 17: key cannot contain a space`, which is a failure of the file's
+   parse, so `up`, `logs` and `test` were all dead. The owner had edited the file and fixed it on
+   being shown the error; nothing in the repository changed. **If a later session sees Docker
+   "broken", read this line before restarting anything** — `docker compose config --quiet` says so
+   in one second.
+2. **`ruff format --check` is red on `docs/iterations/I3-operations.md`.** I3's baseline recorded
+   *"clean, 127 files"*; the count is 128 now and the extra file is the I3 iteration page itself,
+   written during I3 after the last format check and never checked. Ruff formats fenced Python
+   inside Markdown and wants to rewrite the T125 dedup excerpt, whose aligned trailing comments are
+   the explanation. **ADR-030 / T134** takes `docs/` out of ruff's discovery. Nothing else is red.
+
+The intermittent 500 that made I3's baseline amber did not recur.
+
+```text
+Iteration I4 progress:
+- [x] 0 baseline recorded (branch, suite result, timestamp)
+- [x] 1 delta intake agreed (in / out / deferred)
+- [x] 2 impact map written
+- [x] 3 docs amended (SPEC F36/F55 reworded, F61/F62 added; ADR-027…031; TASKS M16)
+- [x] GATE approved by the owner — «утверждаю», 2026-08-16
+- [ ] 4 implementation
+- [ ] 5 verification green, baseline suites still green
+- [ ] 6 review clean or waived
+- [ ] 7 closed (STATUS rewritten, milestone ticked)
+```
 
 ## Baseline I3
 
@@ -174,6 +216,36 @@ findings below it would otherwise read as thirteen open P2s. The findings themse
 they were an audit, not a backlog, and editing them in place would destroy the record.
 
 ## Resume here
+
+**Iteration I4's delta was approved by the owner on 2026-08-16 («утверждаю»). Milestone M16 is in
+progress and no implementation code has been written yet.** Branch `iteration/I4-editing-mode`, cut
+from `main` at `a0d1ecf`; so far only `docs/` has been touched. The delta — the admin bar retired
+into the navigation capsule, a «Просмотр»/«Правка» mode replacing hover-reveal, and a private
+cabinet at `/me` — is specified in **`docs/iterations/I4-editing-mode.md`**, with milestone **M16**
+(T131–T134) in `docs/TASKS.md`, requirements F61 and F62 in `docs/SPEC.md`, and ADR-027…ADR-031 in
+`docs/DECISIONS.md`. Baseline and progress checklist: **§ Baseline I4** at the top of this file.
+
+**Start with T131, and land it alone** — it rewrites `base.html` and the one component on every
+page, and T132 and T133 both hang off the menu it creates. T134 is isolated and may go at any point.
+Scope is closed: the approved delta is those four tasks, and an improvement noticed in passing is a
+line in the next intake, not a diff.
+
+**A full `/admin` panel was raised at the gate and declined** — the owner asked whether to build one
+now; the answer was no, for the reasons in ADR-029 plus one more: the site is still in test mode
+with disposable content, so the workload a panel would be designed for has not been observed yet.
+If the pain turns out to be photographs at scale, the cheap answer is multi-select inside the album
+grid that already exists, not a second editing surface. **This trigger was offered as an addendum
+to ADR-029 and the owner did not ask for it, so ADR-029 is unchanged** — it is recorded here only
+so the next session knows the question was asked and answered.
+
+Three tests are correct today and change with the delta — `test_authz_sweep.py`'s marker list,
+all four of `e2e/test_show_edits.py`, and the reveal helper both a11y sweeps use. They are named in
+the iteration page with the ADR each one carries. **Do not edit them into passing without it.**
+
+Everything below this line is I3's record and is still true. **T128 and T129 remain open and remain
+the owner's** — they are not blocked by I4 and I4 does not touch them.
+
+---
 
 **I3 is merged, pushed and deployed.** `main` = `38456e5`, fast-forwarded from
 `iteration/I3-operations` (33 commits) and pushed to `origin`

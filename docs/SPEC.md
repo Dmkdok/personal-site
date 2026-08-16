@@ -112,7 +112,7 @@ Needs: no code, no file management, no fragile admin UI, clear feedback on long 
 | ID | Requirement | Acceptance |
 |----|-------------|------------|
 | F35 | Editable site copy | Given a logged-in admin on the home page, when an editable text block is clicked, then it can be edited inline in Markdown and saved without a page reload, and the change is visible to visitors |
-| F36 | Admin affordances hidden from visitors | Given an anonymous visitor, when any public page renders, then no edit control, admin bar or admin-only markup is present in the HTML |
+| F36 | Admin affordances hidden from visitors | Given an anonymous visitor, when any public page renders, then no edit control, no owner menu and no admin-only markup is present in the HTML *(reworded by I4 — the admin bar it named was retired into the navigation capsule, ADR-027; the guarantee is unchanged)* |
 | F37 | Save feedback and failure handling | Given any admin save, when it succeeds then a confirmation is shown; when it fails then the error is shown and the entered content is not lost |
 | F38 | Image size control inside an article | Given an image inserted into an article, when the author appends a size from a fixed vocabulary to its Markdown, then the published page renders it at that width — column, wide or full — with a caption when one is given, responsive sources, and no arbitrary attribute or inline style reaching the HTML; the syntax is discoverable from the editor without reading documentation |
 | F39 | Editable contact links and copyright | Given a logged-in admin, when a social link or the copyright name is changed from the site, then both the footer and the home-page contacts block reflect it without a code change; an emptied link disappears from both; only `http` and `https` URLs are accepted |
@@ -157,7 +157,7 @@ Added 2026-08-14 from `docs/ROADMAP.md` (R-05, R-10, R-12) and the P2 backlog of
 | F52 | A long index does not render itself entirely | Given more published articles than one page holds, when `/blog` is opened, then a bounded number render with a link to the next page whose URL can be shared and crawled; every published article appears on exactly one page; the same holds for `/photo` as a visitor sees it; an out-of-range page is an honest empty page or a redirect, never a 500 |
 | F53 | An error message can be read, and read again | Given an admin action that fails, when its message is shown, then it is announced assertively, stays until it is dismissed or replaced rather than removing itself on a timer, carries its own close control, and renders above the lightbox; a success message keeps its brief self-removing behaviour |
 | F54 | A rejected form says which field is wrong | Given a form rejected on a field other than the first, when it re-renders, then that field carries `aria-invalid="true"` and is described by its own message, and the caret lands on it rather than on the top of the form |
-| F55 | The owner can see everything he can edit | Given a signed-in owner on any page with in-place editing, when he asks for the edit affordances to be shown, then every editable region on that page reveals its control at once, the choice survives a reload without a flash of the wrong state, and the resting appearance of the site for a visitor is unchanged |
+| F55 | The owner can see everything he can edit | Given a signed-in owner, when he switches to «Правка», then every editable region on the page shows its control at once and keeps showing it, with no pointer anywhere; when he switches to «Просмотр», then no edit control is present at all, so the page he reads is the page a visitor reads; the choice survives a reload without a flash of the wrong state *(reformulated by I4 — the hover-reveal this originally sat on top of is gone, ADR-028)* |
 | F56 | Interface state survives a high-contrast theme | Given Windows High Contrast (forced colours), when a thumbnail, a navigation link or an entry is hovered or focused, then its state is expressed by a property the mode preserves, so no control is left without a visible focus indicator |
 
 ### Added by iteration I3 — operations
@@ -178,6 +178,22 @@ dedicated server.
 | F58 | The owner can read the log without a terminal | Given a fault he wants to understand, when he opens the storage the site already writes to, then the application's log is a plain file under it, carrying the same lines the container prints — no `docker logs`, no shell on the appliance — and no secret, session token or password appears in it |
 | F59 | The published image is one the suite passed | Given a push that would publish, when the unit/API suite or the lint gate fails, then no image is built and no tag moves; `latest` can only ever point at a commit whose gates were green |
 | F60 | Logs cannot fill the disk | Given any service in either deployment, when it has been running and logging for a long time, then both the container's log driver and the application's own log file are bounded by an explicit maximum size and file count, so no volume of output can exhaust the volume that holds the photographs |
+
+### Added by iteration I4 — the editing mode
+
+Added 2026-08-16 from an owner request, not from an audit. Intake, impact map and exit criteria:
+`docs/iterations/I4-editing-mode.md`. Both requirements below are visible only to the signed-in
+owner; a visitor's page is unchanged, which F36 continues to guarantee.
+
+**The cabinet is a summary, not an editing surface** (ADR-029). The non-goal at the end of this
+document — "a separate admin panel as the primary editing surface" — stands: F62 answers *what
+needs attention*, and every answer it gives is a link back to the page where the editing happens
+in place.
+
+| ID | Requirement | Acceptance |
+|----|-------------|------------|
+| F61 | The owner's controls live in one place, and that place covers nothing | Given a signed-in owner on any page, when it renders, then the mode indicator, the mode switch, the cabinet and «Выйти» are reachable from a single menu on the navigation capsule, no element is fixed over the content, and the document reserves no clearance it would not reserve for a visitor; «Выйти» takes a deliberate second action rather than sitting under the pointer |
+| F62 | The owner can see what needs him without touring the site | Given a signed-in owner, when he opens the cabinet, then one page lists his drafts, his unpublished albums and projects, every photograph that failed to process — with the retry that already exists — and every photograph with no description, each linking to the page that edits it; the page is never indexed, and to anyone without a session the address does not exist |
 
 
 ## Non-functional
