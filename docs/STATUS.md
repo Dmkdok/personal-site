@@ -230,8 +230,9 @@ the suites afterwards were **277 unit/API** and **88 e2e** (81 before it), both 
 the five things the plan did not say, and the two traps that cost time are in
 `docs/iterations/I4-editing-mode.md` § *T131 landed*. **Next are T132 and T133**, which are
 independent of each other now that the menu exists — T132 replaces «Показать правки» in it with the
-«Просмотр» / «Правка» switch, T133 adds «Кабинет» to it. T134 is isolated and may go at any point.
-Scope is closed: the approved delta is those four tasks, and an improvement noticed in passing is a
+«Просмотр» / «Правка» switch, T133 adds «Кабинет» to it. **T134 is also done**: `docs` is out of
+ruff's discovery, so both gates now exit 0 over the whole tree and the baseline's second inherited
+finding is closed. Scope is closed: the approved delta is those four tasks, and an improvement noticed in passing is a
 line in the next intake, not a diff.
 
 **A full `/admin` panel was raised at the gate and declined** — the owner asked whether to build one
