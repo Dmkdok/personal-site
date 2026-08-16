@@ -40,11 +40,17 @@ Iteration I4 progress:
 - [x] 2 impact map written
 - [x] 3 docs amended (SPEC F36/F55 reworded, F61/F62 added; ADR-027…031; TASKS M16)
 - [x] GATE approved by the owner — «утверждаю», 2026-08-16
-- [ ] 4 implementation
-- [ ] 5 verification green, baseline suites still green
-- [ ] 6 review clean or waived
-- [ ] 7 closed (STATUS rewritten, milestone ticked)
+- [x] 4 implementation — T131, T134, T132, T133, all four ticked
+- [x] 5 verification green — unit/API **289** exit 0 (277 at baseline), e2e **92** exit 0 (81),
+      lint and format clean over 118 files; exit criterion 4 closed by strengthening the guard
+- [x] 6 review — `docs/REVIEW.md` run 6, PASS, two Low security findings recorded not fixed;
+      it says plainly that it is a self-review rather than an independent one
+- [ ] 7 closed — **M16 cannot be ticked**: exit criterion 7 is the owner's own publishing pass
 ```
+
+**Both inherited findings are closed.** The `.env` parse was the owner's edit and never touched the
+repository; `ruff format --check` is green over the whole tree since T134 took `docs/` out of ruff's
+discovery (ADR-030).
 
 ## Baseline I3
 
@@ -217,41 +223,53 @@ they were an audit, not a backlog, and editing them in place would destroy the r
 
 ## Resume here
 
-**Iteration I4's delta was approved by the owner on 2026-08-16 («утверждаю»). Milestone M16 is in
-progress and no implementation code has been written yet.** Branch `iteration/I4-editing-mode`, cut
-from `main` at `a0d1ecf`; so far only `docs/` has been touched. The delta — the admin bar retired
-into the navigation capsule, a «Просмотр»/«Правка» mode replacing hover-reveal, and a private
-cabinet at `/me` — is specified in **`docs/iterations/I4-editing-mode.md`**, with milestone **M16**
-(T131–T134) in `docs/TASKS.md`, requirements F61 and F62 in `docs/SPEC.md`, and ADR-027…ADR-031 in
-`docs/DECISIONS.md`. Baseline and progress checklist: **§ Baseline I4** at the top of this file.
+**Iteration I4's code is finished. The iteration is not, and M16 is not ticked.** All four tasks are
+implemented, tested, reviewed and committed on `iteration/I4-editing-mode` (cut from `main` at
+`a0d1ecf`). Nothing is left in I4 that a session can do — **what remains is exit criterion 7, the
+owner's own pass through one full publishing flow using only the new menu and the new mode.** No
+test stands in for it, and the written-but-never-run tick is the T073 mistake this project already
+paid for once in T086.
 
-**T131 is done and committed** — the admin bar is deleted, the capsule carries the owner's menu, and
-the suites afterwards were **277 unit/API** and **88 e2e** (81 before it), both exit 0. What landed,
-the five things the plan did not say, and the two traps that cost time are in
-`docs/iterations/I4-editing-mode.md` § *T131 landed*. **Next are T132 and T133**, which are
-independent of each other now that the menu exists — T132 replaces «Показать правки» in it with the
-«Просмотр» / «Правка» switch, T133 adds «Кабинет» to it. **T134 is also done**: `docs` is out of
-ruff's discovery, so both gates now exit 0 over the whole tree and the baseline's second inherited
-finding is closed. Scope is closed: the approved delta is those four tasks, and an improvement noticed in passing is a
-line in the next intake, not a diff.
+| | | State |
+|---|---|---|
+| **T131** | the admin bar retires into the navigation capsule | **done**, `cc403a5` |
+| **T134** | `docs/` leaves ruff's discovery, so prose stops being formatted as code | **done**, `1eec8cb` |
+| **T132** | «Просмотр» / «Правка» replace hover and the toggle on top of it | **done**, `82a3eef` |
+| **T133** | the cabinet at `/me` — one page that says what needs the owner | **done**, `f75d1da` |
+| | exit criterion 4: the visitor guard sweeps four pages, not one | **done**, `c5fba5b` |
 
-**A full `/admin` panel was raised at the gate and declined** — the owner asked whether to build one
-now; the answer was no, for the reasons in ADR-029 plus one more: the site is still in test mode
-with disposable content, so the workload a panel would be designed for has not been observed yet.
-**ADR-029 now carries this as its «Trigger to revisit»**, written at the owner's request on
-2026-08-16: the question returns on a reported pain rather than a date, and if that pain is
-photographs at scale the answer is multi-select inside the existing album grid — not a second
-editing surface. A panel only wins if the pain turns out not to be per-album at all.
+**Gates on the closing tree, none piped:** unit/API **289** exit 0 (277 at the baseline), e2e **92**
+exit 0 (81 at the baseline, 88 after T131), `ruff check` and `ruff format --check` clean over 118
+files. Review: **`docs/REVIEW.md` run 6, PASS**, with two Low security findings recorded rather than
+fixed and a plain statement that it is a self-review.
 
-Three tests are correct today and change with the delta — `test_authz_sweep.py`'s marker list (done
-in T131), all four of `e2e/test_show_edits.py`, and the reveal helper both a11y sweeps use. They are
-named in the iteration page with the ADR each one carries. **Do not edit them into passing without
-it.** T131 found four *more* tests owing the same marker change than the map listed; the next task
-should expect the same and check `e2e/` for locators that describe the old behaviour.
+**What actually landed, in one paragraph each, is in `docs/iterations/I4-editing-mode.md`** — three
+sections, *T131 landed*, *T132 landed* and *T133 landed*, each listing what the plan did not say.
+Read those before touching any of this; they are where the reasons live.
 
-**A new i18n key needs `docker compose restart web`** — `translate()`'s catalogue is `@lru_cache`d
-per process, and a missing key renders as its own dotted name, which looks exactly like markup that
-failed to render. This cost a debugging round in T131.
+**Two things to expect if you carry this forward.**
+
+1. **The impact map undercounts the tests that carry a behaviour change, every time so far.** T131
+   owed four more than the map named; T132 owed **seven** more, in three files the map never
+   mentioned — every in-place editing flow, all passing until then only because `opacity: 0` is
+   clickable. Before starting anything that changes a resting state, grep `e2e/` for locators that
+   describe the old behaviour, not just the files the map lists.
+2. **A new i18n key needs `docker compose restart web`.** `translate()`'s catalogue is `@lru_cache`d
+   per process, and a missing key renders as its own dotted name — which looks exactly like markup
+   that failed to render. It cost a debugging round in T131 and was cheap in T132 and T133 because
+   it was written down.
+
+**Two lines for the next intake, deliberately not fixed here.** The cabinet's «Снимки без описания»
+list is unbounded and its rows are indistinguishable — on the owner's real data it renders 24 rows
+all reading «Снимок в альбоме «X»», told apart only by where they lead; that is also the first
+evidence for the trigger ADR-029 records, which is photographs at scale. And **ADR-029's own
+consequences line is stale**: it says `/me` joins the parametrized admin-read case in
+`test_authz_sweep.py`, which it does not and must not — that case asserts redirect-to-login
+semantics and this route answers 404 by decision. The impact map said so first; both statements are
+in the record and neither was edited away.
+
+**Merging is the owner's call** and, since T127, a push to `main` runs the suite and the lint gate
+before it builds anything.
 
 Everything below this line is I3's record and is still true. **T128 and T129 remain open and remain
 the owner's** — they are not blocked by I4 and I4 does not touch them.

@@ -1,8 +1,121 @@
 # Review
 
-Five Phase 6 runs. **Run 5 is the current one and is below**; the earlier four
+Six Phase 6 runs. **Run 6 is the current one and is below**; the earlier five
 are kept underneath it because their findings are the reason half of M9 exists,
 and a reviewer arriving later should be able to see what was already looked at.
+
+---
+
+# Run 6 — Phase 6 against I4 (M16), 2026-08-16
+
+Scope is the I4 delta only: `a0d1ecf..HEAD` on `iteration/I4-editing-mode`,
+judged against the impact map in `docs/iterations/I4-editing-mode.md`.
+
+**Like Run 5, this is a self-review and not an independent one.** It was written
+by the session that implemented T132 and T133, so it can check that the diff
+stayed inside its owned paths — and did — but it cannot catch what the
+implementer did not think to look for. An independent pass before this branch
+merges is a reasonable call and nothing below depends on one having been done.
+
+## Verdict
+
+**PASS.** All four tasks in M16 are implemented, each with a check watched
+failing first, and both baseline suites are above their baseline counts. The one
+exit criterion no test can stand in for — the owner's own pass through a full
+publishing flow using only the new menu and the new mode — is outstanding and
+is his by definition.
+
+## Regression against the impact map
+
+| Item | Proof named in the map | Status |
+|------|------------------------|--------|
+| **A** bar → capsule menu | visitor HTML carries no owner marker; focus sweep still finds every stop; the page reserves no bottom clearance | Pass — T131, `cc403a5`; the clearance check compares the document's tail, 88 px → 0 |
+| **B** mode replaces hover | on «Просмотр» the three families are absent from the accessibility tree, not transparent; on «Правка» all three visible with no pointer | Pass — `e2e/test_show_edits.py` rewritten, watched failing on *"Locator expected to have count '0'; Actual value: 1"* against the unchanged tree |
+| **C** the cabinet at `/me` | anonymous gets 404; the page appears in both admin sweeps; every existing suite unchanged | Pass — `tests/api/test_me.py` (8) and `e2e/test_me.py` (4), `/me` in `admin_surfaces`, contrast · focus · target-size all green in both themes |
+| **D** `docs/` out of ruff | `ruff format --check .` exits 0 and the I3 excerpt is untouched | Pass — T134, `1eec8cb` |
+
+**Paths that moved and were not on a task's list, each declared rather than
+discovered here:**
+
+- `e2e/test_home_editing.py`, `e2e/test_site_links.py`, `e2e/test_album_upload.py`
+  — seven in-place editing flows that clicked an affordance «Просмотр» now
+  removes. One idempotent `switch_mode(page, "edit")` each, in the helper those
+  files already shared. Written up as T132 landed §3.
+- `tests/api/test_authz_sweep.py` — beyond T131's marker line, the guard was
+  parametrized over four public pages and gained `admin.css` and `edits.js`,
+  because **exit criterion 4 asks for all four pages and both assets and the
+  guard checked one page and neither asset.** That is Phase 5 closing a
+  criterion, not Phase 4 widening scope; it is its own commit (`c5fba5b`).
+- `app/static/css/me.css` — a new file no task listed. CONVENTIONS asks for one
+  stylesheet per feature area; the alternative was reusing search's `.results`
+  primitives and coupling two pages through a third area's file.
+
+**Nothing else moved.** `app/routers/photos.py` in particular is untouched: the
+cabinet reuses the retry endpoint exactly as it is, which is what forced the
+`hx-swap="none"` decision recorded in the iteration page.
+
+## Security
+
+**Tooling:** manual — `semgrep` is not installed on this host, so the checklist
+below was carried by hand over the diff.
+
+| ID | Severity | Issue | Where | Fix |
+|----|----------|-------|-------|-----|
+| S-101 | Low (informational) | `Disallow: /me` names in a world-readable file the very path the 404 is designed not to confirm. The two requirements are in mild tension and **both** come from ADR-029. | `app/routers/seo.py` | Not changed. The route answers 404 without a session, so knowing the path exists gains nothing, and this repository is public — the route list is already public. `noindex` alone would in fact suffice, since no crawler can fetch the page at all. |
+| S-102 | Low | The cabinet's retry can be pressed repeatedly, re-queueing a photograph that is already `PENDING`. | `app/templates/partials/cabinet_group.html` | Not changed. The endpoint is `CurrentAdmin`, the work is one photograph, and the tile this control was taken from behaves identically — it is the shape of the existing action, not something the cabinet introduced. |
+
+**No critical or high findings in the scoped review.** What was checked and
+found clean:
+
+- **Authorisation.** `/me` takes `OptionalAdmin` and raises 404, deliberately
+  not `CurrentAdmin` — which answers 401 and is turned into a redirect to
+  `/login` by `main.py`, telling a stranger the page is there. No mutating route
+  was added, nothing joined an allow-list, and
+  `test_every_mutating_route_rejects_anonymous` passes unchanged. There is no
+  IDOR surface: the only id in the diff is the retry's `photo_id`, on an
+  endpoint that already required a session, on a site with exactly one account.
+- **Injection and XSS.** Every query in `app/routers/me.py` is an ORM select
+  with no request input in it — the route takes no parameters at all. Jinja
+  autoescape is on and **neither new template uses `|safe`**, so `photo.error`
+  (the one string on the page that comes from the pipeline rather than the
+  catalogue) is escaped.
+- **CSP.** The new page adds no inline `<script>` and no inline `style=`. The
+  retry is htmx, so it carries the CSRF token from `hx-headers` on `<body>`
+  exactly as every other admin action does.
+- **What a visitor receives.** Strengthened rather than merely preserved: the
+  sweep now proves across `/`, `/dev`, `/photo` and `/blog` that no owner
+  marker, no `admin.css` and no `edits.js` reaches an anonymous request, and a
+  companion test proves the owner's own page still carries all of them — so a
+  marker naming a renamed asset cannot satisfy the guard for free.
+- **Secrets and supply chain.** No dependency changed; `uv.lock` untouched;
+  `.env` is gitignored and `.env.example` still carries placeholders. The
+  cabinet states *where* the password lives and shows no value, and no form on
+  it posts a credential (ADR-029).
+
+## Notes — recorded, not fixed
+
+1. **The undescribed list is unbounded and its rows are indistinguishable.** On
+   the owner's real data it renders 24 rows all reading «Снимок в альбоме «X»»,
+   told apart only by where they lead. Nothing in the delta asked for
+   thumbnails, grouping or a cap, so nothing was added — and it is evidence for
+   the trigger ADR-029 records: if a pain appears, it will be photographs at
+   scale. A line for the next intake.
+2. **ADR-029's consequences say `/me` joins the parametrized admin-read case in
+   `test_authz_sweep.py`. It does not, and must not** — that case asserts
+   redirect-to-login semantics, which this route deliberately does not have. The
+   impact map said so first; both statements are in the record.
+
+## Gates at the time of this verdict
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **289 passed**, exit 0 (277 at baseline) |
+| e2e | `uv run pytest e2e` | **92 passed**, exit 0 (81 at baseline, 88 after T131) |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | clean, 118 files |
+
+None piped. The baseline's intermittent 500 did not recur, and neither did the
+unexplained login failure recorded in I3.
 
 ---
 
