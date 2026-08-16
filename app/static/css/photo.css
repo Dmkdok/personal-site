@@ -448,10 +448,13 @@
   }
 
   /* --- Owner's controls, over the frame ------------------------------------ */
+  /* Absent in «Просмотр», not transparent — see the note on `.editable__edit`
+     in admin.css (ADR-028). Nothing is left over the photograph in that mode,
+     so the tile is exactly the tile a visitor gets. */
   .photo-item__admin {
     position: absolute;
     inset: 0;
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: flex-end;
     justify-content: space-between;
@@ -460,32 +463,14 @@
     border-radius: inherit;
     background-color: color-mix(in srgb, var(--surface-raised) 55%, transparent);
     backdrop-filter: blur(2px);
-    opacity: 0;
-    transition: opacity var(--dur) var(--ease);
-    /* The scrim must never intercept the click that opens the photograph, and
-       a control that is not on screen must never be clickable. */
+    /* The scrim must never intercept the click that opens the photograph. */
     pointer-events: none;
   }
 
-  .photo-item__admin > * {
-    pointer-events: none;
-  }
-
-  .photo-item:hover .photo-item__admin,
-  .photo-item__admin:focus-within {
-    opacity: 1;
-  }
-
-  .photo-item:hover .photo-item__admin > *,
-  .photo-item__admin:focus-within > * {
-    pointer-events: auto;
-  }
-
-  /* «Показать правки» (UI-AUDIT F-018). The scrim keeps `pointer-events: none`
-     so the photograph underneath still opens on click; its children take theirs
-     back, exactly as they do on hover. */
+  /* «Правка» (ADR-028). The scrim keeps `pointer-events: none` so the
+     photograph underneath still opens on click; its children take theirs back. */
   :root.show-edits .photo-item__admin {
-    opacity: 1;
+    display: flex;
   }
 
   :root.show-edits .photo-item__admin > * {

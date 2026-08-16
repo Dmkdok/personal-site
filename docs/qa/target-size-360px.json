@@ -147,6 +147,15 @@
     {
       "path": "/photo",
       "tag": "a",
+      "label": "Тестовый 2К",
+      "width": 114,
+      "height": 25,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/photo",
+      "tag": "a",
       "label": "Тестовый",
       "width": 87,
       "height": 25,

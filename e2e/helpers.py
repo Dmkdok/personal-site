@@ -260,6 +260,33 @@ def open_owner_menu(page: Page) -> Locator:
     return panel
 
 
+#: True when the page is in «Правка». The class is what the three stylesheets
+#: key off and what the pre-paint script applies, so it is the state itself
+#: rather than a description of it.
+EDITING = "() => document.documentElement.classList.contains('show-edits')"
+
+
+def switch_mode(page: Page, mode: str) -> None:
+    """Put the owner's page into «Правка» (`edit`) or «Просмотр» (`view`).
+
+    Driven through the menu rather than by setting the class or the storage key,
+    so what a test measures afterwards is the state the product produces
+    (ADR-028). Idempotent: asking for the mode the page is already in does
+    nothing, which is what lets a per-action helper call it every time.
+
+    The menu is closed again — it hangs over the top of the page, and a test
+    that goes on to Tab through the document should not be tabbing through an
+    open dropdown.
+    """
+    assert mode in {"view", "edit"}, mode
+    if page.evaluate(EDITING) == (mode == "edit"):
+        return
+    key = "auth.mode_edit" if mode == "edit" else "auth.mode_view"
+    open_owner_menu(page).get_by_role("button", name=ru(key), exact=True).click()
+    page.keyboard.press("Escape")
+    expect(page.locator("#owner-menu")).to_be_hidden()
+
+
 def csrf_of(page: Page) -> str:
     return page.evaluate(
         "() => JSON.parse(document.body.getAttribute('hx-headers') || '{}')['X-CSRF-Token'] || ''"

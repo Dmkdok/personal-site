@@ -22,20 +22,25 @@ from __future__ import annotations
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.helpers import Album, ru
+from e2e.helpers import Album, ru, switch_mode
 
 pytestmark = pytest.mark.a11y
 
 
 def _press_and_settle(page: Page, element_id: str) -> None:
-    """Focus a control by id, press Enter, and wait for htmx to finish.
+    """Enter «Правка», focus a control by id, press Enter, and let htmx finish.
 
-    Focus is set through the DOM rather than through Playwright: these controls
-    rest at `opacity: 0` until their tile is hovered, and the caret is what is
-    under test, not the pointer. Waiting on `htmx:afterSettle` rather than a
-    timeout — focus restoration happens inside the swap, so reading
+    «Правка» first because since ADR-028 these controls are not on the page at
+    all in «Просмотр» — and `focus()` on an element with no box does nothing, so
+    the caret would land on `<body>` for a reason that has nothing to do with
+    what is under test. `switch_mode` is idempotent, so every action can ask.
+
+    Focus is then set through the DOM rather than through Playwright: the caret
+    is what is under test, not the pointer. Waiting on `htmx:afterSettle` rather
+    than a timeout — focus restoration happens inside the swap, so reading
     `document.activeElement` before it settles measures the wrong moment.
     """
+    switch_mode(page, "edit")
     page.evaluate("(id) => document.getElementById(id).focus()", element_id)
     page.evaluate(
         "() => { window.__settled = false;"

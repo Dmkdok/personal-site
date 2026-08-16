@@ -23,24 +23,35 @@
   </button>
 
   <div class="owner-menu__panel" id="owner-menu" hidden>
-    <p class="owner-menu__mode">{{ t("auth.admin_mode") }}</p>
+    <p class="owner-menu__mode" id="owner-menu-mode">{{ t("auth.mode") }}</p>
 
-    {# The mode switch. T132 replaces its label and its behaviour with
-       «Просмотр» / «Правка»; until then it is the toggle the bar carried, moved
-       and otherwise untouched.
+    {# The mode switch (ADR-028). Two named states, not one toggle sitting on
+       top of hover: «Просмотр» is the page a visitor gets, «Правка» shows every
+       affordance at once. Both halves are here so the mode is legible without
+       reading a pressed state off a single button — the pressed one *is* the
+       indicator F61 asks for.
 
-       `aria-pressed` starts false and `edits.js` corrects it on load from the
-       same storage the pre-paint script reads — the server cannot know, and
-       this button does not exist yet when that script runs. The class itself
-       *is* applied pre-paint, so nothing flashes; what lags is the accessible
-       state, for as long as a deferred script takes. Every later path re-reads
-       the page rather than a variable, which is the part F-019 got wrong. #}
-    <button
-      class="button button--quiet owner-menu__item"
-      type="button"
-      data-edits-toggle
-      aria-pressed="false"
-    >{{ t("auth.show_edits") }}</button>
+       `aria-pressed` starts on «Просмотр» and `edits.js` corrects both halves
+       on load from the same storage the pre-paint script reads — the server
+       cannot know, and these buttons do not exist yet when that script runs.
+       The class itself *is* applied pre-paint, so nothing flashes; what lags is
+       the accessible state, for as long as a deferred script takes. Every later
+       path re-reads the page rather than a variable, which is the part F-019
+       got wrong. #}
+    <div class="owner-menu__switch" role="group" aria-labelledby="owner-menu-mode">
+      <button
+        class="button button--quiet owner-menu__item"
+        type="button"
+        data-edit-mode="view"
+        aria-pressed="true"
+      >{{ t("auth.mode_view") }}</button>
+      <button
+        class="button button--quiet owner-menu__item"
+        type="button"
+        data-edit-mode="edit"
+        aria-pressed="false"
+      >{{ t("auth.mode_edit") }}</button>
+    </div>
 
     {# T133 adds «Кабинет» here. It is absent until the route exists rather than
        rendered dead: a menu item that goes nowhere is worse than one fewer. #}

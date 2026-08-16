@@ -87,17 +87,26 @@
     display: contents;
   }
 
+  /* Both halves of the mode switch, stacked like every other item in the panel.
+     A real box rather than `display: contents`, so the group keeps the name
+     `aria-labelledby` gives it. */
+  .owner-menu__switch {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
   .owner-menu__item {
     justify-content: flex-start;
     inline-size: 100%;
     padding: 0.5rem 0.6rem;
   }
 
-  /* The mode switch, pressed. Without this the only thing the press changes is
-     an attribute in the accessibility tree: at the top of a long article, where
-     no editable region is in view, the control looks like it did nothing. Keyed
-     off `aria-pressed` rather than a second class, so the visible state and the
-     announced one cannot drift — which is the whole of F-019. */
+  /* The half of the switch the page is in. Without this the only thing the
+     choice changes is an attribute in the accessibility tree, and a mode has to
+     be legible at a glance to be a mode at all. Keyed off `aria-pressed` rather
+     than a second class, so the visible state and the announced one cannot
+     drift — which is the whole of F-019. */
   .owner-menu .button[aria-pressed="true"] {
     color: var(--accent-ink);
     background-color: var(--accent-wash);
@@ -192,8 +201,13 @@
     position: relative;
   }
 
+  /* «Просмотр» renders no affordance at all: absent from the page, from the
+     accessibility tree and from the tab order, not merely transparent
+     (ADR-028). `display` rather than `opacity` is what makes that true, which
+     is also why there is no hover branch and no touch branch left — the mode
+     answers the question hover used to answer badly (UI-AUDIT F-018). */
   .editable__edit {
-    display: inline-flex;
+    display: none;
     align-items: center;
     gap: 0.35rem;
     margin-block-start: var(--space-2xs);
@@ -203,19 +217,12 @@
     color: var(--text-faint);
     font-family: var(--font-mono);
     font-size: var(--step--1);
-    opacity: 0;
-    transition: opacity var(--dur) var(--ease), color var(--dur-fast) var(--ease),
-      border-color var(--dur-fast) var(--ease);
+    transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
   }
 
   .editable__edit svg {
     inline-size: 13px;
     block-size: 13px;
-  }
-
-  .editable:hover .editable__edit,
-  .editable__edit:focus-visible {
-    opacity: 1;
   }
 
   .editable__edit:hover {
@@ -245,15 +252,20 @@
     gap: var(--space-2xs);
   }
 
-  /* Touch devices have no hover: keep the affordance permanently visible. */
-  @media (hover: none) {
-    .editable__edit {
-      opacity: 1;
-    }
+  /* «Правка» (ADR-028). One class on the root decides all three affordance
+     families; this is the only rule that puts this one on the page. */
+  :root.show-edits .editable__edit {
+    display: inline-flex;
   }
 
-  /* «Показать правки» (UI-AUDIT F-018). */
-  :root.show-edits .editable__edit {
-    opacity: 1;
+  /* The region, not only its button. At the top of a long page nothing
+     editable is in view, so a mode that changes no visible pixel is the shape
+     F-019 had. `outline` rather than `box-shadow` so a forced-colours theme
+     keeps it (UI-AUDIT F-013), and never on a block that is already open for
+     editing — that one carries its own accent border. */
+  :root.show-edits .editable:not(.editable--editing) {
+    outline: 1px dashed var(--line-strong);
+    outline-offset: var(--space-3xs);
+    border-radius: var(--radius-m);
   }
 }

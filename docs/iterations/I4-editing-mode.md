@@ -167,3 +167,43 @@ indicator, the mode switch, and «Выйти». Suites afterwards: **277 unit/AP
    did not render. And `--text-faint` on `--surface-raised` measures **4.21:1** in the dark theme:
    the admin contrast sweep caught the mode line before the commit, and it uses `--text-muted`, as
    the bar's own text did.
+
+## T132 landed — the mode is now load-bearing, and seven more tests said so
+
+Done 2026-08-16. The twelve rules across three stylesheets are one class on the root, and the
+`@media (hover: none)` branches are gone with them — touch and pointer behave identically for the
+first time. Suites afterwards: **277 unit/API**, **88 e2e**, lint and format clean over 115 files,
+all exit 0. Watched failing first on the unchanged tree: *«Locator expected to have count '0';
+Actual value: 1»* for the footer's edit button in «Просмотр».
+
+1. **`display`, not `opacity`, is the whole change.** «Просмотр» has to leave the control absent
+   from the accessibility tree and out of the tab order, and only `display: none` does all three at
+   once — a transparent control is still a tab stop, still under the pointer, and still announced.
+   It is also what makes the checks meaningful: `get_by_role(…).to_have_count(0)` cannot pass
+   against `opacity: 0`, which is why that assertion is the one that was watched failing.
+2. **The a11y sweeps' guard had to be rebuilt, not just repointed.** It used to count the nodes it
+   forced visible. In «Просмотр» every node is still in the DOM, so a count of nodes would now pass
+   while measuring nothing. It counts **rendered boxes** — `getClientRects().length` — after
+   clicking the switch, which is strictly stronger than what it replaced: the sweeps measure the
+   real «Правка» state instead of simulating it through the CSSOM.
+3. **Seven tests outside the impact map owed the same change**, in three files the map never named:
+   `test_home_editing.py` (all three), `test_site_links.py` (all three) and `test_album_upload.py`'s
+   launch flow. Every one of them clicks an in-place affordance, and every one of them was passing
+   only because `opacity: 0` is clickable. This is the second iteration running in which the map
+   undercounted by roughly the same margin — **T131 owed four, T132 owed seven**. Each fix is one
+   idempotent `switch_mode(page, "edit")` in the file's existing `_open_the_editor` helper, so the
+   mode became part of the flow rather than a detail of the test. Nothing was relaxed.
+4. **The switch is two buttons, not one toggle.** A single control labelled «Правка» with
+   `aria-pressed` would have been «Показать правки» renamed, which is the redundancy the owner
+   objected to. Both halves are rendered, the pressed one *is* the mode indicator F61 asks for, and
+   `edits.js` writes both from one read of the root's class so they cannot disagree (F-019). The
+   group hangs off the panel's `«Режим»` line through `aria-labelledby`, and it is a real flex box
+   rather than `display: contents` — which would have put the group's name at the mercy of a known
+   accessibility-tree quirk for a saved rule of three lines.
+5. **Editing is now impossible in «Просмотр», and that is the design.** Nothing is merely hidden:
+   the owner in «Просмотр» gets a page with no way to change anything, which is what makes it
+   "the page a visitor reads". The seven adapted flows are the specification of that, written down.
+6. **`auth.admin_mode` and `auth.show_edits` are deleted**, replaced by `auth.mode`,
+   `auth.mode_view` and `auth.mode_edit`. The class and the `localStorage` key stay `show-edits` —
+   they mean exactly what they did, and renaming them would move the owner's remembered choice for
+   nothing.

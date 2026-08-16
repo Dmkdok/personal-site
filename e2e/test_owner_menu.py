@@ -66,7 +66,8 @@ def test_the_menu_opens_on_click_and_closes_on_escape_with_the_caret(admin_page:
     expect(button).to_have_attribute("aria-expanded", "true")
     # Everything the bar carried, still reachable — and «Выйти» now takes a
     # second deliberate action rather than sitting under the pointer.
-    expect(panel.get_by_role("button", name=ru("auth.show_edits"), exact=True)).to_be_visible()
+    expect(panel.get_by_role("button", name=ru("auth.mode_view"), exact=True)).to_be_visible()
+    expect(panel.get_by_role("button", name=ru("auth.mode_edit"), exact=True)).to_be_visible()
     expect(panel.get_by_role("button", name=ru("auth.logout"), exact=True)).to_be_visible()
 
     admin_page.keyboard.press("Escape")

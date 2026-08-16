@@ -15,19 +15,24 @@ from __future__ import annotations
 
 from playwright.sync_api import Page, expect
 
-from e2e.helpers import ru, token
+from e2e.helpers import ru, switch_mode, token
 
 BLOCK = "#site-links"
 CONTACTS = "#site-contacts"
 
 
 def _open_the_editor(page: Page) -> None:
-    """Click the footer's edit button and wait for htmx to settle the form.
+    """Enter «Правка», click the footer's edit button, wait for htmx to settle.
+
+    Since ADR-028 the edit button is not on the page in «Просмотр» at all, so
+    the mode is part of the flow rather than a detail of the test — this is
+    what the owner does too. `switch_mode` is idempotent.
 
     Not `expect(...).to_be_visible()`: htmx shows the swapped form before it
     settles, and a form that has not settled has not had its submit intercepted
     yet. Filling and submitting without this wait flakes about one run in three.
     """
+    switch_mode(page, "edit")
     page.evaluate(
         "() => { window.__settled = false;"
         " document.body.addEventListener('htmx:afterSettle',"

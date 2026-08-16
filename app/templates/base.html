@@ -8,9 +8,11 @@
        The indicator rules live in components.css instead. #}
     <meta name="htmx-config" content='{"includeIndicatorStyles": false}' />
 
-    {# Applied before first paint so neither the theme nor the owner's reveal
-       state flashes. `show-edits` is a class rather than a data attribute
-       because the stylesheet keys ten selectors off it. #}
+    {# Applied before first paint so neither the theme nor the owner's mode
+       flashes. `show-edits` is a class rather than a data attribute because
+       three stylesheets key off it: present is «Правка», absent is «Просмотр»
+       (ADR-028), and the name is kept so the owner's remembered choice does
+       not move. #}
     <script nonce="{{ request.state.csp_nonce }}">
       (function () {
         try {

@@ -101,13 +101,17 @@ COLLECT_TEXT_COLOURS = """
 
 PAGES = ["/", "/dev", "/photo", "/blog", "/search?q=", "/login", "/does-not-exist"]
 
-# The owner's controls rest at `opacity: 0` until their block is hovered, and
-# every walker below skips a fully transparent element — so an unrevealed admin
-# sweep would measure everything except the markup it was extended to measure
-# (F-001). Revealed through the CSSOM rather than an injected <style>: the CSP
-# is `style-src 'self'`, which drops a style tag silently, and a sweep that
-# silently measures nothing is worse than no sweep at all. The count comes back
-# so a test can fail when it reveals nothing.
+# The owner's controls are not on the page in «Просмотр» at all (ADR-028), and
+# every walker below skips what has no box — so an unswitched admin sweep would
+# measure everything except the markup it was extended to measure (F-001).
+#
+# It used to force `opacity: 1` through the CSSOM, because the CSP is
+# `style-src 'self'` and an injected <style> is dropped silently. Now it clicks
+# the switch instead: the sweeps measure the real «Правка» state rather than a
+# simulation of it, which is the one place this change makes a test stricter
+# rather than merely different. The count still comes back so a test can fail
+# when nothing was revealed — and it counts *rendered* affordances, not DOM
+# nodes, because in «Просмотр» every node is still there.
 #
 # The owner's menu is opened by clicking its button rather than by unsetting
 # `hidden`, so the sweeps measure the state the product produces. Its contents
@@ -116,17 +120,18 @@ PAGES = ["/", "/dev", "/photo", "/blog", "/search?q=", "/login", "/does-not-exis
 REVEAL_ADMIN_AFFORDANCES = """
 () => {
   let revealed = 0;
-  for (const selector of ['.editable__edit', '.site-links__edit', '.photo-item__admin']) {
-    for (const el of document.querySelectorAll(selector)) {
-      el.style.opacity = '1';
-      revealed += 1;
-    }
-  }
   const toggle = document.querySelector('[data-owner-menu-toggle]');
   const panel = document.getElementById('owner-menu');
   if (toggle && panel && panel.hidden) {
     toggle.click();
     if (!panel.hidden) revealed += 1;
+  }
+  const edit = document.querySelector('[data-edit-mode="edit"]');
+  if (edit) edit.click();
+  for (const selector of ['.editable__edit', '.site-links__edit', '.photo-item__admin']) {
+    for (const el of document.querySelectorAll(selector)) {
+      if (el.getClientRects().length) revealed += 1;
+    }
   }
   return revealed;
 }
@@ -263,7 +268,7 @@ def test_admin_text_meets_aa_contrast_in_both_themes(
     _write_contrast(qa_dir, f"contrast-admin-{theme}.json", theme, measured, failures, unmeasurable)
 
     assert measured, "collected nothing — the walker is broken, not the site"
-    assert revealed, "no hover-only affordance was revealed; this swept the public page"
+    assert revealed, "the sweep found no owner affordance on the page; it never entered «Правка»"
     assert not failures, _contrast_report(failures)
 
 
@@ -623,7 +628,7 @@ def test_every_admin_focus_stop_shows_a_visible_indicator(
     """F-001: the editor, the tile toolbar and the admin bar, never swept before."""
     swept, invisible, revealed = _sweep_focus(admin_page, admin_surfaces, reveal=True)
     _write_focus(qa_dir, "focus-sweep-admin.json", swept, invisible)
-    assert revealed, "no hover-only affordance was revealed; this swept the public page"
+    assert revealed, "the sweep found no owner affordance on the page; it never entered «Правка»"
     assert not invisible, json.dumps(invisible, ensure_ascii=False, indent=2)
 
 
@@ -857,7 +862,7 @@ def test_admin_target_sizes_at_360px(
 
     aa_failures = _under_wcag_258(small)
     _write_targets(qa_dir, "target-size-360px-admin.json", small, aa_failures)
-    assert revealed, "no hover-only affordance was revealed; this measured the public page"
+    assert revealed, "the sweep found no owner affordance on the page; it never entered «Правка»"
     assert not aa_failures, json.dumps(aa_failures, ensure_ascii=False, indent=2)
 
 

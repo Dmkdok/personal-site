@@ -745,8 +745,10 @@
     margin-inline-end: auto;
   }
 
+  /* Absent in «Просмотр», not transparent — see the note on `.editable__edit`
+     in admin.css (ADR-028). */
   .site-links__edit {
-    display: inline-flex;
+    display: none;
     align-items: center;
     gap: 0.35rem;
     padding: 0.3rem 0.7rem;
@@ -755,9 +757,7 @@
     color: var(--text-faint);
     font-family: var(--font-mono);
     font-size: var(--step--1);
-    opacity: 0;
-    transition: opacity var(--dur) var(--ease), color var(--dur-fast) var(--ease),
-      border-color var(--dur-fast) var(--ease);
+    transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
   }
 
   .site-links__edit svg {
@@ -765,28 +765,14 @@
     block-size: 13px;
   }
 
-  .site-links:hover .site-links__edit,
-  .site-links__edit:focus-visible {
-    opacity: 1;
-  }
-
   .site-links__edit:hover {
     color: var(--accent-ink);
     border-color: var(--accent);
   }
 
-  /* Touch devices have no hover: keep the affordance permanently visible. */
-  @media (hover: none) {
-    .site-links__edit {
-      opacity: 1;
-    }
-  }
-
-  /* «Показать правки» in the admin bar (UI-AUDIT F-018). Hover stays the
-     resting state — this page is the published page — but the owner can ask
-     for every affordance at once instead of sweeping the pointer to find one. */
+  /* «Правка» (ADR-028). */
   :root.show-edits .site-links__edit {
-    opacity: 1;
+    display: inline-flex;
   }
 
   .site-links--editing {

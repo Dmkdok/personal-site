@@ -13,7 +13,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from e2e.conftest import Trash
-from e2e.helpers import AdminApi, photo_bytes, ru
+from e2e.helpers import AdminApi, photo_bytes, ru, switch_mode
 
 PROCESSING_TIMEOUT_MS = 90_000
 
@@ -82,6 +82,10 @@ def test_create_album_upload_photos_and_publish(
         assert "640w" in (image.get_attribute("srcset") or "")
 
     # -- F25: alt text the owner sets is what a visitor reads -------------
+    # The tile's tools are the owner's, and since ADR-028 they are on the page
+    # in «Правка» only — so entering it is part of the flow, exactly as it is
+    # for him. Everything above this line is visible in both modes.
+    switch_mode(admin_page, "edit")
     written_alt = f"Тестовый снимок {run_token}"
     first_tile = grid.get_by_role("listitem").first
     first_tile.get_by_label(ru("photo.alt_label")).fill(written_alt)

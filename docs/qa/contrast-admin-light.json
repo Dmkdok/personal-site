@@ -1,6 +1,6 @@
 {
   "theme": "light",
-  "samples": 82,
+  "samples": 89,
   "failures": [],
   "unmeasurable": [],
   "worst": [
@@ -85,6 +85,22 @@
       "required": 4.5
     },
     {
+      "selector": "button.site-links__edit",
+      "text": "Изменить ссылки",
+      "color": "rgb(100, 108, 119)",
+      "backdrop": [
+        "rgb(238, 240, 243)"
+      ],
+      "background": "rgb(238, 240, 243)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/dev",
+      "theme": "light",
+      "ratio": 4.65,
+      "required": 4.5
+    },
+    {
       "selector": "p.photo-actions__hint",
       "text": "Перетащите фотографию за уголок, чтобы изменить порядок",
       "color": "rgb(100, 108, 119)",
@@ -95,7 +111,23 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/photo/e2e-galereia-xuwejecdn",
+      "page": "/photo/e2e-galereia-asklzxltd",
+      "theme": "light",
+      "ratio": 4.65,
+      "required": 4.5
+    },
+    {
+      "selector": "button.site-links__edit",
+      "text": "Изменить ссылки",
+      "color": "rgb(100, 108, 119)",
+      "backdrop": [
+        "rgb(238, 240, 243)"
+      ],
+      "background": "rgb(238, 240, 243)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/photo/e2e-galereia-asklzxltd",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
@@ -111,7 +143,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-xuwejecdn/edit",
+      "page": "/blog/e2e-admin-svip-asklzxltd/edit",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
@@ -127,74 +159,41 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-xuwejecdn/edit",
+      "page": "/blog/e2e-admin-svip-asklzxltd/edit",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
     },
     {
-      "selector": "label.field__label",
-      "text": "Файлы для загрузки",
+      "selector": "button.site-links__edit",
+      "text": "Изменить ссылки",
       "color": "rgb(100, 108, 119)",
       "backdrop": [
-        "color(srgb 0.972549 0.976471 0.984314 / 0.6)",
         "rgb(238, 240, 243)"
       ],
       "background": "rgb(238, 240, 243)",
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/photo/e2e-galereia-xuwejecdn",
+      "page": "/blog/e2e-admin-svip-asklzxltd/edit",
       "theme": "light",
-      "ratio": 4.88,
+      "ratio": 4.65,
       "required": 4.5
     },
     {
-      "selector": "a.nav__link",
-      "text": "Главная",
-      "color": "rgb(20, 23, 26)",
+      "selector": "button.button.button--quiet",
+      "text": "Правка",
+      "color": "rgb(143, 86, 15)",
       "backdrop": [
-        "rgb(192, 118, 42)"
+        "rgb(242, 230, 214)"
       ],
-      "background": "rgb(192, 118, 42)",
+      "background": "rgb(242, 230, 214)",
       "fontSize": 14.24,
       "fontWeight": 500,
       "onImage": false,
       "page": "/",
       "theme": "light",
-      "ratio": 5.03,
-      "required": 4.5
-    },
-    {
-      "selector": "a.nav__link",
-      "text": "Разработка",
-      "color": "rgb(20, 23, 26)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/dev",
-      "theme": "light",
-      "ratio": 5.03,
-      "required": 4.5
-    },
-    {
-      "selector": "button.button.button--primary",
-      "text": "Добавить проект",
-      "color": "rgb(20, 23, 26)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/dev",
-      "theme": "light",
-      "ratio": 5.03,
+      "ratio": 4.87,
       "required": 4.5
     }
   ]
