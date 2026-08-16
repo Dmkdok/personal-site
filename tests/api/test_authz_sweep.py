@@ -115,15 +115,48 @@ def test_mutation_without_csrf_is_rejected(admin_client):
     assert response.status_code == 403
 
 
-def test_anonymous_html_contains_no_admin_markup(client):
+#: Every public page, not the home page alone. I4's exit criterion 4 asks for
+#: all four, and until it was written this swept one — a leak on `/photo` or
+#: `/blog` would have passed.
+PUBLIC_PAGES = ("/", "/dev", "/photo", "/blog")
+
+#: The list only ever grows. `admin-bar` was retired into the navigation capsule
+#: by ADR-027 and cannot appear in any HTML now, owner's included — which costs
+#: this sweep nothing and makes a shortened list, one day, a weakened guarantee
+#: rather than a tidied one. `admin.css` and `edits.js` joined it in I4: since
+#: ADR-028 the mode is the only thing that reveals an affordance, and the
+#: stylesheet and the script that implement it must not be served to a visitor
+#: even though the markup they act on is absent.
+ADMIN_MARKERS = (
+    "admin-bar",
+    "owner-menu",
+    "editable__edit",
+    "/admin/content/",
+    "admin.css",
+    "edits.js",
+)
+
+
+@pytest.mark.parametrize("path", PUBLIC_PAGES)
+def test_anonymous_html_contains_no_admin_markup(client, path):
     """A visitor must not receive edit controls, even hidden ones."""
-    html = client.get("/").text
-    # The list only ever grows. `admin-bar` was retired into the navigation
-    # capsule by ADR-027 and cannot appear in any HTML now, owner's included —
-    # which costs this sweep nothing and makes a shortened list, one day, a
-    # weakened guarantee rather than a tidied one.
-    for marker in ("admin-bar", "owner-menu", "editable__edit", "/admin/content/"):
-        assert marker not in html, f"admin markup leaked to anonymous visitor: {marker}"
+    html = client.get(path).text
+    for marker in ADMIN_MARKERS:
+        assert marker not in html, f"admin markup leaked to a visitor on {path}: {marker}"
+
+
+def test_the_owner_receives_the_markup_the_visitor_does_not(admin_client):
+    """Guards the guard: a marker nothing emits any more passes above for free.
+
+    `admin-bar` is the deliberate exception — it is kept in the list precisely
+    because it can no longer appear anywhere (ADR-027), so it is the one marker
+    that must not be asserted here.
+    """
+    html = admin_client.get("/").text
+    for marker in ADMIN_MARKERS:
+        if marker == "admin-bar":
+            continue
+        assert marker in html, f"the owner's own page no longer carries {marker}"
 
 
 def test_every_response_carries_the_security_headers_including_a_500(_schema):
