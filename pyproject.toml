@@ -38,7 +38,12 @@ package = false
 [tool.ruff]
 line-length = 100
 target-version = "py313"
-extend-exclude = ["migrations/versions"]
+# `docs/` is English prose, not source: nothing under it is imported, executed or
+# tested. Ruff formats fenced Python inside Markdown, and the block it wanted to
+# rewrite is the T125 dedup excerpt, whose aligned trailing comments are the
+# explanation the excerpt exists for (ADR-030). `scripts/` is deliberately not
+# here — it is code, and stays both linted and formatted.
+extend-exclude = ["migrations/versions", "docs"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "C4", "SIM", "TID", "RUF"]
