@@ -17,7 +17,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from PIL import Image
-from playwright.sync_api import APIRequestContext, Page
+from playwright.sync_api import APIRequestContext, Locator, Page, expect
 
 ROOT = Path(__file__).resolve().parent.parent
 I18N = ROOT / "app" / "i18n" / "ru"
@@ -244,6 +244,22 @@ class AdminApi:
 
 
 # ------------------------------------------------------------------ page utils
+def open_owner_menu(page: Page) -> Locator:
+    """Open the owner's menu in the navigation capsule and return its panel.
+
+    Since ADR-027 everything the owner does that is not in place — the mode
+    switch, «Выйти», and the cabinet when T133 adds it — lives behind one button
+    on the capsule instead of a bar fixed over the page. A test that reaches for
+    one of them opens the menu first, and calling this twice is safe: the panel
+    stays open while it is clicked inside.
+    """
+    panel = page.locator("#owner-menu")
+    if panel.is_hidden():
+        page.get_by_role("button", name=ru("auth.owner_menu"), exact=True).click()
+    expect(panel).to_be_visible()
+    return panel
+
+
 def csrf_of(page: Page) -> str:
     return page.evaluate(
         "() => JSON.parse(document.body.getAttribute('hx-headers') || '{}')['X-CSRF-Token'] || ''"

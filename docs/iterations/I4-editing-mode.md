@@ -128,3 +128,42 @@ an anonymous request and `200` for a signed-in one.
    in both themes, and pass.
 7. The owner performs one full publishing flow — write, illustrate, publish — using only the new
    menu and the new mode, and reports it. No test stands in for this.
+
+## T131 landed — and five things the plan did not say
+
+Done 2026-08-16. `partials/admin_bar.html` is deleted, `partials/owner_menu.html` is new, and the
+capsule carries one owner control: a button with an accent dot, opening a panel with the mode
+indicator, the mode switch, and «Выйти». Suites afterwards: **277 unit/API**, **88 e2e** (81 before,
+`+6` for the menu, `+1` net in `test_a11y.py`), `ruff check` clean.
+
+1. **The clearance is proved by the document's tail, not by `scrollHeight`.** T131's DoD asks for
+   "the same content renders to the same document height signed-in as anonymous". Measured against
+   the pre-change tree, that comparison is not available: the owner's `/photo` is 869 → 1516 px
+   because of the upload zone and «Новый альбом», and even in «Просмотр» after T132 it still will
+   be. What the two deleted rules actually created is the empty space *after* the last element —
+   **88 px on every page at both 360 px and 1280 px, against a visitor's 0** — and that is what
+   `test_the_owners_document_reserves_no_clearance_a_visitors_does_not` compares, together with the
+   root's `scroll-padding-bottom` (`88px` → `auto`). Watched failing first, on the stashed tree:
+   *"/ at 1280px ends 88px after its footer"*.
+2. **Four more tests carried the marker change than the impact map named.** The map named
+   `test_authz_sweep.py:121`; the same substitution was owed by `tests/api/test_auth.py` twice (the
+   *positive* marker — a signed-in page must contain it, a logged-out one must not),
+   `e2e/conftest.py`'s login fixture, `e2e/test_login.py`, and `e2e/test_a11y.py:656` — all four of
+   which located the owner by the bar's `role="region"`. **Nothing was relaxed**: each asserts the
+   same guarantee against the marker that replaced it, and the sweep's list grew rather than moved.
+3. **The capsule now has two dropdowns, and they hang from the same edge.** Below 768 px the links
+   panel spans the capsule and the owner's menu overlaps its right half, so whichever opened second
+   would be read over the first. `nav.js` opens them one at a time — and skips any disclosure that
+   is not live at the current width, or opening the menu on the desktop would empty the navigation
+   row. `test_the_two_dropdowns_are_never_open_at_once` is the check.
+4. **The first draft anchored the panel to its own wrapper, and it was wrong by 7 px.**
+   `position: relative` on `.owner-menu` makes the containing block the 34 px button, which the
+   capsule's padding insets — so `inset-inline-end: 0` landed 7 px short of the edge and 2 px *over*
+   the capsule. The panel hangs from `.nav__capsule` instead, which declares `position: relative`
+   for exactly this reason (F-011), and lands on the same 1 px border offset the links panel does.
+5. **Two traps, both cheap next time.** `translate()`'s catalogue is `@lru_cache`d per process, so
+   a **new i18n key needs `docker compose restart web`** in development — until then it renders as
+   its own dotted name and every role-based selector misses it, which looks exactly like markup that
+   did not render. And `--text-faint` on `--surface-raised` measures **4.21:1** in the dark theme:
+   the admin contrast sweep caught the mode line before the commit, and it uses `--text-muted`, as
+   the bar's own text did.

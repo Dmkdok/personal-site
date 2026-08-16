@@ -5,9 +5,11 @@ from __future__ import annotations
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.helpers import ru
+from e2e.helpers import open_owner_menu, ru
 
-ADMIN_BAR = "Режим редактирования"
+#: The owner's presence on the page, since ADR-027 retired the admin bar: one
+#: button on the navigation capsule, holding everything that is not in place.
+OWNER_MENU = ru("auth.owner_menu")
 
 
 @pytest.mark.launch_flow
@@ -18,7 +20,7 @@ def test_login_reveals_admin_and_logout_takes_it_away(
 
     # F36: nothing admin-shaped reaches an anonymous visitor.
     page.goto("/photo")
-    expect(page.get_by_role("region", name=ADMIN_BAR)).to_have_count(0)
+    expect(page.get_by_role("button", name=OWNER_MENU, exact=True)).to_have_count(0)
     expect(page.get_by_role("button", name=ru("photo.new_album"))).to_have_count(0)
 
     # Not linked from the navigation — the owner types the address.
@@ -29,18 +31,20 @@ def test_login_reveals_admin_and_logout_takes_it_away(
 
     # F16: back on the page the owner came from, now in editing mode.
     expect(page).to_have_url(f"{base_url}/photo")
-    expect(page.get_by_role("region", name=ADMIN_BAR)).to_be_visible()
+    expect(page.get_by_role("button", name=OWNER_MENU, exact=True)).to_be_visible()
     expect(page.get_by_role("button", name=ru("photo.new_album"))).to_be_visible()
 
     cookie = next(c for c in page.context.cookies() if c["name"] == "portfolio_session")
     assert cookie["httpOnly"] is True
     assert cookie["sameSite"] == "Lax"
 
-    # F20: logging out revokes the affordances.
-    page.get_by_role("button", name="Выйти", exact=True).click()
+    # F20: logging out revokes the affordances. It takes two deliberate actions
+    # now (F61) — the button that used to sit under the pointer at the bottom of
+    # every page is behind the menu.
+    open_owner_menu(page).get_by_role("button", name=ru("auth.logout"), exact=True).click()
     expect(page).to_have_url(f"{base_url}/")
     page.goto("/photo")
-    expect(page.get_by_role("region", name=ADMIN_BAR)).to_have_count(0)
+    expect(page.get_by_role("button", name=OWNER_MENU, exact=True)).to_have_count(0)
 
 
 def test_wrong_password_is_rejected_with_a_generic_message(
@@ -65,9 +69,9 @@ def test_wrong_password_is_rejected_with_a_generic_message(
     expect(error).to_be_visible()
     # F17: the message must not distinguish a wrong name from a wrong password.
     assert username not in error.inner_text()
-    expect(page.get_by_role("region", name=ADMIN_BAR)).to_have_count(0)
+    expect(page.get_by_role("button", name=OWNER_MENU, exact=True)).to_have_count(0)
 
     page.get_by_label("Логин", exact=True).fill(username)
     page.get_by_label("Пароль", exact=True).fill(password)
     page.get_by_role("button", name="Войти", exact=True).click()
-    expect(page.get_by_role("region", name=ADMIN_BAR)).to_be_visible()
+    expect(page.get_by_role("button", name=OWNER_MENU, exact=True)).to_be_visible()

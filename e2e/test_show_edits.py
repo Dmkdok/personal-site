@@ -2,7 +2,7 @@
 
 Each one appears on hover, which is right for a page that is also the published
 page and useless for finding an affordance nobody told you about. «Показать
-правки» in the admin bar reveals them all; the choice is remembered the way the
+правки» in the owner's menu reveals them all; the choice is remembered the way the
 theme is, and the pre-paint script applies it before the first paint so a
 reloaded page does not flicker its controls into view.
 
@@ -15,13 +15,18 @@ from __future__ import annotations
 
 from playwright.sync_api import Page, expect
 
-from e2e.helpers import Album, ru
+from e2e.helpers import Album, open_owner_menu, ru
 
 OPACITY = "(el) => getComputedStyle(el).opacity"
 
 
 def _toggle(page: Page):
-    return page.get_by_role("button", name=ru("auth.show_edits"), exact=True)
+    """The switch, which lives in the owner's menu since ADR-027.
+
+    Opening the menu is what changed; what the switch does is untouched here and
+    is T132's to replace.
+    """
+    return open_owner_menu(page).get_by_role("button", name=ru("auth.show_edits"), exact=True)
 
 
 def test_the_toggle_reveals_the_footer_affordance_and_remembers(admin_page: Page) -> None:

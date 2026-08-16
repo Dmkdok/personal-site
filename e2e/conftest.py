@@ -101,7 +101,7 @@ def admin_storage_state(
     page.get_by_label("Логин", exact=True).fill(username)
     page.get_by_label("Пароль", exact=True).fill(password)
     page.get_by_role("button", name="Войти", exact=True).click()
-    expect(page.get_by_role("region", name="Режим редактирования")).to_be_visible()
+    expect(page.get_by_role("button", name=ru("auth.owner_menu"), exact=True)).to_be_visible()
 
     path = tmp_path / "admin-state.json"
     context.storage_state(path=str(path))

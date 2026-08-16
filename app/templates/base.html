@@ -65,11 +65,12 @@
     {% block head_extra %}{% endblock %}
   </head>
 
-  {# `is-admin` is what lets a stylesheet reserve room for the admin bar once,
-     globally, instead of every component near the bottom of a page carrying its
-     own clearance (UI-AUDIT F-015). A visitor's HTML never carries it — the
-     class is the whole of what admin.css hangs off, and admin.css is only
-     linked above when `is_admin` too. #}
+  {# `is-admin` is the one signal in the document that says it belongs to a
+     signed-in owner. It used to carry the clearance for the fixed admin bar
+     (UI-AUDIT F-015); the bar is gone and so is the clearance (ADR-027), and
+     what the class is for now is telling the two accessibility sweeps that they
+     really did run signed in rather than quietly measuring the public page.
+     A visitor's HTML never carries it. #}
   <body
     {% set classes = ([body_class] if body_class else []) + (["is-admin"] if is_admin else []) %}
     {% if classes %}class="{{ classes|join(' ') }}"{% endif %}
@@ -86,10 +87,6 @@
 
       {% include "partials/footer.html" %}
     </div>
-
-    {% if is_admin %}
-      {% include "partials/admin_bar.html" %}
-    {% endif %}
 
     {# `ui.js` reads its messages from here. Data attributes rather than an
        inline script: the CSP forbids one, and this keeps every user-visible

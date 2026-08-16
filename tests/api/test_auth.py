@@ -23,7 +23,9 @@ def _login(client, password: str, csrf: str | None = None, headers: dict[str, st
 
 def test_correct_credentials_sign_in(client):
     assert _login(client, os.environ["ADMIN_PASSWORD"]).status_code == 303
-    assert "admin-bar" in client.get("/").text
+    # The owner's controls are one menu on the navigation capsule since ADR-027;
+    # `admin-bar` was the marker of the same thing before it was retired.
+    assert "owner-menu" in client.get("/").text
 
 
 def test_wrong_password_and_unknown_user_are_indistinguishable(client):
@@ -101,7 +103,7 @@ def test_logout_invalidates_the_session(admin_client):
     token = admin_client.headers["X-CSRF-Token"]
     response = admin_client.post("/logout", data={"csrf_token": token}, follow_redirects=False)
     assert response.status_code == 303
-    assert "admin-bar" not in admin_client.get("/").text
+    assert "owner-menu" not in admin_client.get("/").text
 
 
 def test_password_is_never_stored_in_plaintext(db):

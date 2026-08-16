@@ -108,6 +108,11 @@ PAGES = ["/", "/dev", "/photo", "/blog", "/search?q=", "/login", "/does-not-exis
 # is `style-src 'self'`, which drops a style tag silently, and a sweep that
 # silently measures nothing is worse than no sweep at all. The count comes back
 # so a test can fail when it reveals nothing.
+#
+# The owner's menu is opened by clicking its button rather than by unsetting
+# `hidden`, so the sweeps measure the state the product produces. Its contents
+# were swept before ADR-027 too — they were in the admin bar, which was always
+# on the page — and they are still the owner's controls, so they are still in.
 REVEAL_ADMIN_AFFORDANCES = """
 () => {
   let revealed = 0;
@@ -116,6 +121,12 @@ REVEAL_ADMIN_AFFORDANCES = """
       el.style.opacity = '1';
       revealed += 1;
     }
+  }
+  const toggle = document.querySelector('[data-owner-menu-toggle]');
+  const panel = document.getElementById('owner-menu');
+  if (toggle && panel && panel.hidden) {
+    toggle.click();
+    if (!panel.hidden) revealed += 1;
   }
   return revealed;
 }
@@ -642,7 +653,7 @@ def test_login_is_completable_without_a_mouse(
     expect(page.get_by_label("Пароль", exact=True)).to_be_focused()
     page.keyboard.type(password)
     page.keyboard.press("Enter")  # implicit submission, no button hunt
-    expect(page.get_by_role("region", name="Режим редактирования")).to_be_visible()
+    expect(page.get_by_role("button", name=ru("auth.owner_menu"), exact=True)).to_be_visible()
 
 
 def test_an_article_can_be_written_and_published_without_a_mouse(
@@ -851,89 +862,80 @@ def test_admin_target_sizes_at_360px(
 
 
 # WCAG 2.4.11 asks that a focused control not be hidden by author-created
-# content. The admin bar is fixed to the bottom centre and the page reserved no
-# clearance for it, so anything at the foot of an admin page was focusable and
-# underneath it at once (UI-AUDIT F-015).
+# content. The admin bar was that content — fixed to the bottom centre — and the
+# document paid for it in two properties: `padding-block-end` on `.page` so the
+# last control could be scrolled clear, and `scroll-padding-block-end` on the
+# root so a tabbed-to one stopped above the bar rather than behind it (UI-AUDIT
+# F-015). Together they made every signed-in page 88 px longer than a visitor's,
+# at every width, which is the plain-language complaint ADR-027 came from.
 #
-# The rule is about controls the browser could have placed clear of the bar:
-# those it has scrolled entirely into the viewport. `#post-body` is a 22-row
-# textarea, taller at 360 px than the fold, and Chromium leaves a partially
-# visible element where it is — so its lower half is off-screen, hidden by the
-# viewport edge rather than by any author-created content. Asserting on it would
-# be asserting that the editor be short, which is not what 2.4.11 says. The
-# caret inside it is a different matter, and is what the scroll padding covers:
-# the page can still scroll, so a caret moving down carries the padding with it.
-FOCUS_AGAINST_THE_ADMIN_BAR = """
+# The bar is gone into the navigation capsule and both rules are deleted, so the
+# question 2.4.11 asks has no subject any more: nothing is positioned over the
+# end of the document. What is left to prove is that the clearance left nothing
+# behind — this is that check, and it fails by exactly 88 px against the tree
+# before ADR-027.
+#
+# Not a comparison of `scrollHeight`: the owner's page legitimately carries
+# controls a visitor's does not — the upload zone, «Новый альбом» — so its total
+# height is not a visitor's and is not meant to be. What must match is the empty
+# space *after* the last element of the document, which is what the two rules
+# created and what a visitor never had.
+DOCUMENT_TAIL = """
 () => {
-  const el = document.activeElement;
-  if (!el || el === document.body) return null;
-  const bar = document.querySelector('.admin-bar');
-  if (!bar) return 'no-admin-bar';
-  if (el.closest('.admin-bar')) return null;
-  const box = el.getBoundingClientRect();
-  if (box.width === 0 || box.height === 0) return null;
-  if (box.bottom > window.innerHeight) return null;
-  const barBox = bar.getBoundingClientRect();
-  const clear = box.bottom <= barBox.top
-             || box.right <= barBox.left
-             || box.left >= barBox.right;
-  if (clear) return null;
+  const root = document.documentElement;
+  const footer = document.querySelector('.site-footer');
   return {
-    tag: el.tagName.toLowerCase(),
-    id: el.id || null,
-    label: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 40),
-    top: Math.round(box.top),
-    bottom: Math.round(box.bottom),
-    barTop: Math.round(barBox.top)
+    owner: document.body.classList.contains('is-admin'),
+    tail: Math.round(root.scrollHeight - (footer.getBoundingClientRect().bottom + window.scrollY)),
+    scrollPadding: getComputedStyle(root).scrollPaddingBottom
   };
 }
 """
 
+CLEARANCE_PAGES = ["/", "/dev", "/blog", "/photo", "/search?q="]
 
-def test_no_admin_control_is_obscured_by_the_admin_bar(
+
+def _document_tails(context, paths: list[str]) -> dict[str, dict]:
+    page = context.new_page()
+    measured: dict[str, dict] = {}
+    for path in paths:
+        page.goto(path)
+        measured[path] = page.evaluate(DOCUMENT_TAIL)
+    return measured
+
+
+@pytest.mark.parametrize("width", [360, 1280])
+def test_the_owners_document_reserves_no_clearance_a_visitors_does_not(
     browser: Browser,
     base_url: str,
     admin_storage_state: str,
-    admin_surfaces: list[str],
+    width: int,
 ) -> None:
-    """F-015: the bar is fixed over the page, so the page must reserve room for it.
+    """F61 / ADR-027: nothing floats over the page, so nothing makes room for it.
 
-    Swept at 360 px, where the bar is widest relative to the viewport and the
-    footer's own controls sit closest to it. The sweep tabs the whole page rather
-    than only the last stop: the bar is centred, so what it lands on depends on
-    the content, not on the tab order.
-
-    `reduced_motion` is not decoration. `base.css:69` sets `scroll-behavior:
-    smooth`, so the scroll that Tab triggers is an animation, and a rect read
-    straight after the keypress measures the element where it was before the
-    browser moved it. The site already turns that off under reduced motion, so
-    this asks for the setting rather than sleeping and hoping.
+    Both widths, because the clearance was width-independent: 88 px at 360 px
+    and 88 px at 1280 px, on every page in the site.
     """
-    context = browser.new_context(
-        base_url=base_url,
-        viewport={"width": 360, "height": 780},
-        storage_state=admin_storage_state,
-        reduced_motion="reduce",
+    viewport = {"width": width, "height": 780}
+    visitor_context = browser.new_context(base_url=base_url, viewport=viewport)
+    owner_context = browser.new_context(
+        base_url=base_url, viewport=viewport, storage_state=admin_storage_state
     )
-    obscured: list[dict] = []
     try:
-        page = context.new_page()
-        for path in admin_surfaces:
-            page.goto(path)
-            page.evaluate(REVEAL_ADMIN_AFFORDANCES)
-            page.evaluate("() => document.body.focus()")
-            for _ in range(60):
-                page.keyboard.press("Tab")
-                state = page.evaluate(FOCUS_AGAINST_THE_ADMIN_BAR)
-                assert state != "no-admin-bar", (
-                    f"{path} rendered no admin bar; this swept anonymously"
-                )
-                if state:
-                    obscured.append(state | {"page": path})
+        visitor = _document_tails(visitor_context, CLEARANCE_PAGES)
+        owner = _document_tails(owner_context, CLEARANCE_PAGES)
     finally:
-        context.close()
+        visitor_context.close()
+        owner_context.close()
 
-    assert not obscured, json.dumps(obscured, ensure_ascii=False, indent=2)
+    for path in CLEARANCE_PAGES:
+        mine, theirs = owner[path], visitor[path]
+        assert mine["owner"], f"{path} did not render as the owner; this measured anonymously"
+        # Sub-pixel layout rounds either way, hence the pixel of slack; the
+        # regression this guards against is 88 of them.
+        assert abs(mine["tail"]) <= 1, f"{path} at {width}px ends {mine['tail']}px after its footer"
+        assert abs(mine["tail"] - theirs["tail"]) <= 1, (path, width, mine, theirs)
+        assert mine["scrollPadding"] == theirs["scrollPadding"], (path, width, mine, theirs)
 
 
 def test_no_console_errors_or_failed_requests_on_the_public_pages(

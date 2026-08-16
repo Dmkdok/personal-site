@@ -118,7 +118,11 @@ def test_mutation_without_csrf_is_rejected(admin_client):
 def test_anonymous_html_contains_no_admin_markup(client):
     """A visitor must not receive edit controls, even hidden ones."""
     html = client.get("/").text
-    for marker in ("admin-bar", "editable__edit", "/admin/content/"):
+    # The list only ever grows. `admin-bar` was retired into the navigation
+    # capsule by ADR-027 and cannot appear in any HTML now, owner's included —
+    # which costs this sweep nothing and makes a shortened list, one day, a
+    # weakened guarantee rather than a tidied one.
+    for marker in ("admin-bar", "owner-menu", "editable__edit", "/admin/content/"):
         assert marker not in html, f"admin markup leaked to anonymous visitor: {marker}"
 
 

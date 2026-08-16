@@ -225,22 +225,32 @@ cabinet at `/me` — is specified in **`docs/iterations/I4-editing-mode.md`**, w
 (T131–T134) in `docs/TASKS.md`, requirements F61 and F62 in `docs/SPEC.md`, and ADR-027…ADR-031 in
 `docs/DECISIONS.md`. Baseline and progress checklist: **§ Baseline I4** at the top of this file.
 
-**Start with T131, and land it alone** — it rewrites `base.html` and the one component on every
-page, and T132 and T133 both hang off the menu it creates. T134 is isolated and may go at any point.
+**T131 is done and committed** — the admin bar is deleted, the capsule carries the owner's menu, and
+the suites afterwards were **277 unit/API** and **88 e2e** (81 before it), both exit 0. What landed,
+the five things the plan did not say, and the two traps that cost time are in
+`docs/iterations/I4-editing-mode.md` § *T131 landed*. **Next are T132 and T133**, which are
+independent of each other now that the menu exists — T132 replaces «Показать правки» in it with the
+«Просмотр» / «Правка» switch, T133 adds «Кабинет» to it. T134 is isolated and may go at any point.
 Scope is closed: the approved delta is those four tasks, and an improvement noticed in passing is a
 line in the next intake, not a diff.
 
 **A full `/admin` panel was raised at the gate and declined** — the owner asked whether to build one
 now; the answer was no, for the reasons in ADR-029 plus one more: the site is still in test mode
 with disposable content, so the workload a panel would be designed for has not been observed yet.
-If the pain turns out to be photographs at scale, the cheap answer is multi-select inside the album
-grid that already exists, not a second editing surface. **This trigger was offered as an addendum
-to ADR-029 and the owner did not ask for it, so ADR-029 is unchanged** — it is recorded here only
-so the next session knows the question was asked and answered.
+**ADR-029 now carries this as its «Trigger to revisit»**, written at the owner's request on
+2026-08-16: the question returns on a reported pain rather than a date, and if that pain is
+photographs at scale the answer is multi-select inside the existing album grid — not a second
+editing surface. A panel only wins if the pain turns out not to be per-album at all.
 
-Three tests are correct today and change with the delta — `test_authz_sweep.py`'s marker list,
-all four of `e2e/test_show_edits.py`, and the reveal helper both a11y sweeps use. They are named in
-the iteration page with the ADR each one carries. **Do not edit them into passing without it.**
+Three tests are correct today and change with the delta — `test_authz_sweep.py`'s marker list (done
+in T131), all four of `e2e/test_show_edits.py`, and the reveal helper both a11y sweeps use. They are
+named in the iteration page with the ADR each one carries. **Do not edit them into passing without
+it.** T131 found four *more* tests owing the same marker change than the map listed; the next task
+should expect the same and check `e2e/` for locators that describe the old behaviour.
+
+**A new i18n key needs `docker compose restart web`** — `translate()`'s catalogue is `@lru_cache`d
+per process, and a missing key renders as its own dotted name, which looks exactly like markup that
+failed to render. This cost a debugging round in T131.
 
 Everything below this line is I3's record and is still true. **T128 and T129 remain open and remain
 the owner's** — they are not blocked by I4 and I4 does not touch them.

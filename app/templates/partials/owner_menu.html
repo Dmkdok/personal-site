@@ -1,0 +1,53 @@
+{# The owner's controls, folded into the one object that is already on every
+   page. Rendered only for a signed-in admin; anonymous HTML contains none of it.
+
+   It replaces `.admin-bar`, which was fixed at the bottom centre (ADR-027). The
+   bar floated over the end of the document, so every signed-in page had to
+   reserve clearance for it in two properties, and «Выйти» — the rarest action
+   the owner takes — held the most valuable position on the screen. Here nothing
+   covers the page and «Выйти» takes a deliberate second action.
+
+   The panel is `hidden` in the markup rather than closed by script, so a slow
+   load cannot flash it open. `nav.js` owns the rest: the click, Escape, the
+   click outside, and returning the caret to the button that opened it. #}
+<div class="owner-menu">
+  <button
+    class="icon-button owner-menu__button"
+    type="button"
+    data-owner-menu-toggle
+    aria-expanded="false"
+    aria-controls="owner-menu"
+  >
+    <span class="visually-hidden">{{ t("auth.owner_menu") }}</span>
+    <span class="owner-menu__dot" aria-hidden="true"></span>
+  </button>
+
+  <div class="owner-menu__panel" id="owner-menu" hidden>
+    <p class="owner-menu__mode">{{ t("auth.admin_mode") }}</p>
+
+    {# The mode switch. T132 replaces its label and its behaviour with
+       «Просмотр» / «Правка»; until then it is the toggle the bar carried, moved
+       and otherwise untouched.
+
+       `aria-pressed` starts false and `edits.js` corrects it on load from the
+       same storage the pre-paint script reads — the server cannot know, and
+       this button does not exist yet when that script runs. The class itself
+       *is* applied pre-paint, so nothing flashes; what lags is the accessible
+       state, for as long as a deferred script takes. Every later path re-reads
+       the page rather than a variable, which is the part F-019 got wrong. #}
+    <button
+      class="button button--quiet owner-menu__item"
+      type="button"
+      data-edits-toggle
+      aria-pressed="false"
+    >{{ t("auth.show_edits") }}</button>
+
+    {# T133 adds «Кабинет» here. It is absent until the route exists rather than
+       rendered dead: a menu item that goes nowhere is worse than one fewer. #}
+
+    <form class="owner-menu__form" method="post" action="/logout">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+      <button class="button button--quiet owner-menu__item" type="submit">{{ t("auth.logout") }}</button>
+    </form>
+  </div>
+</div>
