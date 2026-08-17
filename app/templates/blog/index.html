@@ -34,7 +34,7 @@
 
     {# Drafts never reach a visitor: the router only fills this list for the owner. #}
     {% if drafts %}
-      <section class="section" aria-labelledby="drafts-heading">
+      <section class="section owner-only" aria-labelledby="drafts-heading">
         <div class="section__head">
           <h2 class="drafts__title" id="drafts-heading">{{ t("blog.drafts_title") }}</h2>
           <p class="drafts__note">{{ t("blog.drafts_note") }}</p>

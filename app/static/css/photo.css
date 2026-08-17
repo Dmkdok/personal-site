@@ -339,8 +339,14 @@
 
   /* Only ever emitted for the owner (UI-AUDIT F-017). Dashed rather than solid,
      and inset so it reads over the photograph: this marks work to do, not an
-     error — the visitor's alt is already there. */
-  .photo-item--undescribed {
+     error — the visitor's alt is already there.
+
+     Keyed off the mode rather than carrying `owner-only`, and it has to be: the
+     class is a modifier on the tile, so removing the tile would remove the
+     photograph with it. Like the `.editable` outline in admin.css this is a hint
+     drawn on a block that is present in both modes — the second and last rule
+     left reading `show-edits` directly (ADR-032). */
+  :root.show-edits .photo-item--undescribed {
     outline: 2px dashed var(--accent);
     outline-offset: -2px;
   }
@@ -448,13 +454,13 @@
   }
 
   /* --- Owner's controls, over the frame ------------------------------------ */
-  /* Absent in «Просмотр», not transparent — see the note on `.editable__edit`
-     in admin.css (ADR-028). Nothing is left over the photograph in that mode,
-     so the tile is exactly the tile a visitor gets. */
+  /* Absent in «Просмотр», not transparent — `owner-only` removes it, see the
+     note on the marker rule in admin.css (ADR-032). Nothing is left over the
+     photograph in that mode, so the tile is exactly the tile a visitor gets. */
   .photo-item__admin {
     position: absolute;
     inset: 0;
-    display: none;
+    display: flex;
     flex-direction: column;
     align-items: flex-end;
     justify-content: space-between;
@@ -467,13 +473,11 @@
     pointer-events: none;
   }
 
-  /* «Правка» (ADR-028). The scrim keeps `pointer-events: none` so the
-     photograph underneath still opens on click; its children take theirs back. */
-  :root.show-edits .photo-item__admin {
-    display: flex;
-  }
-
-  :root.show-edits .photo-item__admin > * {
+  /* The scrim keeps `pointer-events: none` so the photograph underneath still
+     opens on click; its children take theirs back. Unconditional now: in
+     «Просмотр» there is no scrim in the document at all, so there is nothing
+     left for a mode-scoped rule to say. */
+  .photo-item__admin > * {
     pointer-events: auto;
   }
 
@@ -505,16 +509,10 @@
     font-size: var(--step--1);
   }
 
-  /* Touch devices have no hover: keep the affordances permanently visible. */
-  @media (hover: none) {
-    .photo-item__admin {
-      opacity: 1;
-    }
-
-    .photo-item__admin > * {
-      pointer-events: auto;
-    }
-  }
+  /* No touch branch. T132 replaced hover with a mode for everyone, and this
+     block outlived it: `opacity: 1` on a scrim that `display` had already taken
+     out, plus a `pointer-events` line the rule above now states for every
+     pointer. Both said nothing on any device. */
 
   /* ==========================================================================
      Lightbox

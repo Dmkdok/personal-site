@@ -15,6 +15,10 @@
      is rendered without `is_admin` — and it never changes what is shipped. #}
   class="photo-item photo-item--{{ ratio_class(photo) }}
     {%- if not ready %} photo-item--waiting{% endif %}
+    {#- A photograph still in the pipeline, or one that failed, is not in a
+        visitor's grid at all (`_album_photos`), so in «Просмотр» the whole tile
+        goes rather than just the controls over it (ADR-032). -#}
+    {%- if is_admin and not ready %} owner-only{% endif %}
     {%- if is_admin and not photo.alt %} photo-item--undescribed{% endif %}"
   id="photo-{{ photo.id }}"
   data-sort-id="{{ photo.id }}"
@@ -65,7 +69,7 @@
   {% endif %}
 
   {% if is_admin %}
-    <div class="photo-item__admin">
+    <div class="photo-item__admin owner-only">
       <div class="photo-item__tools" role="group" aria-label="{{ t('photo.photo_actions_label') }}">
         <span class="photo-handle" data-drag-handle aria-hidden="true">
           <svg viewBox="0 0 16 16" fill="currentColor" focusable="false">

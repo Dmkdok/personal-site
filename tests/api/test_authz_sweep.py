@@ -126,10 +126,14 @@ PUBLIC_PAGES = ("/", "/dev", "/photo", "/blog")
 #: rather than a tidied one. `admin.css` and `edits.js` joined it in I4: since
 #: ADR-028 the mode is the only thing that reveals an affordance, and the
 #: stylesheet and the script that implement it must not be served to a visitor
-#: even though the markup they act on is absent.
+#: even though the markup they act on is absent. `owner-only` joined it in I5
+#: (ADR-032): it is now the single marker every owner-only block carries, so a
+#: template that forgets its `is_admin` guard fails here on whichever page it
+#: renders rather than on the home page alone.
 ADMIN_MARKERS = (
     "admin-bar",
     "owner-menu",
+    "owner-only",
     "editable__edit",
     "/admin/content/",
     "admin.css",

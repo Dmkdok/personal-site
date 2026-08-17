@@ -47,7 +47,7 @@
     <div class="prose">{{ post.body_html|safe }}</div>
 
     {% if is_admin %}
-      <div class="article__admin">
+      <div class="article__admin owner-only">
         <a class="button" href="/blog/{{ post.slug }}/edit">{{ t("blog.edit") }}</a>
         <button
           class="button button--quiet button--danger"

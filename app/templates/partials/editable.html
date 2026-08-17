@@ -9,7 +9,7 @@
   <div class="editable__value">{{ html|safe }}</div>
   {% if is_admin %}
     <button
-      class="editable__edit"
+      class="editable__edit owner-only"
       type="button"
       hx-get="/admin/content/{{ key }}/edit"
       hx-target="#{{ dom_id }}"

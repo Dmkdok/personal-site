@@ -14,7 +14,7 @@
 >
   {% if photos %}
     {% if is_admin and photos|length > 1 %}
-      <p class="photo-actions__hint">{{ t("photo.reorder_hint") }}</p>
+      <p class="photo-actions__hint owner-only">{{ t("photo.reorder_hint") }}</p>
     {% endif %}
 
     {# The server always ships an alt, so nothing is ever unlabelled — but a
@@ -25,7 +25,7 @@
     {% if is_admin %}
       {% set undescribed = photos | rejectattr("alt") | list | length %}
       {% if undescribed %}
-        <p class="photo-actions__hint">
+        <p class="photo-actions__hint owner-only">
           {{ t("photo.undescribed_count", count=undescribed, total=photos|length) }}
         </p>
       {% endif %}

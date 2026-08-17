@@ -82,7 +82,9 @@ def test_cyrillic_survives_a_multipart_submission(admin_client, db):
 def test_a_draft_project_carries_the_shared_status_chip(admin_client, db):
     """One status, one chip, whichever section renders it (UI-AUDIT F-010)."""
     _create(admin_client)
-    assert 'class="status-chip"' in admin_client.get("/dev").text
+    # Since ADR-032 the chip carries the marker that takes it off the page in
+    # «Просмотр»; asserted whole rather than loosened to a substring.
+    assert 'class="status-chip owner-only"' in admin_client.get("/dev").text
 
 
 def test_unpublished_project_is_invisible_to_visitors(admin_client, db):

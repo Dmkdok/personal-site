@@ -18,7 +18,15 @@ import pytest
 from playwright.sync_api import Browser, Page, expect
 
 from e2e.conftest import Trash
-from e2e.helpers import AdminApi, Album, composite, contrast_ratio, flatten, ru
+from e2e.helpers import (
+    AdminApi,
+    Album,
+    composite,
+    contrast_ratio,
+    flatten,
+    ru,
+    switch_mode,
+)
 
 pytestmark = pytest.mark.a11y
 
@@ -668,6 +676,21 @@ def test_an_article_can_be_written_and_published_without_a_mouse(
     title = f"E2E клавиатура {run_token}"
 
     admin_page.goto("/blog")
+
+    # Since I5 «Новая статья» is not on the page in «Просмотр» at all (ADR-032),
+    # so entering «Правка» is the first step of the flow. Done from the keyboard
+    # rather than through `switch_mode`, which clicks: this test's claim is that
+    # the whole publishing flow is reachable without a mouse, and a mode switch
+    # that needed one would make the claim false. Escape returns the caret to
+    # the button that opened the menu (F-002), which is where tabbing on to the
+    # page continues from.
+    _tab_to(admin_page, ru("auth.owner_menu"))
+    admin_page.keyboard.press("Enter")
+    _tab_to(admin_page, ru("auth.mode_edit"), limit=6)
+    admin_page.keyboard.press("Enter")
+    admin_page.keyboard.press("Escape")
+    expect(admin_page.locator("#owner-menu")).to_be_hidden()
+
     _tab_to(admin_page, ru("blog.new"))
     # htmx makes the swapped form visible and focuses it before it finishes
     # settling, and only a settled form has its submit intercepted. A human
@@ -714,6 +737,9 @@ def test_the_upload_picker_is_in_the_keyboard_tab_order(
     """
     album = trash.album(admin_api.create_album(f"E2E клавиатура {run_token}"))
     admin_page.goto(f"/photo/{album.slug}")
+    # The zone is an owner-only block since I5 (ADR-032): reachable by Tab is a
+    # claim about «Правка», which is the mode the owner uploads in.
+    switch_mode(admin_page, "edit")
 
     picker = admin_page.get_by_label(ru("photo.choose_files_label"))
     expect(picker).to_be_visible()

@@ -1,9 +1,11 @@
 /**
  * «Просмотр» / «Правка» — the two modes the owner's page has (ADR-028).
  *
- * In «Просмотр» no edit affordance is rendered at all, so the page the owner
- * reads is the page a visitor reads; in «Правка» all three families are shown
- * permanently and the editable regions are outlined. There is no hover branch
+ * In «Просмотр» nothing the owner alone has any use for is rendered at all, so
+ * the page the owner reads is the page a visitor reads — since I5 that means
+ * every block carrying `owner-only`, not the three affordance families I4 gated
+ * (ADR-032); in «Правка» all of it is shown permanently and the editable
+ * regions are outlined. There is no hover branch
  * and no touch branch left: one class on <html> decides everything, the
  * stylesheets do the rest, and the pre-paint script in base.html has already
  * applied it — so this file only wires the switch and keeps storage and

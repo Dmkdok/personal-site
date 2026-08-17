@@ -16,7 +16,7 @@ from __future__ import annotations
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.helpers import AdminApi, ru
+from e2e.helpers import AdminApi, ru, switch_mode
 
 pytestmark = pytest.mark.a11y
 
@@ -42,8 +42,15 @@ DROP_FILES = """
 
 @pytest.fixture
 def album_page(admin_page: Page, admin_api: AdminApi, trash, run_token: str) -> Page:
+    """An album open in «Правка», which is where the owner uploads.
+
+    Since I5 the upload zone is not on the page in «Просмотр» at all (ADR-032),
+    so entering the mode is part of the flow rather than a detail of the test —
+    the drop below then lands on the zone the owner is actually looking at.
+    """
     album = trash.album(admin_api.create_album(f"E2E предпроверка {run_token}"))
     admin_page.goto(f"/photo/{album.slug}")
+    switch_mode(admin_page, "edit")
     return admin_page
 
 

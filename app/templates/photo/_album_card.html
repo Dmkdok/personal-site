@@ -4,7 +4,11 @@
    restores focus after a swap by `id`, and a disabled element cannot take it
    (ADR-016). The endpoint answers «уже первый» instead. #}
 {% set cover = album.cover_photo %}
-<article class="card album-card" id="album-{{ album.id }}" data-sort-id="{{ album.id }}">
+{# An album a visitor cannot reach is the owner's alone, so in «Просмотр» the
+   whole card goes and not merely its chip — the index then holds exactly the
+   albums a visitor's index holds (ADR-032). #}
+<article class="card album-card{% if is_admin and not album.is_published %} owner-only{% endif %}"
+         id="album-{{ album.id }}" data-sort-id="{{ album.id }}">
   <a class="card__media{% if not (cover and cover.thumb_path) %} card__media--empty{% endif %}"
      href="/photo/{{ album.slug }}" tabindex="-1" aria-hidden="true">
     {% if cover and cover.thumb_path %}
@@ -27,7 +31,7 @@
     <h2 class="card__title">
       <a class="album-card__link" href="/photo/{{ album.slug }}">{{ album.title }}</a>
       {% if is_admin and not album.is_published %}
-        <span class="status-chip">{{ t("photo.draft") }}</span>
+        <span class="status-chip owner-only">{{ t("photo.draft") }}</span>
       {% endif %}
     </h2>
     {% if album.caption %}
@@ -36,7 +40,7 @@
   </div>
 
   {% if is_admin %}
-    <div class="album-card__admin" role="group" aria-label="{{ t('photo.album_position_label') }}">
+    <div class="album-card__admin owner-only" role="group" aria-label="{{ t('photo.album_position_label') }}">
       <span class="photo-handle" data-drag-handle aria-hidden="true">
         <svg viewBox="0 0 16 16" fill="currentColor" focusable="false">
           <circle cx="6" cy="3" r="1.3" /><circle cx="10" cy="3" r="1.3" />

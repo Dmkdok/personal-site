@@ -745,10 +745,10 @@
     margin-inline-end: auto;
   }
 
-  /* Absent in «Просмотр», not transparent — see the note on `.editable__edit`
-     in admin.css (ADR-028). */
+  /* Absent in «Просмотр», not transparent — `owner-only` removes it, see the
+     note on the marker rule in admin.css (ADR-032). */
   .site-links__edit {
-    display: none;
+    display: inline-flex;
     align-items: center;
     gap: 0.35rem;
     padding: 0.3rem 0.7rem;
@@ -768,11 +768,6 @@
   .site-links__edit:hover {
     color: var(--accent-ink);
     border-color: var(--accent);
-  }
-
-  /* «Правка» (ADR-028). */
-  :root.show-edits .site-links__edit {
-    display: inline-flex;
   }
 
   .site-links--editing {

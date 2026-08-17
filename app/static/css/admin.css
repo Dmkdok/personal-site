@@ -1,6 +1,28 @@
 /* Editing surfaces. Present only when signed in — never shipped to visitors. */
 
 @layer components {
+  /* --- The mode ----------------------------------------------------------- */
+
+  /* «Просмотр» is the page a visitor reads. One rule, and every block only the
+     owner has any use for leaves the document — the layout, the accessibility
+     tree and the tab order at once (F55 as written, ADR-032). Everything of the
+     kind carries `owner-only` in its template, from the upload zone down to a
+     single draft chip, so the mode is decided in exactly one place instead of
+     once per affordance family.
+
+     Two things deliberately do not carry it. The mode switch itself, because a
+     mode that hides the way out of itself cannot be left; and the one line on a
+     draft's or an unpublished album's own page saying a visitor would not see
+     this, because hiding that line would make «Просмотр» claim the page is
+     published. Everything else the owner sees, a visitor sees too.
+
+     Specificity is (0,3,0) and every component rule it overrides is (0,1,0),
+     which is what lets it sit in `admin.css` — loaded before `photo.css`,
+     `blog.css` and `dev.css` and in the same `components` layer as all three. */
+  :root:not(.show-edits) .owner-only {
+    display: none;
+  }
+
   /* --- The owner's menu, inside the navigation capsule --------------------- */
 
   /* What used to be `.admin-bar`, fixed at the bottom centre with the document
@@ -201,13 +223,13 @@
     position: relative;
   }
 
-  /* «Просмотр» renders no affordance at all: absent from the page, from the
-     accessibility tree and from the tab order, not merely transparent
-     (ADR-028). `display` rather than `opacity` is what makes that true, which
-     is also why there is no hover branch and no touch branch left — the mode
-     answers the question hover used to answer badly (UI-AUDIT F-018). */
+  /* Its own resting display, and `owner-only` in the template is what takes it
+     out of «Просмотр» (ADR-032). `display` rather than `opacity` is still what
+     makes the absence real, and there is still no hover branch and no touch
+     branch: the mode answers the question hover used to answer badly
+     (UI-AUDIT F-018). */
   .editable__edit {
-    display: none;
+    display: inline-flex;
     align-items: center;
     gap: 0.35rem;
     margin-block-start: var(--space-2xs);
@@ -252,17 +274,16 @@
     gap: var(--space-2xs);
   }
 
-  /* «Правка» (ADR-028). One class on the root decides all three affordance
-     families; this is the only rule that puts this one on the page. */
-  :root.show-edits .editable__edit {
-    display: inline-flex;
-  }
-
   /* The region, not only its button. At the top of a long page nothing
      editable is in view, so a mode that changes no visible pixel is the shape
      F-019 had. `outline` rather than `box-shadow` so a forced-colours theme
      keeps it (UI-AUDIT F-013), and never on a block that is already open for
-     editing — that one carries its own accent border. */
+     editing — that one carries its own accent border.
+
+     One of the two rules left keyed off `show-edits` directly, and both are the
+     same shape: a hint drawn on a block that is present in either mode, so
+     there is nothing for `owner-only` to remove. The other is
+     `.photo-item--undescribed` in `photo.css`. */
   :root.show-edits .editable:not(.editable--editing) {
     outline: 1px dashed var(--line-strong);
     outline-offset: var(--space-3xs);

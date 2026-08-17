@@ -131,3 +131,75 @@ misses it. This iteration adds keys in five catalogues.
    screens, in both themes, and pass.
 8. **The owner writes one article containing a picture at a chosen width and a video, using only the
    editor's own cheat sheet, publishes it, and reads it in both modes.** No test stands in for this.
+
+## T135 landed — and eight things the plan did not say
+
+Done 2026-08-17. One rule in `admin.css` — `:root:not(.show-edits) .owner-only { display: none }` —
+and the marker on every owner-only block across eighteen templates. The three families I4 gated lost
+their `display: none` default and their `:root.show-edits` override, so one mechanism decides
+visibility. Suites afterwards: **289 unit/API** exit 0, **97 e2e** exit 0 (92 before, `+5` for the
+new parity file), `ruff check` clean, `ruff format --check` 119 files exit 0.
+
+1. **`show-edits` survives in three CSS rules, not the two the task predicted.** The third is
+   `.photo-item--undescribed`, and it has to be: the class is a *modifier on the tile*, so putting
+   `owner-only` on it would take the photograph away with the rim. It stayed keyed off the mode,
+   exactly like the `.editable` outline — both are hints drawn on a block that is present in either
+   mode, so there is nothing for a `display: none` rule to remove. The honest statement is narrower
+   than the DoD's: **one mechanism decides visibility, and two decorations read the mode.** Nothing
+   is weakened by the difference, and inventing a child element to carry the marker would have added
+   a DOM node to avoid a comment.
+
+2. **The impact map named nine `e2e/` files. The suite broke in five — and one of them was not on
+   the list.** `e2e/test_login.py` was missed by the grep the task prescribed, because it reaches the
+   control by accessible name and not by class. That is the third iteration running where the
+   undercount was a role-based selector; the grep list catches classes and misses `get_by_role`.
+
+3. **That missed test asserted the leak.** `test_login_reveals_admin_and_logout_takes_it_away` ended
+   with `expect(get_by_role("button", name="Новый альбом")).to_be_visible()` immediately after the
+   login — which is precisely what F55 says must not happen. It was made **stricter**, not relaxed:
+   the control is asserted *hidden* on the page the login lands on, then «Правка» is asked for, then
+   it is asserted visible. Signing in reveals the menu; the mode reveals the affordances.
+
+4. **One test could not use `switch_mode`, because the helper clicks.**
+   `test_an_article_can_be_written_and_published_without_a_mouse` claims a full publishing flow
+   without a mouse. Calling the sanctioned helper there would have quietly falsified the docstring,
+   so the mode is entered from the keyboard — Tab to the menu button, Enter, Tab to «Правка», Enter,
+   Escape — and the caret lands back on the button that opened the menu, which is what F-002 already
+   guaranteed and what the rest of the flow tabs on from.
+
+5. **Three unit tests broke on a string, in three files the map never mentioned.**
+   `tests/api/test_blog.py`, `test_photo.py` and `test_projects.py` each assert the literal
+   `class="status-chip"`, and the attribute grew by one class. Fixed by asserting the attribute whole
+   — `class="status-chip owner-only"` — rather than loosening it to a substring: the assertion exists
+   to prove the *shared* chip renders (UI-AUDIT F-010), and a substring match would pass on a
+   mention of the word anywhere in the document.
+
+6. **A dead block from T132 was still in `photo.css`.** `@media (hover: none)` set `opacity: 1` on a
+   scrim that `display: none` had already removed, and repeated a `pointer-events` line. T132's DoD
+   said the families lose their touch branch; this one outlived it and said nothing on any device.
+   Deleted here because it sat on the very selector whose mode mechanism was being consolidated.
+
+7. **Watched failing first, the parity check fails at its own guard rather than on a box diff.** On
+   the pre-change tree `.owner-only` does not exist, so the guard that stops the test passing
+   vacuously — "«/» carries no owner-only block at all" — fires before the comparison it protects.
+   The box-level evidence came from the three named-surface checks, which failed with
+   «`#upload-zone` still has a box in «Просмотр»», «`.photo-actions` …» and «`.board-actions` …».
+   Four of the five new checks were red; the fifth, `.photo-item__admin`, was already green, because
+   that is the one family I4 had gated.
+
+8. **The empty state still says a different sentence in the two modes, and that is deliberate.**
+   `blog.empty_note_admin`, `photo.empty_admin_note` and `photo.grid_empty_admin_note` are chosen
+   **server-side** from `is_admin`, and the mode never reaches the server — the same reasoning that
+   put ADR-033 out of scope. The empty state's *action button* carries `owner-only`; its sentence
+   does not. Exit criterion 4 measures boxes and the counts are identical, so the check passes; an
+   owner comparing the two modes by eye will still read a different sentence there. Left as it is,
+   named here rather than fixed quietly.
+
+**One caveat inside the parity check itself.** `/photo` is bounded for a visitor and whole for the
+owner (ADR-022), so above `PAGE_SIZE` published albums the two sides hold different content and the
+diff reports album cards. The assertion message says so in as many words, because the failure would
+otherwise read as a leak.
+
+**No i18n key was added**, so the `docker compose restart web` this iteration's intake warns about
+was not needed for the catalogue — only for the templates, twice, either side of stashing the change
+to watch the new checks fail.

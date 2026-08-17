@@ -8,7 +8,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 from e2e.conftest import Trash
-from e2e.helpers import AdminApi, csrf_of, photo_bytes, ru
+from e2e.helpers import AdminApi, csrf_of, photo_bytes, ru, switch_mode
 
 BODY = """## Подзаголовок
 
@@ -27,6 +27,9 @@ def test_write_preview_and_publish_an_article(
 
     # -- draft created from /blog ----------------------------------------
     admin_page.goto("/blog")
+    # «Новая статья» is an owner-only block, so it is off the page in «Просмотр»
+    # since I5 (ADR-032). The owner enters «Правка» to write; so does this.
+    switch_mode(admin_page, "edit")
     admin_page.get_by_role("button", name=ru("blog.new"), exact=True).click()
     admin_page.get_by_label(ru("blog.new_title_label")).fill(title)
     admin_page.get_by_role("button", name=ru("blog.new_submit")).click()

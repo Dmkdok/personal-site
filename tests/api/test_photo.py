@@ -189,8 +189,10 @@ def test_unpublished_album_is_visible_to_the_admin_with_a_draft_marker(admin_cli
     response = admin_client.get(f"/photo/{draft_album.slug}")
     assert response.status_code == 200
     assert "Черновик" in response.text
-    # One status, one chip, whichever section renders it (UI-AUDIT F-010).
-    assert 'class="status-chip"' in response.text
+    # One status, one chip, whichever section renders it (UI-AUDIT F-010) — and
+    # since ADR-032 the chip carries the marker that takes it off the page in
+    # «Просмотр», asserted whole rather than loosened to a substring.
+    assert 'class="status-chip owner-only"' in response.text
 
 
 def test_missing_album_is_404(client):

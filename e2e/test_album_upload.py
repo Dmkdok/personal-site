@@ -38,6 +38,10 @@ def test_create_album_upload_photos_and_publish(
 
     # -- F21: create in place on /photo -----------------------------------
     admin_page.goto("/photo")
+    # Since I5 every owner-only block is off the page in «Просмотр», «Новый
+    # альбом» and the upload zone included (ADR-032), so the whole flow runs in
+    # «Правка» — which is what the owner does. `switch_mode` is idempotent.
+    switch_mode(admin_page, "edit")
     # `.first`: with an empty index the invitation in the empty state carries
     # the same label as the toolbar button.
     admin_page.get_by_role("button", name=ru("photo.new_album")).first.click()
@@ -82,10 +86,9 @@ def test_create_album_upload_photos_and_publish(
         assert "640w" in (image.get_attribute("srcset") or "")
 
     # -- F25: alt text the owner sets is what a visitor reads -------------
-    # The tile's tools are the owner's, and since ADR-028 they are on the page
-    # in «Правка» only — so entering it is part of the flow, exactly as it is
-    # for him. Everything above this line is visible in both modes.
-    switch_mode(admin_page, "edit")
+    # Already in «Правка» since the top of the flow: before I5 everything above
+    # this line was visible in both modes and only the tile's tools were not,
+    # which is the half-measure ADR-032 finishes.
     written_alt = f"Тестовый снимок {run_token}"
     first_tile = grid.get_by_role("listitem").first
     first_tile.get_by_label(ru("photo.alt_label")).fill(written_alt)
@@ -121,6 +124,7 @@ def test_a_file_that_is_not_an_image_is_rejected_per_file(
     bad.write_bytes(b"this is not an image, whatever the extension says")
 
     admin_page.goto(f"/photo/{album.slug}")
+    switch_mode(admin_page, "edit")
     admin_page.get_by_label(ru("photo.choose_files_label")).set_input_files([str(good), str(bad)])
 
     rows = admin_page.locator("#upload-queue").get_by_role("listitem")

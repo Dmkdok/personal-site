@@ -10,9 +10,10 @@
 
     {# Applied before first paint so neither the theme nor the owner's mode
        flashes. `show-edits` is a class rather than a data attribute because
-       three stylesheets key off it: present is «Правка», absent is «Просмотр»
+       the stylesheets key off it: present is «Правка», absent is «Просмотр»
        (ADR-028), and the name is kept so the owner's remembered choice does
-       not move. #}
+       not move. Since I5 one rule reads it — `.owner-only` in admin.css — plus
+       two that draw a hint on a block present in either mode (ADR-032). #}
     <script nonce="{{ request.state.csp_nonce }}">
       (function () {
         try {

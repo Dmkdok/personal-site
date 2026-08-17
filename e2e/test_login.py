@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from playwright.sync_api import Page, expect
 
-from e2e.helpers import open_owner_menu, ru
+from e2e.helpers import open_owner_menu, ru, switch_mode
 
 #: The owner's presence on the page, since ADR-027 retired the admin bar: one
 #: button on the navigation capsule, holding everything that is not in place.
@@ -29,10 +29,19 @@ def test_login_reveals_admin_and_logout_takes_it_away(
     page.get_by_label("Пароль", exact=True).fill(password)
     page.get_by_role("button", name="Войти", exact=True).click()
 
-    # F16: back on the page the owner came from, now in editing mode.
+    # F16: back on the page the owner came from, with the owner's menu on it.
+    #
+    # Signing in reveals the menu; «Правка» is what reveals the affordances
+    # (ADR-032). Since I5 a signed-in page rests in «Просмотр» and is the page a
+    # visitor reads, so asserting «Новый альбом» straight after the login would
+    # be asserting the leak this iteration closed — the mode is asked for first,
+    # and the control is checked absent before and present after.
     expect(page).to_have_url(f"{base_url}/photo")
     expect(page.get_by_role("button", name=OWNER_MENU, exact=True)).to_be_visible()
-    expect(page.get_by_role("button", name=ru("photo.new_album"))).to_be_visible()
+    new_album = page.get_by_role("button", name=ru("photo.new_album")).first
+    expect(new_album).to_be_hidden()
+    switch_mode(page, "edit")
+    expect(new_album).to_be_visible()
 
     cookie = next(c for c in page.context.cookies() if c["name"] == "portfolio_session")
     assert cookie["httpOnly"] is True

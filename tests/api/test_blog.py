@@ -242,8 +242,10 @@ def test_index_shows_drafts_to_the_owner(admin_client, make_post):
 
     assert "Моя заготовка" in html
     assert "Черновики" in html
-    # One status, one chip, whichever section renders it (UI-AUDIT F-010).
-    assert 'class="status-chip"' in html
+    # One status, one chip, whichever section renders it (UI-AUDIT F-010) — and
+    # since ADR-032 the chip carries the marker that takes it off the page in
+    # «Просмотр», asserted whole rather than loosened to a substring.
+    assert 'class="status-chip owner-only"' in html
 
 
 def test_the_index_is_bounded_and_every_article_is_on_exactly_one_page(client, db, make_post):

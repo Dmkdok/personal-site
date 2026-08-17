@@ -46,8 +46,28 @@ Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: 
 ## Resume here
 
 **I5's delta is approved and M17 is in progress on `iteration/I5-authoring`.** The order is fixed by
-the impact map: **T135 first and alone**, then T136–T139 (T139 after T138). Nothing below the next
-horizontal rule has been implemented yet; the section after it is I4's record and is still true.
+the impact map: **T135 first and alone**, then T136–T139 (T139 after T138).
+
+**T135 is done** — the shared-primitive change is in, so T136–T139 are no longer blocked and may be
+taken in any order that respects T139-after-T138. Gates on the tree at that commit, none piped:
+unit/API **289** exit 0, e2e **97** exit 0 (92 at the baseline, `+5` for `e2e/test_view_parity.py`),
+`ruff check` clean, `ruff format --check` **119 files** exit 0.
+
+**Read `docs/iterations/I5-authoring.md` § «T135 landed» before touching any of this.** Three things
+in it change how the next task should be approached:
+
+1. **The grep list in every remaining DoD catches classes and misses `get_by_role`.** T135's
+   undercount was `e2e/test_login.py`, which reaches an owner control by accessible name. Three
+   iterations running, the missed tests were role-based selectors.
+2. **`show-edits` ended at three CSS rules, not the two T135's DoD predicted.** One decides
+   visibility; two draw a hint on a block that is present in both modes. Do not "tidy" the third away
+   — `.photo-item--undescribed` is a modifier on the tile, and `owner-only` there removes the
+   photograph.
+3. **A test whose docstring claims «without a mouse» cannot call `switch_mode`** — the helper clicks.
+   `test_a11y.py` now enters «Правка» from the keyboard.
+
+Nothing below the next horizontal rule has been implemented yet; the section after it is I4's record
+and is still true.
 
 ---
 

@@ -1,5 +1,8 @@
 {# One project. `project` comes from the enclosing loop. #}
-<li class="project" id="project-{{ project.id }}" data-project-id="{{ project.id }}">
+{# An unpublished project is not on a visitor's /dev, so in «Просмотр» the whole
+   row goes and not merely its chip (ADR-032). #}
+<li class="project{% if is_admin and not project.is_published %} owner-only{% endif %}"
+    id="project-{{ project.id }}" data-project-id="{{ project.id }}">
   {% set detail_url = "/dev/" ~ project.slug if project.body_html else none %}
   {% set target_url = detail_url or project.repo_url %}
 
@@ -27,7 +30,7 @@
         {{ project.title }}
       {% endif %}
       {% if is_admin and not project.is_published %}
-        <span class="status-chip">{{ t("dev.draft_badge") }}</span>
+        <span class="status-chip owner-only">{{ t("dev.draft_badge") }}</span>
       {% endif %}
     </h2>
 
@@ -60,7 +63,7 @@
     </p>
 
     {% if is_admin %}
-      <div class="project__admin">
+      <div class="project__admin owner-only">
         <button class="button button--quiet" type="button"
                 hx-get="/dev/admin/projects/{{ project.id }}/edit"
                 hx-target="#project-{{ project.id }}"

@@ -7,7 +7,7 @@
     <h1 class="page-header__title album-head__title">
       {{ album.title }}
       {% if is_admin and not album.is_published %}
-        <span class="status-chip">{{ t("photo.draft") }}</span>
+        <span class="status-chip owner-only">{{ t("photo.draft") }}</span>
       {% endif %}
     </h1>
 
@@ -16,11 +16,14 @@
     {% endif %}
 
     {% if is_admin %}
+      {# No `owner-only`, deliberately: this is the one line that stays in both
+         modes, because «Просмотр» hiding it would have the album read as
+         published when it is not (ADR-032). #}
       {% if not album.is_published %}
         <p class="album-head__note">{{ t("photo.draft_note") }}</p>
       {% endif %}
 
-      <div class="photo-actions" role="group" aria-label="{{ t('photo.album_actions_label') }}">
+      <div class="photo-actions owner-only" role="group" aria-label="{{ t('photo.album_actions_label') }}">
         <button class="button button--quiet" type="button"
                 id="album-{{ album.id }}-edit"
                 hx-get="/photo/admin/albums/{{ album.id }}/edit"
