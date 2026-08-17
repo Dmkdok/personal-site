@@ -82,6 +82,8 @@
       "code": "Код",
       "link": "Ссылка",
       "image": "Вставить изображение",
+      "video": "Видео",
+      "table": "Таблица",
       "ph_text": "текст",
       "ph_heading": "Подзаголовок",
       "ph_quote": "Цитата",
@@ -89,8 +91,10 @@
       "ph_code": "код",
       "ph_url": "https://",
       "ph_alt": "описание изображения",
+      "ph_th": "Заголовок",
+      "ph_td": "данные",
 
-      "size_summary": "Размер картинки и подпись",
+      "size_summary": "Как писать текст: картинки, видео, таблицы",
       "size_normal_code": "![описание](адрес)",
       "size_normal_text": "— по ширине текста",
       "size_wide_code": "![описание](адрес){.wide}",
@@ -98,7 +102,24 @@
       "size_full_code": "![описание](адрес){.full}",
       "size_full_text": "— во всю колонку",
       "size_caption_code": "![описание](адрес \"подпись\")",
-      "size_caption_text": "— подпись под картинкой"
+      "size_caption_text": "— подпись под картинкой",
+
+      "sheet_video_code": "https://youtu.be/…",
+      "sheet_video_text": "— ссылка на видео отдельным абзацем становится плеером",
+      "sheet_table_code": "| Заголовок | Ещё |\n| --- | --- |\n| данные | данные |",
+      "sheet_table_text": "— таблица: строка заголовка, строка из дефисов, дальше данные",
+      "sheet_quote_code": "> цитата",
+      "sheet_quote_text": "— цитата",
+      "sheet_code_code": "```\nкод\n```",
+      "sheet_code_text": "— блок кода; одиночные `кавычки` — код внутри строки",
+      "sheet_link_code": "[текст](https://…)",
+      "sheet_link_text": "— ссылка",
+      "sheet_list_code": "- пункт",
+      "sheet_list_text": "— список; «1.» вместо дефиса даёт нумерованный",
+      "sheet_heading_code": "## Подзаголовок",
+      "sheet_heading_text": "— подзаголовок; «###» — уровнем ниже",
+      "sheet_strike_code": "~~зачёркнуто~~",
+      "sheet_strike_text": "— зачёркнутый текст"
     },
 
     "months": {

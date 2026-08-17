@@ -205,6 +205,44 @@
     replaceRange(start, end, "[" + label + "](" + url + ")", caret, caret + length);
   }
 
+  /**
+   * A block that has to own its paragraph, with the caret left on the first thing
+   * worth typing over.
+   *
+   * A video is only a player when its link is a paragraph by itself (F63), and a
+   * table is only a table when its rows start at the beginning of a line — so the
+   * blank lines around the insertion are part of the skeleton, not decoration.
+   * They are added only when they are missing, so pressing the button twice does
+   * not leave a growing gap.
+   */
+  function insertBlock(text, offset, length) {
+    var start = area.selectionStart;
+    var end = area.selectionEnd;
+    var before = area.value.slice(0, start);
+    var after = area.value.slice(end);
+
+    var lead = before === "" || /\n\n$/.test(before) ? "" : /\n$/.test(before) ? "\n" : "\n\n";
+    var tail = after === "" || /^\n\n/.test(after) ? "" : /^\n/.test(after) ? "\n" : "\n\n";
+
+    var caret = start + lead.length + offset;
+    replaceRange(start, end, lead + text + tail, caret, caret + length);
+  }
+
+  /** An address on a line of its own — the shape `render_markdown` turns into a player. */
+  function videoAction() {
+    var url = placeholder("url");
+    insertBlock(url, 0, url.length);
+  }
+
+  /** Header row, the dashes that make it a header, and one row of data. */
+  function tableAction() {
+    var th = placeholder("th");
+    var td = placeholder("td");
+    var text =
+      "| " + th + " | " + th + " |\n| --- | --- |\n| " + td + " | " + td + " |";
+    insertBlock(text, 2, th.length);
+  }
+
   var ACTIONS = {
     bold: function () {
       toggleWrap("**", "text");
@@ -225,7 +263,9 @@
     link: linkAction,
     image: function () {
       if (picker) picker.click();
-    }
+    },
+    video: videoAction,
+    table: tableAction
   };
 
   // ==========================================================================

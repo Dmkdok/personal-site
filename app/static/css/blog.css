@@ -285,6 +285,16 @@
     margin-block-start: var(--space-m);
   }
 
+  /* A snippet in the cheat sheet that is a shape rather than a line — a table, a
+     fenced block. It keeps its line breaks and scrolls inside itself, because the
+     pane it sits in must not scroll sideways. */
+  .editor__snippet {
+    display: block;
+    white-space: pre;
+    overflow-x: auto;
+    margin-block-end: var(--space-3xs);
+  }
+
   /* --- Formatting toolbar -------------------------------------------------
      The glyph on each button is the Markdown it writes; the accessible name is
      the word for it. One tab stop, arrow keys inside — see editor.js. */

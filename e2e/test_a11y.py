@@ -137,6 +137,13 @@ REVEAL_ADMIN_AFFORDANCES = """
   }
   const edit = document.querySelector('[data-edit-mode="edit"]');
   if (edit) edit.click();
+  // The editor's disclosures — the markup cheat sheet and the card settings —
+  // are closed by default (T139). Opened here so the sweeps measure the state
+  // the owner reads them in; the closed state is what every artefact committed
+  // before T139 measured.
+  for (const details of document.querySelectorAll('details.editor__details')) {
+    details.open = true;
+  }
   for (const selector of ['.editable__edit', '.site-links__edit', '.photo-item__admin']) {
     for (const el of document.querySelectorAll(selector)) {
       if (el.getClientRects().length) revealed += 1;

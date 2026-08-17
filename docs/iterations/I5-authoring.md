@@ -371,3 +371,59 @@ exit 0 (99 before, `+4`), `ruff check` clean, `ruff format --check` 121 files ex
     of its meta description. Before T138 the same article got the raw URL there, so this is not a
     regression — but it is not right either, and it belongs in the next intake rather than in a task
     whose DoD says nothing about excerpts.
+
+## T139 landed — and eight things the plan did not say
+
+Done 2026-08-17. The four-line size disclosure became one cheat sheet of twelve rows — the four
+picture forms in the wording they already had, then video, table, quote, code, link, list, heading and
+strikethrough — and the toolbar gained a **video** button and a **table** button that write working
+skeletons at the caret. Suites afterwards: **353 unit/API** exit 0 (unchanged — this task adds no
+Python), **107 e2e** exit 0 (103 before, `+4`), `ruff check` clean, `ruff format --check` 122 files
+exit 0. Admin sweeps: contrast **141 samples, 0 failures** in both themes, focus stops 205 → 207 with
+**0** missing an indicator, target sizes under 44 px unchanged at 171 with **0** under WCAG 2.5.8.
+
+1. **One catalogue value changed and no key did.** `blog.md.size_summary` now reads «Как писать
+   текст: картинки, видео, таблицы», because it is the summary of a sheet rather than of four lines
+   about size. Adding a second summary key would have left the old one on the page as an orphan, and
+   the DoD forbids renaming — not re-wording.
+
+2. **Two of the twelve snippets are shapes rather than lines.** A table is three rows and a fenced
+   block is three lines; one line of either is not an example anybody can copy. Those two get
+   `class="editor__snippet"` — `display: block`, `white-space: pre`, and its own horizontal scroll,
+   because the pane it sits in must not scroll sideways. The other ten stay inline `<code>`.
+
+3. **"Copyable" was read as selectable, not as a copy button.** The four rows that were already there
+   are `<code>` a mouse or a keyboard can select; a clipboard button would add a script, a permission
+   surface and a "copied!" string to say what the browser already says by highlighting.
+
+4. **The video button writes the paragraph, not the address.** A video link among other text is an
+   ordinary link (F63), so a button that dropped `https://` at the caret would produce something that
+   looks inserted and does not play. `insertBlock` adds the blank line above and below **only when it
+   is missing**, so pressing twice does not open a growing gap, and it leaves the placeholder
+   selected so a paste replaces it.
+
+5. **The two new buttons add no focus stops, and that is correct.** The toolbar is one tab stop with
+   arrow keys inside (WAI-ARIA toolbar), so `focus-sweep-admin.json` still shows a single stop for all
+   ten buttons. Its 205 → 207 growth comes from the settings disclosure being opened by the sweep, not
+   from the buttons.
+
+6. **The sweeps now open the editor's disclosures.** `REVEAL_ADMIN_AFFORDANCES` sets `open` on every
+   `details.editor__details`, so the admin sweeps measure the sheet in the state the owner reads it
+   in; the **closed** state is what every artefact committed before T139 measured, so the DoD's "open
+   and closed" is covered by the two together. Contrast went 140 → 141 samples rather than 140 → 152,
+   because the walker dedupes by colour, size and weight: eight new rows of the same hint colour
+   collapse into the sample that was already passing.
+
+7. **The first red run proved nothing, and the reason is worth keeping.** `docker compose restart web`
+   returns before the application is listening, so all four checks failed in *setup* with
+   «/healthz is not answering» — an environment error wearing a failure's clothes. Re-run after
+   waiting for `/healthz`, the real red was four `KeyError`s from `ru()` — the catalogue keys and the
+   two button names that do not exist on the pre-change tree — raised inside the test bodies, so the
+   file still collected.
+
+8. **The e2e checks went into a new file the DoD did not name.** `e2e/test_editor_guard.py` is about
+   unsaved work and `test_article_publish.py` is a launch flow; `e2e/test_editor_sheet.py` holds the
+   four checks that belong to the sheet — that it is closed until asked for and does not remember
+   being opened, that it covers every shape the renderer understands, and that each new button leaves
+   Markdown that actually renders. The table one asserts a `<table>` in the preview, not three lines
+   that look like one.

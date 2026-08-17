@@ -1,6 +1,6 @@
 {
   "theme": "dark",
-  "samples": 140,
+  "samples": 141,
   "failures": [],
   "unmeasurable": [],
   "worst": [
@@ -15,7 +15,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wmycmslnd/edit",
+      "page": "/blog/e2e-admin-svip-ruwitpwzr/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -31,7 +31,23 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wmycmslnd/edit",
+      "page": "/blog/e2e-admin-svip-ruwitpwzr/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "code.editor__snippet",
+      "text": "| Заголовок | Ещё |\n| --- | --- |\n| данные | данные |",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-admin-svip-ruwitpwzr/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -47,7 +63,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wmycmslnd/edit",
+      "page": "/blog/e2e-admin-svip-ruwitpwzr/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -63,7 +79,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wmycmslnd/edit",
+      "page": "/blog/e2e-admin-svip-ruwitpwzr/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -79,7 +95,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wmycmslnd/edit",
+      "page": "/blog/e2e-admin-svip-ruwitpwzr/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -95,7 +111,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wmycmslnd/edit",
+      "page": "/blog/e2e-admin-svip-ruwitpwzr/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -111,7 +127,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-wmycmslnd/edit",
+      "page": "/blog/e2e-admin-svip-ruwitpwzr/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -128,7 +144,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/photo/e2e-galereia-wmycmslnd",
+      "page": "/photo/e2e-galereia-ruwitpwzr",
       "theme": "dark",
       "ratio": 4.99,
       "required": 4.5
@@ -177,22 +193,6 @@
       "fontWeight": 400,
       "onImage": false,
       "page": "/",
-      "theme": "dark",
-      "ratio": 5.31,
-      "required": 4.5
-    },
-    {
-      "selector": "p.board-actions__hint",
-      "text": "Порядок можно менять перетаскиванием или кнопками со стрелка",
-      "color": "rgb(138, 147, 158)",
-      "backdrop": [
-        "rgb(28, 31, 35)"
-      ],
-      "background": "rgb(28, 31, 35)",
-      "fontSize": 14.24,
-      "fontWeight": 400,
-      "onImage": false,
-      "page": "/dev",
       "theme": "dark",
       "ratio": 5.31,
       "required": 4.5

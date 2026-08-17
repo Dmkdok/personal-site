@@ -67,6 +67,8 @@
               data-ph-item="{{ t('blog.md.ph_item') }}"
               data-ph-code="{{ t('blog.md.ph_code') }}"
               data-ph-url="{{ t('blog.md.ph_url') }}"
+              data-ph-th="{{ t('blog.md.ph_th') }}"
+              data-ph-td="{{ t('blog.md.ph_td') }}"
             >
               <button class="md-toolbar__button" type="button" data-md="bold" title="{{ t('blog.md.bold') }}">
                 <span class="md-toolbar__glyph" aria-hidden="true">**</span>
@@ -100,6 +102,17 @@
                 <span class="md-toolbar__glyph" aria-hidden="true">![]</span>
                 <span class="visually-hidden">{{ t("blog.md.image") }}</span>
               </button>
+              {# The other eight glyphs are the Markdown they write. A video has no
+                 markup of its own — it is a link on a line by itself (F63) — so
+                 this one is the play triangle the facade shows. #}
+              <button class="md-toolbar__button" type="button" data-md="video" title="{{ t('blog.md.video') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">▶</span>
+                <span class="visually-hidden">{{ t("blog.md.video") }}</span>
+              </button>
+              <button class="md-toolbar__button" type="button" data-md="table" title="{{ t('blog.md.table') }}">
+                <span class="md-toolbar__glyph" aria-hidden="true">|</span>
+                <span class="visually-hidden">{{ t("blog.md.table") }}</span>
+              </button>
             </div>
 
             <label class="visually-hidden" for="post-body">{{ t("blog.body_label") }}</label>
@@ -120,15 +133,30 @@
             >{{ post.body_md }}</textarea>
             <p class="field__hint" id="editor-drop-hint">{{ t("blog.drop_hint") }}</p>
 
-            {# The size vocabulary is invisible otherwise: there is no button
-               for it, and nobody guesses `{.wide}`. Closed by default so it
-               costs the owner nothing once it is known. #}
+            {# The whole markup vocabulary, because none of it is discoverable
+               otherwise: there is no button for a picture's width and nobody
+               guesses `{.wide}` (F38). Closed by default, and the state is not
+               remembered — it costs the owner nothing once it is known.
+
+               Pictures first, in the wording they already had; then everything
+               else the renderer understands. Each row is a snippet to copy and
+               one sentence saying what it does. #}
             <details class="editor__details">
               <summary class="editor__summary">{{ t("blog.md.size_summary") }}</summary>
               {% for form in ["normal", "wide", "full", "caption"] %}
                 <p class="field__hint">
                   <code>{{ t("blog.md.size_" ~ form ~ "_code") }}</code>
                   {{ t("blog.md.size_" ~ form ~ "_text") }}
+                </p>
+              {% endfor %}
+              {% for form in ["video", "table", "quote", "code", "link", "list", "heading", "strike"] %}
+                {%- set snippet = t("blog.md.sheet_" ~ form ~ "_code") %}
+                <p class="field__hint">
+                  {# A snippet of more than one line keeps its line breaks: a table
+                     and a fenced block are shapes, and one line of them is not a
+                     usable example. #}
+                  <code {%- if "\n" in snippet %} class="editor__snippet"{% endif %}>{{ snippet }}</code>
+                  {{ t("blog.md.sheet_" ~ form ~ "_text") }}
                 </p>
               {% endfor %}
             </details>
