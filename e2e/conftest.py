@@ -221,6 +221,21 @@ def published_album(admin_api: AdminApi, trash: Trash, run_token: str) -> Album:
 
 
 @pytest.fixture
+def published_video_post(admin_api: AdminApi, trash: Trash, run_token: str) -> Post:
+    """A published article whose body is a video facade (F63, ADR-035).
+
+    Built for the sweeps rather than for a video test of its own: the play control
+    is the newest piece of visible prose, and without a page carrying one, contrast
+    in both themes, focus visibility and target size at 360 px would all measure
+    everything except it. `e2e/test_video.py` proves what it *does*; these prove it
+    can be seen and reached.
+    """
+    post = trash.post(admin_api.create_post(f"E2E видео свип {run_token}"))
+    admin_api.publish_post(post, body_md="Разбор съёмки\n\nhttps://youtu.be/dQw4w9WgXcQ\n")
+    return post
+
+
+@pytest.fixture
 def admin_surfaces(
     admin_api: AdminApi, trash: Trash, run_token: str, published_album: Album
 ) -> list[str]:

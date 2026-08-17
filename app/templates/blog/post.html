@@ -59,3 +59,9 @@
     {% endif %}
   </article>
 {% endblock %}
+
+{% block scripts %}
+  {# Only where prose is rendered. The facade in an article is inert markup until
+     this runs, and it is the only thing that ever builds an `<iframe>` (F63). #}
+  <script src="{{ static_url('js/video.js') }}" defer></script>
+{% endblock %}

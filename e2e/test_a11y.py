@@ -21,6 +21,7 @@ from e2e.conftest import Trash
 from e2e.helpers import (
     AdminApi,
     Album,
+    Post,
     composite,
     contrast_ratio,
     flatten,
@@ -228,14 +229,24 @@ def _contrast_report(failures: list[dict]) -> str:
 
 @pytest.mark.parametrize("theme", ["light", "dark"])
 def test_text_meets_aa_contrast_in_both_themes(
-    browser: Browser, base_url: str, qa_dir: Path, theme: str, published_album: Album
+    browser: Browser,
+    base_url: str,
+    qa_dir: Path,
+    theme: str,
+    published_album: Album,
+    published_video_post: Post,
 ) -> None:
     context = browser.new_context(
         base_url=base_url, color_scheme="dark" if theme == "dark" else "light"
     )
     try:
+        # The article carries the video facade (T138): its label and its glyph are
+        # text over a plate over a poster, and nothing else on the site is.
         measured, failures, unmeasurable, _ = _sweep_contrast(
-            context, [*PAGES, f"/photo/{published_album.slug}"], theme, reveal=False
+            context,
+            [*PAGES, f"/photo/{published_album.slug}", f"/blog/{published_video_post.slug}"],
+            theme,
+            reveal=False,
         )
     finally:
         context.close()
@@ -618,12 +629,20 @@ def _write_focus(qa_dir: Path, name: str, swept: list[dict], invisible: list[dic
 
 
 def test_every_focus_stop_shows_a_visible_indicator(
-    page: Page, qa_dir: Path, published_album: Album
+    page: Page, qa_dir: Path, published_album: Album, published_video_post: Post
 ) -> None:
     """Focus must be visible everywhere; the Tab sweep proves the order too."""
     swept, invisible, _ = _sweep_focus(
         page,
-        ["/", "/photo", "/blog", "/search?q=", f"/photo/{published_album.slug}"],
+        [
+            "/",
+            "/photo",
+            "/blog",
+            "/search?q=",
+            f"/photo/{published_album.slug}",
+            # The play control is a tab stop in the middle of prose (T138).
+            f"/blog/{published_video_post.slug}",
+        ],
         reveal=False,
     )
     _write_focus(qa_dir, "focus-sweep.json", swept, invisible)
@@ -845,7 +864,9 @@ def _write_targets(qa_dir: Path, name: str, small: list[dict], aa_failures: list
     )
 
 
-def test_target_sizes_at_360px(browser: Browser, base_url: str, qa_dir: Path) -> None:
+def test_target_sizes_at_360px(
+    browser: Browser, base_url: str, qa_dir: Path, published_video_post: Post
+) -> None:
     """Two different bars, measured separately at the narrowest supported width.
 
     WCAG 2.2 AA 2.5.8 asks for 24×24 with an inline and a spacing exception —
@@ -854,7 +875,11 @@ def test_target_sizes_at_360px(browser: Browser, base_url: str, qa_dir: Path) ->
     """
     context = browser.new_context(base_url=base_url, viewport={"width": 360, "height": 780})
     try:
-        small, _ = _sweep_targets(context, ["/", "/photo", "/blog", "/dev", "/login"], reveal=False)
+        small, _ = _sweep_targets(
+            context,
+            ["/", "/photo", "/blog", "/dev", "/login", f"/blog/{published_video_post.slug}"],
+            reveal=False,
+        )
     finally:
         context.close()
 

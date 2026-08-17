@@ -1,6 +1,6 @@
 {
   "theme": "dark",
-  "samples": 76,
+  "samples": 85,
   "failures": [],
   "unmeasurable": [],
   "worst": [
@@ -38,7 +38,7 @@
     },
     {
       "selector": "time",
-      "text": "8 августа 2026",
+      "text": "17 августа 2026",
       "color": "rgb(138, 147, 158)",
       "backdrop": [
         "rgb(28, 31, 35)"
@@ -64,6 +64,22 @@
       "fontWeight": 400,
       "onImage": false,
       "page": "/login",
+      "theme": "dark",
+      "ratio": 5.31,
+      "required": 4.5
+    },
+    {
+      "selector": "time",
+      "text": "17 августа 2026",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(28, 31, 35)"
+      ],
+      "background": "rgb(28, 31, 35)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-video-svip-zquokbhld",
       "theme": "dark",
       "ratio": 5.31,
       "required": 4.5
@@ -183,23 +199,6 @@
       "fontWeight": 500,
       "onImage": false,
       "page": "/does-not-exist",
-      "theme": "dark",
-      "ratio": 6.32,
-      "required": 4.5
-    },
-    {
-      "selector": "a.nav__link",
-      "text": "Главная",
-      "color": "rgb(168, 177, 187)",
-      "backdrop": [
-        "rgba(44, 49, 55, 0.82)",
-        "rgb(28, 31, 35)"
-      ],
-      "background": "rgb(28, 31, 35)",
-      "fontSize": 14.24,
-      "fontWeight": 500,
-      "onImage": false,
-      "page": "/photo/e2e-galereia-xbycuczid",
       "theme": "dark",
       "ratio": 6.32,
       "required": 4.5

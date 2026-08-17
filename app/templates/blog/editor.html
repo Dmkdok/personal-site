@@ -192,4 +192,8 @@
 
 {% block scripts %}
   <script src="{{ static_url('js/editor.js') }}" defer></script>
+  {# The preview goes through the same `render_markdown` as the published page,
+     so it shows the same facade — and without this the facade would be the one
+     thing in the preview that does not behave like the page (F28, F63). #}
+  <script src="{{ static_url('js/video.js') }}" defer></script>
 {% endblock %}

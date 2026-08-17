@@ -108,6 +108,23 @@ def test_the_current_section_is_still_marked(forced_colors_page, qa_dir: Path) -
     )
 
 
+def test_the_video_facade_keeps_its_plates(forced_colors_page, published_video_post) -> None:
+    """T138: the glyph's disc and the label's plate are backgrounds, and forced
+    colours repaint every one of them with the system's own.
+
+    Over a poster that would leave both floating on the picture with nothing
+    behind them, so `prose.css` gives each a border under `forced-colors` — the
+    same treatment the current navigation link already has (UI-AUDIT F-013).
+    """
+    page = forced_colors_page
+    page.goto(f"/blog/{published_video_post.slug}")
+
+    for selector in (".prose-video__glyph", ".prose-video__label"):
+        state = page.locator(selector).evaluate(READ_STATE)
+        assert state["borderStyle"] == "solid", (selector, state)
+        assert _width(state["borderWidth"]) >= 1, (selector, state)
+
+
 def test_a_home_entry_still_answers_the_pointer(forced_colors_page) -> None:
     page = forced_colors_page
     page.goto("/")

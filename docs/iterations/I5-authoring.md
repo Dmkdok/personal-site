@@ -302,3 +302,72 @@ WCAG 2.5.8's 24, contrast failures **0** in both themes.
    browser, so they were not stashed a second time. T136's lesson was applied: the three tests that
    need `app.services.storage` import it **inside** their bodies, so a tree without the module still
    collects the file.
+
+## T138 landed — and ten things the plan did not say
+
+Done 2026-08-17. A paragraph holding nothing but a link to YouTube, RuTube or VK Video becomes
+`<figure class="prose-video">` around a `<button>` carrying the embed URL; `app/static/js/video.js`
+builds the `<iframe>` on a press and nothing else in the product ever does. `ALLOWED_TAGS` gained
+`button`; `iframe` did not. The CSP gained one line — `frame-src` naming the three hosts — and no
+other directive moved. Suites afterwards: **353 unit/API** exit 0 (320 before, `+33`), **103 e2e**
+exit 0 (99 before, `+4`), `ruff check` clean, `ruff format --check` 121 files exit 0.
+
+1. **My own test found a real defect: two video links in one paragraph were one player.** The
+   recogniser accepted a paragraph whose *first* token was a `link_open` and whose *last* was a
+   `link_close` — which is also true of «link link», where the two belong to different links.
+   Everything between them, including the first link's close and the second's open, was treated as
+   the inside of one link. Fixed by requiring that no link boundary appears in between, which is the
+   same "a figure is a paragraph, not a mention" rule pictures already follow.
+
+2. **The CSP assertion the DoD names is not where the DoD says.** `tests/api/test_pages.py` is the
+   footer-links file and holds no header assertion; the policy is asserted in
+   `tests/api/test_authz_sweep.py`, which only checked that the header *exists*. That is what was
+   extended, and it now reads the policy **directive by directive** — `img-src` still `'self' data:`,
+   no `unsafe-inline`, no wildcard anywhere, `frame-src` exactly the three hosts — so widening one is
+   a failing test rather than a detail nobody looks at.
+
+3. **`autoplay=1` is part of the embed URL the renderer builds.** Without it a reader presses play
+   twice: once on the facade, once in the player that replaces it. It is inside the URL rather than
+   appended by the script, so the value in `data-video` stays something this module composed from an
+   anchored pattern.
+
+4. **The author's own link text becomes the caption.** `[Разбор съёмки](https://youtu.be/…)` alone in
+   a paragraph is a facade *and* a `<figcaption>`; a linkified bare address is a facade with no
+   caption, because its "link text" is the URL. The DoD did not ask for this, and the alternative was
+   swallowing words the author typed.
+
+5. **A poster from anywhere but our own media makes the paragraph an ordinary link.** ADR-035 leaves
+   `img-src 'self' data:` alone, so a foreign poster could not load anyway; rather than render a
+   facade with a hole in it, the link stays the link the author wrote.
+
+6. **`video.js` is loaded in the editor too, which the DoD's path list did not include.** The preview
+   goes through the same `render_markdown`, so it already showed the same facade — and a facade that
+   did nothing on a press would have been the one thing in the preview that does not behave like the
+   published page (F28). Two lines in `blog/editor.html`, with an e2e check that the preview's
+   control builds a player.
+
+7. **`span` gained `aria-hidden` in the sanitiser's attribute allow-list.** The play triangle is a
+   decorative character, and the control's name is the label beside it. Authors cannot produce a
+   `span` at all — raw HTML is off at the parser and `attrs_plugin` reaches images only — so the
+   addition is reachable from the renderer and from nowhere else. The triangle is *text* rather than a
+   CSS shape on purpose: a shape disappears under `forced-colors`.
+
+8. **One test assertion had to be narrowed, and it was the test that was wrong.** The poster-caption
+   check asserted `"title=" not in html`, which the picture tests can afford; the button legitimately
+   carries `data-title`, the frame's accessible name. It now asserts that the *caption text* is not
+   also a tooltip.
+
+9. **The accessibility evidence needed a page that carries a facade, so the sweeps got one.** A new
+   `published_video_post` fixture joins the anonymous contrast sweep (both themes), the anonymous
+   focus sweep and the 360 px target-size sweep, and a new `forced-colors` test asserts the glyph's
+   disc and the label's plate keep a border when their backgrounds are repainted. Results: contrast
+   **85 samples, 0 failures, 0 unmeasurable** in both themes, with the facade measured and *not* among
+   the twelve worst (the worst on the whole site is 4.65:1); the play control appears in
+   `focus-sweep.json` as a stop with its own indicator; it is full-width, so it is not in the
+   under-44 px list at all.
+
+10. **A known wart, named rather than fixed.** `excerpt_from` strips tags and keeps text, so an
+    article that *opens* with a video and leaves its excerpt empty gets «▶Смотреть видео» at the front
+    of its meta description. Before T138 the same article got the raw URL there, so this is not a
+    regression — but it is not right either, and it belongs in the next intake rather than in a task
+    whose DoD says nothing about excerpts.

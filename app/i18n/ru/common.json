@@ -80,7 +80,9 @@
   },
   "prose": {
     "code_block": "Блок кода",
-    "table": "Таблица"
+    "table": "Таблица",
+    "video_play": "Смотреть видео",
+    "video_frame": "Видео"
   },
   "editable": {
     "edit": "Править",

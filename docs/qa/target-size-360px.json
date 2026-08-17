@@ -503,6 +503,87 @@
       "height": 17,
       "inlineInProse": false,
       "crowded": false
+    },
+    {
+      "path": "/blog/e2e-video-svip-arjsylnjf",
+      "tag": "a",
+      "label": "Перейти к содержимому",
+      "width": 193,
+      "height": 40,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-video-svip-arjsylnjf",
+      "tag": "button",
+      "label": "Меню",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-video-svip-arjsylnjf",
+      "tag": "input",
+      "label": "",
+      "width": 94,
+      "height": 36,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-video-svip-arjsylnjf",
+      "tag": "button",
+      "label": "Переключить тему",
+      "width": 34,
+      "height": 34,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-video-svip-arjsylnjf",
+      "tag": "a",
+      "label": "Все статьи",
+      "width": 91,
+      "height": 17,
+      "inlineInProse": true,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-video-svip-arjsylnjf",
+      "tag": "a",
+      "label": "GitHub",
+      "width": 40,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-video-svip-arjsylnjf",
+      "tag": "a",
+      "label": "Telegram",
+      "width": 53,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-video-svip-arjsylnjf",
+      "tag": "a",
+      "label": "VK",
+      "width": 17,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
+    },
+    {
+      "path": "/blog/e2e-video-svip-arjsylnjf",
+      "tag": "a",
+      "label": "YouTube",
+      "width": 51,
+      "height": 17,
+      "inlineInProse": false,
+      "crowded": false
     }
   ],
   "under_wcag_2_5_8": []

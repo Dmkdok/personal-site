@@ -189,3 +189,35 @@ def test_every_response_carries_the_security_headers_including_a_500(_schema):
         assert "Content-Security-Policy" in response.headers, path
         assert response.headers["X-Frame-Options"] == "DENY", path
         assert response.headers["X-Content-Type-Options"] == "nosniff", path
+
+
+def test_the_policy_names_three_frame_hosts_and_widens_nothing_else(client):
+    """T138 gave the policy its only third-party hosts, and only as frames.
+
+    Asserted directive by directive rather than by substring, so widening one is a
+    failure here and not a detail nobody looks at: `frame-src` is the single line
+    that names anything outside this origin, `img-src` still allows only our own
+    files and `data:` — a video poster is always this site's own picture, never the
+    service's thumbnail — and no `unsafe-inline` and no wildcard appears anywhere
+    (ADR-035).
+    """
+    policy = client.get("/").headers["Content-Security-Policy"]
+    directives = dict(
+        [*part.split(" ", 1), ""][:2] for part in (p.strip() for p in policy.split(";"))
+    )
+
+    assert directives["default-src"] == "'self'"
+    assert directives["style-src"] == "'self'"
+    assert directives["img-src"] == "'self' data:"
+    assert directives["font-src"] == "'self'"
+    assert directives["connect-src"] == "'self'"
+    assert directives["form-action"] == "'self'"
+    assert directives["frame-ancestors"] == "'none'"
+    assert directives["base-uri"] == "'self'"
+    assert directives["object-src"] == "'none'"
+    assert directives["script-src"].startswith("'self' 'nonce-")
+
+    assert directives["frame-src"] == ("https://www.youtube.com https://rutube.ru https://vk.com")
+    assert "unsafe-inline" not in policy
+    assert "unsafe-eval" not in policy
+    assert "*" not in policy

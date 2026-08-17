@@ -1,6 +1,6 @@
 {
   "theme": "light",
-  "samples": 76,
+  "samples": 85,
   "failures": [],
   "unmeasurable": [],
   "worst": [
@@ -38,7 +38,7 @@
     },
     {
       "selector": "time",
-      "text": "8 августа 2026",
+      "text": "17 августа 2026",
       "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
@@ -64,6 +64,22 @@
       "fontWeight": 400,
       "onImage": false,
       "page": "/login",
+      "theme": "light",
+      "ratio": 4.65,
+      "required": 4.5
+    },
+    {
+      "selector": "time",
+      "text": "17 августа 2026",
+      "color": "rgb(100, 108, 119)",
+      "backdrop": [
+        "rgb(238, 240, 243)"
+      ],
+      "background": "rgb(238, 240, 243)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/blog/e2e-video-svip-dkbxczmfo",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
@@ -175,23 +191,7 @@
       "fontSize": 14.24,
       "fontWeight": 500,
       "onImage": false,
-      "page": "/photo/e2e-galereia-gmbzsrdml",
-      "theme": "light",
-      "ratio": 5.03,
-      "required": 4.5
-    },
-    {
-      "selector": "p.photo-item__cover-flag",
-      "text": "Обложка",
-      "color": "rgb(20, 23, 26)",
-      "backdrop": [
-        "rgb(192, 118, 42)"
-      ],
-      "background": "rgb(192, 118, 42)",
-      "fontSize": 14.24,
-      "fontWeight": 400,
-      "onImage": false,
-      "page": "/photo/e2e-galereia-gmbzsrdml",
+      "page": "/photo/e2e-galereia-dkbxczmfo",
       "theme": "light",
       "ratio": 5.03,
       "required": 4.5

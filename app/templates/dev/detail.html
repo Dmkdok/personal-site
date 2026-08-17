@@ -61,3 +61,9 @@
     <div class="prose">{{ project.body_html|safe }}</div>
   </article>
 {% endblock %}
+
+{% block scripts %}
+  {# A project description is prose too, and F63 is a property of prose rather
+     than of the blog. #}
+  <script src="{{ static_url('js/video.js') }}" defer></script>
+{% endblock %}
