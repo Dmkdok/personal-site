@@ -99,6 +99,29 @@ def is_searchable(query: str) -> bool:
     return len(query) >= MIN_QUERY_LENGTH
 
 
+#: Everything `to_tsquery` reads as syntax. A search box holds a phrase somebody
+#: typed, never an expression, so these are **stripped** rather than escaped:
+#: there is no query a visitor can type that should be able to raise
+#: `syntax error in tsquery` and answer a 500 to an HTML page. The backslash and
+#: the double quote are not operators but are the two characters that can still
+#: unbalance the parse once `:*` is appended, so they go with the rest.
+_TSQUERY_SYNTAX = str.maketrans("", "", "&|!()<>:*'\"\\")
+
+
+def _prefix_tsquery(query: str):
+    """«фотогр снимок» → `to_tsquery('russian', 'фотогр:* & снимок:*')`.
+
+    Returns `None` when nothing usable survives the strip, which is what keeps
+    the statement below byte-for-byte the one this module has always built for
+    a query made of punctuation.
+    """
+    tokens = [word.translate(_TSQUERY_SYNTAX) for word in query.split()]
+    usable = [token for token in tokens if token]
+    if not usable:
+        return None
+    return func.to_tsquery("russian", " & ".join(f"{token}:*" for token in usable))
+
+
 def _statement(kind: str, tsquery, include_hidden: bool):
     """The one query per content type, written once for the hits and the count."""
     if kind == "post":
@@ -147,7 +170,15 @@ def group(
     if not is_searchable(query):
         return SearchGroup(kind=kind, hits=[], total=0)
 
+    # A **union**, never a substitution (F65, ADR-034): the whole-word half is
+    # the query this module has always run, and the prefix half is added beside
+    # it, so nothing that is found today can stop being found. `ts_rank` reads
+    # the same combined query, and `_statement` is still written once for the
+    # hits and the count, so `total` and the list cannot disagree.
     tsquery = func.websearch_to_tsquery("russian", query)
+    prefix = _prefix_tsquery(query)
+    if prefix is not None:
+        tsquery = tsquery.op("||")(prefix)
     statement = _statement(kind, tsquery, include_hidden)
 
     total = db.scalar(select(func.count()).select_from(statement.subquery())) or 0

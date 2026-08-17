@@ -203,3 +203,38 @@ otherwise read as a leak.
 **No i18n key was added**, so the `docker compose restart web` this iteration's intake warns about
 was not needed for the catalogue — only for the templates, twice, either side of stashing the change
 to watch the new checks fail.
+
+## T136 landed — and four notes on how
+
+Done 2026-08-17. `_prefix_tsquery` turns the normalised query into `token:* & token:*`, and `group()`
+unions it onto the whole-word half — `websearch_to_tsquery(...) || to_tsquery(...)` — so `ts_rank`
+reads the same combined query and `_statement` is still written once for the hits and the count.
+Suites afterwards: **306 unit/API** exit 0 (289 before, `+17` from the two parametrised guards),
+`e2e/test_search.py` **7** exit 0 with every assertion unchanged, `ruff check` clean,
+`ruff format --check` 119 files exit 0. No migration, no extension, no new index, and
+`MIN_QUERY_LENGTH` is where it was.
+
+1. **The strip list is two characters longer than the DoD's.** The task named `&|!()<>:*'`; the code
+   also strips `\` and `"`. Neither is a `to_tsquery` operator, and that is the point — they are the
+   two characters that can still unbalance the parse *after* `:*` is appended to a token, and the
+   failure mode is `syntax error in tsquery` answering a 500 to an HTML page. Stripping rather than
+   escaping is the same decision throughout: a search box holds a phrase somebody typed, never an
+   expression.
+
+2. **The red run only became honest on the third attempt.** The first was worthless — a module-level
+   `from app.services.search import _prefix_tsquery` made the whole file fail *collection* with
+   `ImportError` on the stashed tree, so nothing was proved about search. The second hit a collection
+   error of its own: a test parametrised on `query` that did not accept the argument
+   («function uses no argument 'query'»). The import now sits **inside** the two helper tests, so a
+   tree without the change still collects the file and the red run reads as failed assertions. Worth
+   keeping as a habit: watch-it-fail-first proves nothing when what fails is the import.
+
+3. **What the red run actually showed.** With `app/services/search.py` stashed,
+   `test_a_prefix_finds_the_word_it_begins` failed on its own assertion — «Плёночная фотография
+   зимой» not in the response for «фотогр» — and the eight `_prefix_tsquery` parametrisations failed
+   on the missing name. The two robustness guards **passed on the stashed tree**, correctly: they
+   guard the new parser path against a 500 and there is no new path there to break yet.
+
+4. **`test_a_usable_token_does_produce_a_prefix_half` exists to guard the other guard.** Seven
+   parametrisations assert `_prefix_tsquery(...) is None`, and a helper that returned `None`
+   unconditionally would satisfy all seven while quietly deleting the feature.

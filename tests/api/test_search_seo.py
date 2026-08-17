@@ -9,7 +9,7 @@ from app.models.album import Album
 from app.models.post import Post, PostStatus
 from app.models.project import Project
 from app.routers.search import MAX_GROUP_LIMIT
-from app.services.search import DEFAULT_LIMIT
+from app.services.search import DEFAULT_LIMIT, MAX_QUERY_LENGTH
 
 
 @pytest.fixture
@@ -85,6 +85,75 @@ def test_search_uses_russian_stemming(client, content):
     """A declined form must still match — this is why the tsvector uses 'russian'."""
     html = client.get("/search", params={"q": "эльбрусе"}).text
     assert "Восхождение на Эльбрус" in html
+
+
+def test_a_prefix_finds_the_word_it_begins(client, db):
+    """The owner's own example, generalised: «фотогр» finds «фотография» (F65).
+
+    `websearch_to_tsquery` alone cannot do this — «фотогр» stems to itself and
+    the document holds «фотографи», so the whole-word half of the query matches
+    nothing here. The prefix half is what finds it, which is why this test fails
+    without ADR-034's union and passes with it.
+    """
+    post = Post(
+        slug="prefix-post",
+        title="Плёночная фотография зимой",
+        excerpt="Про свет и зерно",
+        body_md="Текст",
+        body_html="<p>Текст</p>",
+        status=PostStatus.PUBLISHED,
+        published_at=datetime.now(UTC),
+    )
+    db.add(post)
+    db.commit()
+    try:
+        assert "Плёночная фотография зимой" in client.get("/search", params={"q": "фотогр"}).text
+    finally:
+        db.delete(db.merge(post))
+        db.commit()
+
+
+@pytest.mark.parametrize("query", ["&&", "!!! (((", ":*", "''", "\\\\", '""', "|(:*)|"])
+def test_a_query_made_only_of_tsquery_syntax_answers_a_page(client, content, query):
+    """A search box takes a phrase, not an expression.
+
+    Every character `to_tsquery` reads as syntax is stripped before the prefix
+    half is built, so none of these can reach the parser and turn a visitor's
+    search into `syntax error in tsquery` — which would be a 500 on an HTML page.
+    """
+    response = client.get("/search", params={"q": query})
+    assert response.status_code == 200, query
+
+
+def test_a_query_at_the_cap_is_still_a_page(client, content):
+    """`normalise` truncates at the cap; the prefix half must survive that too."""
+    response = client.get("/search", params={"q": "э" * MAX_QUERY_LENGTH})
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize("query", ["", "   ", "&&", "!!! (((", ":*", "''", "\\\\"])
+def test_the_prefix_half_is_omitted_when_no_token_survives(query):
+    """Then the statement is byte-for-byte the one this module always built.
+
+    Asserted on the helper rather than through a route because that is where the
+    guarantee lives: no prefix half means the SQL is unchanged, and no HTTP
+    response can show the difference between «unchanged» and «unioned with
+    nothing». Imported here rather than at the top of the module: it is the one
+    private name these tests reach for, and a module-level import of it would
+    stop the whole file from collecting on a tree that does not have it yet —
+    turning every red run into an ImportError instead of a failed assertion.
+    """
+    from app.services.search import _prefix_tsquery
+
+    assert _prefix_tsquery(query) is None
+
+
+def test_a_usable_token_does_produce_a_prefix_half():
+    """Guards the guard above: a helper that always answered None would pass it."""
+    from app.services.search import _prefix_tsquery
+
+    assert _prefix_tsquery("фотогр") is not None
+    assert _prefix_tsquery("фотогр !!! снимок") is not None
 
 
 @pytest.mark.parametrize("query", ["", " ", "a", "   %  "])
