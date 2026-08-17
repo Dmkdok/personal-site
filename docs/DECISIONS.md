@@ -2,6 +2,48 @@
 
 ADR-lite. All proposed on 2026-08-04, pending the approval gate.
 
+## Index
+
+- **ADR-001** — FastAPI with server-rendered Jinja2 + htmx, not an SPA
+- **ADR-002** — PostgreSQL, with its full-text search as the site search
+- **ADR-003** — Media on a host bind mount, database on a named volume
+- **ADR-004** — In-process background image processing, not a task queue
+- **ADR-005** — Hand-written CSS with design tokens, no CSS framework
+- **ADR-006** — Authorisation verified by a structural test, not by review
+- **ADR-008** — The test suite runs in a container, not on the host
+- **ADR-009** — Strict CSP kept, htmx adapted to it
+- **ADR-007** — `lang` columns and externalised UI strings from day one
+- **ADR-010** — Touch targets held to WCAG 2.5.8's 24 px, not SPEC F12's 44 px
+- **ADR-011** — Picture width in an article is a closed vocabulary on the figure
+- **ADR-012** — Media grouped per album/article, still split originals vs derived
+- **ADR-013** — Deletion asks the database who still uses a file; there is no reference table
+- **ADR-014** — "Best view" is a native-width rendition, not the original file
+- **ADR-015** — The copyright line is stored whole, and stops knowing the year
+- **ADR-016** — Reorder controls stay enabled at the ends of a list and answer instead of greying out
+- **ADR-017** — The UI audit's P2 and P3 findings are deferred to a later iteration
+- **ADR-018** — The site is deployed from a registry onto TrueNAS Scale, with the router holding TLS
+- **ADR-019** — HEIC is accepted on input; AVIF is not produced on output
+- **ADR-020** — F-016 is closed as "not a defect"; only its useful half is built
+- **ADR-021** — The blog gets pagination, not an archive by year
+- **ADR-022** — `/photo` is paginated for the visitor and whole for the owner
+- **ADR-023** — ZFS snapshots are the backup; the repository ships only the command the appliance cannot supply
+- **ADR-024** — R-01's engineered form waits for the move off the NAS
+- **ADR-025** — R-03 puts the log on disk instead of building a notifier
+- **ADR-026** — R-15 waits for R-02 rather than riding along with it
+- **ADR-027** — The admin bar is retired into the navigation capsule
+- **ADR-028** — Edit affordances become a mode, not a hover reveal
+- **ADR-029** — The cabinet is a summary, not an admin panel
+- **ADR-030** — `docs/` is prose, and ruff does not format prose
+- **ADR-031** — The cabinet ships without a version line
+- **ADR-032** — «Просмотр» is the visitor's page, carried by one marker class
+- **ADR-033** — The search page's owner-only hits stay visible in both modes
+- **ADR-034** — Prefix search is unioned into the existing query, not substituted for it
+- **ADR-035** — Video is a facade the reader opts into, and `iframe` never enters the allow-list
+- **ADR-036** — The cabinet becomes rooms with their own addresses; the undescribed list leaves it
+- **ADR-037** — The orphan scan runs on request, and the script and the page share one implementation
+
+Read one entry, not the file: `Select-String -Path docs/DECISIONS.md -Pattern '^## ADR-029' -Context 0,12`.
+
 ## ADR-001 — FastAPI with server-rendered Jinja2 + htmx, not an SPA
 
 - Date: 2026-08-04
@@ -273,3 +315,57 @@ ADR-lite. All proposed on 2026-08-04, pending the approval gate.
 - Decision: deferred out of I4. The cabinet ships with what the database already holds.
 - Alternatives rejected: **read the git sha at runtime** — there is no checkout in the image, by design. **Show the build date from a file mtime** — a plausible-looking number that answers a different question, which is worse than no number.
 - Consequences: the owner still identifies the running image the way he does today, through Portainer and the tag `publish.yml` moved. The cost of adding the line later is unchanged by this iteration and the plumbing is the same work whenever it is done — it becomes worth doing when something else needs the version too, most likely a 500 report.
+
+## ADR-032 — «Просмотр» is the visitor's page, carried by one marker class
+
+- Date: 2026-08-16
+- Status: accepted
+- Context: I4 built the mode over the three affordance families that had a hover reveal to replace — `.editable__edit`, `.site-links__edit`, `.photo-item__admin`. Everything else the owner sees is gated on `is_admin` alone and therefore renders in both modes: the upload zone, «Новый альбом», the album's edit/publish/delete row, the reorder hints, the draft chips and notes, the drafts section on `/blog`, unpublished album and project cards, unfinished photo tiles, and `.photo-item--undescribed`'s dashed rim — which the owner reported as a defect, because beside `.photo-item__link:hover::after`'s solid accent rim it reads as a line that changes on hover for no reason. F55 already promised «the page he reads is the page a visitor reads»; the implementation kept that promise for three selectors out of twenty-odd. This is a defect against F55, not a new requirement.
+- Decision: every owner-only block carries the class `owner-only`, and `admin.css` — which only a signed-in owner ever downloads — hides all of them in one rule, `:root:not(.show-edits) .owner-only { display: none }`. The three families from I4 fold into the same marker and lose their bespoke `display: none` default and their `:root.show-edits` override, so there is exactly one mechanism. In «Просмотр» that includes unpublished cards and unfinished tiles, because the server withholds those from a visitor and the mode is meant to reproduce what a visitor gets. Two things stay visible in both modes: **the mode switch itself**, or the mode could not be left, and **the one line on a draft's own page saying a visitor would not see it** — a statement of fact, not an affordance, and its absence would make the mode misleading rather than faithful.
+- Alternatives rejected: **a cookie, so the server renders the visitor's page** — literally faithful, and it costs a round trip per switch, an `is_editing` split through every router and template, and a mode that htmx swaps have to carry; it also cannot render the owner menu, so it would not be literal after all. **Keep per-selector rules and add the missing ones** — the same twelve-rule pattern that just failed to cover the page once; a block added next year would leak again by default rather than by mistake. **`visibility: hidden` or `opacity: 0`** — I4 already established that only `display: none` takes a control out of the accessibility tree and the tab order at once, which is what "the page a visitor reads" means.
+- Consequences: `owner-only` is a class that must never reach a visitor, so it joins the marker list in `test_authz_sweep.py` — that list only ever grows. Every e2e flow that clicks an owner control must enter «Правка» first, through the `switch_mode` helper I4 introduced; the last two iterations each owed more of those than their impact map named, and this change widens the hidden set by roughly a factor of seven. The HTML a signed-in owner receives is unchanged — the fidelity is visual and in the accessibility tree, not in the source — which is stated here so that nobody later reads «as if not authenticated» as a promise about bytes.
+
+## ADR-033 — The search page's owner-only hits stay visible in both modes
+
+- Date: 2026-08-16
+- Status: accepted
+- Context: `/search` passes `include_hidden=admin is not None` (`app/routers/search.py:53`), so a signed-in owner sees drafts and unpublished items among the results. Under ADR-032 those rows are content a visitor would not get, and hiding them is one class in `partials/search_group.html`.
+- Decision: not done. The group heading is `t("search.group_heading", shown=…, total=…)` — «Показано 3 из 5» — and both numbers come from the server. Hiding two rows in the browser leaves the heading claiming five above three visible ones.
+- Alternatives rejected: **hide the rows and leave the counts** — replaces a small leak with a visible contradiction on the same line. **Recount in the browser** — the `total` is a `count()` over the whole predicate, not the length of the list, so it cannot be recomputed from what is on the page. **Send the mode to the server** — the mode is a `localStorage` class applied before first paint; making it a request parameter is ADR-032's rejected cookie design arriving through a side door.
+- Consequences: in «Просмотр» the search page is the one surface where the owner still sees more than a visitor. It is a page they reach by typing, not one they read the site through, and it says so in the iteration record. If the mode ever does reach the server, this is the first thing to revisit.
+
+## ADR-034 — Prefix search is unioned into the existing query, not substituted for it
+
+- Date: 2026-08-16
+- Status: accepted
+- Context: search runs `websearch_to_tsquery('russian', q)` (ADR-002), which matches whole stemmed lexemes: «фотогр» finds nothing. The owner asked for partial matching «as it is normally done», which for a text search means matching a prefix.
+- Decision: build a second `tsquery` in Python — each token stripped of tsquery metacharacters and suffixed `:*`, passed through `to_tsquery('russian', …)` so the dictionary still stems it — and OR it into the existing one: `websearch_to_tsquery(…) || prefix_query`. `ts_rank` runs against the combined query. When the query yields no usable token the prefix half is omitted and the statement is exactly today's.
+- Alternatives rejected: **replace `websearch_to_tsquery`** — quoted phrases and `-excluded` terms are its semantics and nothing else provides them; every existing search test asserts behaviour that would have to be re-argued. **`pg_trgm`** — matches inside a word and tolerates typos, at the cost of a PostgreSQL extension, a migration, new indexes on three tables, and a similarity score that has to be reconciled with `ts_rank` into one ordering. Prefix matching is what the request meant; the rest is available later and is recorded here so the option is not lost. **Building the prefix query in SQL from `tsvector_to_array`** — one statement, and unreadable at the point where a mistake is an injection.
+- Consequences: strictly additive — nothing found today stops being found, so no existing search test changes, which is what makes this task cheap to verify. The tokeniser is the one place user input reaches `to_tsquery`, whose error on a malformed query is a 500; it strips `&|!()<>:*'` and drops empty tokens, and it gets its own unit tests including the empty, punctuation-only and over-long cases.
+
+## ADR-035 — Video is a facade the reader opts into, and `iframe` never enters the allow-list
+
+- Date: 2026-08-16
+- Status: accepted
+- Context: the owner asked for video in articles and chose the service-link form over uploading files. The CSP is `default-src 'self'` with no `frame-src` (`app/main.py:142-155`), so an embed is blocked outright today; the Markdown pipeline disables raw HTML at the parser *and* sanitises the output, and `attrs_plugin` reaches images and `class` only.
+- Decision: a paragraph holding nothing but a link to YouTube, RuTube or VK Video — the same shape `_figure_paragraphs` already recognises for pictures — renders as `<figure class="prose-video">` containing a `<button>` with the embed URL in a data attribute, and a small script builds the `<iframe>` when it is pressed. If that link wraps a picture from this site's own media, the picture is the poster; otherwise the button is a plain framed play control. `ALLOWED_TAGS` gains `button` and nothing else; `iframe` stays out, so no path through the sanitiser can produce one. The CSP gains `frame-src` with the three hosts named explicitly, and `img-src` is not touched — a poster is always this site's own file.
+- Alternatives rejected: **render the `<iframe>` directly** — needs `iframe` in the allow-list, which turns a second mistake anywhere in the parser configuration into an embedding hole, and it contacts the service on page load for every reader. **The service's own thumbnail as the poster** — `i.ytimg.com` in `img-src`, and the reader's address reaches Google before they have shown any interest. **A third-party lite-embed component** — a script from a CDN, which `script-src 'self'` forbids and which would be the first dependency of its kind here.
+- Consequences: the URL in the data attribute is author-influenced but renderer-closed, exactly as `WIDTH_WORDS` closes the class attribute — nh3 filters attribute names and never values, so the closing has to happen in the renderer, and the recogniser is a set of anchored patterns per host rather than a general URL parse. A visitor's page carries no `iframe` and makes no third-party request, which is assertable and is exit criterion 6. Self-hosted `mp4` is not built: it is a storage and bandwidth commitment with no transcoding behind it, and it would need a second player kept accessible. Adding it later is `media-src 'self'` — already implied by `default-src` — plus the uploader, and touches nothing decided here.
+
+## ADR-036 — The cabinet becomes rooms with their own addresses; the undescribed list leaves it
+
+- Date: 2026-08-16
+- Status: accepted
+- Context: `/me` shipped in I4 as one column of grouped links. On the owner's real data its «Снимки без описания» section is 24 rows all reading «Снимок в альбоме «X»», told apart only by where they lead — the failure I4's own record predicted and left for this intake. The owner also wants the cabinet to be where administrative things live that have no place on the site itself, and one growing column is not that.
+- Decision: three rooms, each its own route and address — `/me` («События», F62's list), `/me/stats` («Сводка») and `/me/media` («Медиа») — sharing a layout partial with a menu that marks the room it is in. Photographs with no description are removed from the cabinet entirely; the prompt stays in the album, in «Правка», where `photo-item--undescribed` and the count line are a hint in place at the moment the owner is looking at the picture.
+- Alternatives rejected: **tabs swapped by htmx on one route** — one address for three views, so a room cannot be linked, opened in a tab or bookmarked, and the browser's back button stops meaning anything. **Collapse the undescribed list behind a disclosure** — keeps a non-problem on the page that lists problems, which is the objection. **A generic `/admin`** — still contradicts the non-goal at `SPEC.md:265` and ADR-029; these are read-only rooms that link back to in-place editing, and none of them deletes anything.
+- Consequences: `tests/api/test_me.py` and `e2e/test_me.py` both assert the undescribed group today and both change — a behaviour change, which is why it is here. Every room needs the same 404-without-a-session treatment as `/me`, the same `noindex, nofollow`, and a place in `e2e/conftest.py`'s `admin_surfaces` so both accessibility sweeps cover it. `seo.py`'s `Disallow: /me` already covers the prefix; that is checked rather than assumed. The next administrative thing is a fourth room, and this decision is what makes that cheap.
+
+## ADR-037 — The orphan scan runs on request, and the script and the page share one implementation
+
+- Date: 2026-08-16
+- Status: accepted
+- Context: «Медиа» wants to show the files on disk nothing points at. That answer exists only in `scripts/media_orphans.py`, which walks both media roots with `rglob` and asks `owners_of` per stem. On the owner's storage that is a filesystem walk of unbounded duration inside a request that also has to render a page.
+- Decision: the room renders immediately from the database — photographs in flight, failed, totals, `SUM(media_asset.byte_size)` — and the disk walk happens only when the owner presses «Проверить», answering into its own region via htmx. The walk itself moves out of the script into a service both call, so the number on the page and the number the command prints cannot disagree; the script keeps `--prune` and keeps being the only thing that deletes.
+- Alternatives rejected: **walk on page load** — makes the cabinet's slowest room its front door, on the one page that must stay usable when something is wrong. **Cache the result** — a stored number about a directory that changes under it, and the first question about it is always "when was this measured". **Duplicate the walk in the router** — two implementations of "what is an orphan", and ADR-013 is precisely about not having two answers to who owns a file.
+- Consequences: `scripts/media_orphans.py` is edited by a task that names it, and its behaviour from the command line must be identical afterwards — verified by running it before and after and diffing the output. The room shows a size and a count and offers no delete; pruning stays a deliberate command on the server, where the owner can read what will go before it goes.
