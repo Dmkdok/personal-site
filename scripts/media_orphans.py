@@ -31,47 +31,8 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import engine
-from app.services.images import owners_of, release, stem_of
-
-
-def _stems() -> dict[str, list[Path]]:
-    """Every file under the media root, grouped by the upload it belongs to.
-
-    Both roots at once: an original and its renditions are one thing to keep or
-    to delete, and looking at either alone would call half of a live upload an
-    orphan.
-    """
-    grouped: dict[str, list[Path]] = {}
-    for root in (settings.originals_dir, settings.derived_dir):
-        if not root.is_dir():
-            continue
-        for path in sorted(root.rglob("*")):
-            if not path.is_file():
-                continue
-            relative = path.relative_to(root).as_posix()
-            grouped.setdefault(stem_of(relative), []).append(path)
-    return grouped
-
-
-def _empty_directories() -> list[Path]:
-    """Directories holding nothing, deepest first so a parent empties in turn.
-
-    Deleting a photo prunes what it empties, but the tree still carries the
-    directories of everything removed before that was true — every e2e album,
-    and the `post/` and `album/` roots the year-based layout used.
-    """
-    found: list[Path] = []
-    for root in (settings.originals_dir, settings.derived_dir):
-        if not root.is_dir():
-            continue
-        for directory in sorted(root.rglob("*"), key=lambda p: len(p.parts), reverse=True):
-            if directory.is_dir() and not any(directory.iterdir()):
-                found.append(directory)
-    return found
-
-
-def _size(paths: list[Path]) -> int:
-    return sum(path.stat().st_size for path in paths if path.exists())
+from app.services.images import release
+from app.services.storage import empty_directories, scan
 
 
 def _human(size: int) -> str:
@@ -89,44 +50,46 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    grouped = _stems()
-    print(f"media root: {settings.media_root}")
-    print(f"{sum(len(paths) for paths in grouped.values())} file(s) in {len(grouped)} upload(s)\n")
-
+    # The walk itself lives in `app.services.storage`, which the cabinet's
+    # «Медиа» room also calls (ADR-037): one answer to "what is an orphan",
+    # printed here and rendered there. This file keeps the part that is only a
+    # command line's — the terminal formatting, and `--prune`.
     with Session(engine) as db:
-        orphans: list[str] = []
-        shared: list[tuple[str, list[str]]] = []
+        disk = scan(db)
 
-        for stem, paths in sorted(grouped.items()):
-            owners = owners_of(db, stem)
-            if not owners:
-                orphans.append(stem)
-                print(f"ORPHAN  {stem}  ({len(paths)} file(s), {_human(_size(paths))})")
-            elif len(owners) > 1:
-                shared.append((stem, owners))
+        print(f"media root: {settings.media_root}")
+        print(f"{disk.file_count} file(s) in {len(disk.uploads)} upload(s)\n")
 
-        if shared:
-            print(f"\n{len(shared)} upload(s) shared by more than one owner:")
-            for stem, owners in shared:
-                print(f"  {stem}")
-                for owner in owners:
+        for upload in disk.orphans:
+            print(
+                f"ORPHAN  {upload.stem}  ({len(upload.files)} file(s), {_human(upload.byte_size)})"
+            )
+
+        if disk.shared:
+            print(f"\n{len(disk.shared)} upload(s) shared by more than one owner:")
+            for upload in disk.shared:
+                print(f"  {upload.stem}")
+                for owner in upload.owners:
                     print(f"      used by {owner}")
             print("  One file, several pages. Do not delete these by hand.")
 
-        if orphans:
-            freed = sum(_size(grouped[stem]) for stem in orphans)
-            print(f"\n{len(orphans)} orphaned upload(s), {_human(freed)}")
+        if disk.orphans:
+            freed = disk.orphan_bytes
+            print(f"\n{len(disk.orphans)} orphaned upload(s), {_human(freed)}")
             if args.prune:
                 # `release` re-asks the database before it unlinks anything, so a
                 # row written since the listing above still saves its file.
-                release(db, *orphans)
-                print(f"Deleted {len(orphans)} orphaned upload(s), freeing {_human(freed)}.")
+                release(db, *[upload.stem for upload in disk.orphans])
+                print(f"Deleted {len(disk.orphans)} orphaned upload(s), freeing {_human(freed)}.")
             else:
                 print("Nothing deleted. Re-run with --prune to remove them.")
         else:
             print("\nNo orphaned files.")
 
-    empty = _empty_directories()
+    # After the prune, deliberately: a directory the prune just emptied is
+    # reported and removed in the same run, which is why this walk is not part of
+    # `scan()`.
+    empty = empty_directories()
     if empty:
         print(f"\n{len(empty)} empty director(ies):")
         for directory in empty[:10]:
@@ -149,7 +112,7 @@ def main() -> int:
                     removed += 1
             print(f"Removed {removed} empty director(ies).")
 
-    if not args.prune and (orphans or empty):
+    if not args.prune and (disk.orphans or empty):
         print("\nNothing was deleted. Re-run with --prune.")
     return 0
 

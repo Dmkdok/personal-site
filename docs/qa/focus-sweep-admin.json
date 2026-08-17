@@ -470,518 +470,518 @@
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "Перейти к содержимому",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "Главная",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "Разработка",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "Фото",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "Блог",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "input",
       "id": null,
       "label": "",
       "indicator_on": "parent"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
       "id": null,
       "label": "Переключить тему",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
       "id": null,
       "label": "Меню администратора",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
       "id": null,
       "label": "Просмотр",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
       "id": null,
       "label": "Правка",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "Кабинет",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
       "id": null,
       "label": "Выйти",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "← Все альбомы",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "album-1930-edit",
+      "id": "album-1973-edit",
       "label": "Править альбом",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "album-1930-publish",
+      "id": "album-1973-publish",
       "label": "Снять с публикации",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
       "id": null,
       "label": "Удалить альбом",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "input",
       "id": "upload-input",
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8547-up",
+      "id": "photo-8718-up",
       "label": "←\n          Переместить выше",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8547-down",
+      "id": "photo-8718-down",
       "label": "→\n          Переместить ниже",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8547-cover",
+      "id": "photo-8718-cover",
       "label": "★\n            Сделать обложкой",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8547-delete",
+      "id": "photo-8718-delete",
       "label": "✕\n          Удалить",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "input",
-      "id": "alt-8547",
+      "id": "alt-8718",
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8548-up",
+      "id": "photo-8719-up",
       "label": "←\n          Переместить выше",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8548-down",
+      "id": "photo-8719-down",
       "label": "→\n          Переместить ниже",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8548-cover",
+      "id": "photo-8719-cover",
       "label": "★\n            Сделать обложкой",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8548-delete",
+      "id": "photo-8719-delete",
       "label": "✕\n          Удалить",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "input",
-      "id": "alt-8548",
+      "id": "alt-8719",
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8549-up",
+      "id": "photo-8720-up",
       "label": "←\n          Переместить выше",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8549-down",
+      "id": "photo-8720-down",
       "label": "→\n          Переместить ниже",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8549-cover",
+      "id": "photo-8720-cover",
       "label": "★\n            Сделать обложкой",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8549-delete",
+      "id": "photo-8720-delete",
       "label": "✕\n          Удалить",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "input",
-      "id": "alt-8549",
+      "id": "alt-8720",
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8550-up",
+      "id": "photo-8721-up",
       "label": "←\n          Переместить выше",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8550-down",
+      "id": "photo-8721-down",
       "label": "→\n          Переместить ниже",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8550-cover",
+      "id": "photo-8721-cover",
       "label": "★\n            Сделать обложкой",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
-      "id": "photo-8550-delete",
+      "id": "photo-8721-delete",
       "label": "✕\n          Удалить",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "input",
-      "id": "alt-8550",
+      "id": "alt-8721",
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "GitHub",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "Telegram",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "VK",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "a",
       "id": null,
       "label": "YouTube",
       "indicator_on": "self"
     },
     {
-      "page": "/photo/e2e-galereia-hymjxkvbg",
+      "page": "/photo/e2e-galereia-erpezmymt",
       "tag": "button",
       "id": null,
       "label": "Изменить ссылки",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "Перейти к содержимому",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "Главная",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "Разработка",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "Фото",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "Блог",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "input",
       "id": null,
       "label": "",
       "indicator_on": "parent"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "Переключить тему",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "Меню администратора",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "Просмотр",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "Правка",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "Кабинет",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "Выйти",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "К списку статей",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "input",
       "id": "post-title",
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "**\n                Жирный",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "textarea",
       "id": "post-body",
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "summary",
       "id": null,
       "label": "Размер картинки и подпись",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "summary",
       "id": null,
       "label": "Оформление карточки",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "Открыть статью",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "Сохранить",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "Опубликовать",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "input",
       "id": "cover-file",
       "label": "",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "Удалить",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "GitHub",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "Telegram",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "VK",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "a",
       "id": null,
       "label": "YouTube",
       "indicator_on": "self"
     },
     {
-      "page": "/blog/e2e-admin-svip-hymjxkvbg/edit",
+      "page": "/blog/e2e-admin-svip-erpezmymt/edit",
       "tag": "button",
       "id": null,
       "label": "Изменить ссылки",
@@ -1075,7 +1075,28 @@
       "page": "/me",
       "tag": "a",
       "id": null,
-      "label": "E2E админ-свип hymjxkvbg",
+      "label": "События",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me",
+      "tag": "a",
+      "id": null,
+      "label": "Сводка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me",
+      "tag": "a",
+      "id": null,
+      "label": "Медиа",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me",
+      "tag": "a",
+      "id": null,
+      "label": "E2E админ-свип erpezmymt",
       "indicator_on": "self"
     },
     {
@@ -1096,202 +1117,6 @@
       "page": "/me",
       "tag": "a",
       "id": null,
-      "label": "Снимок в альбоме «E2E галерея hymjxkvbg»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «E2E галерея hymjxkvbg»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «E2E галерея hymjxkvbg»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «E2E галерея hymjxkvbg»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «E2E крупные fkhcuulle»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «E2E крупные fkhcuulle»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «E2E крупные fkhcuulle»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый 2К»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый 2К»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый 2К»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый 2К»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый 2К»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый 2К»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый 2К»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Осень»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Осень»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Осень»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Осень»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Осень»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Осень»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Осень»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
-      "label": "Снимок в альбоме «Тестовый»",
-      "indicator_on": "self"
-    },
-    {
-      "page": "/me",
-      "tag": "a",
-      "id": null,
       "label": "GitHub",
       "indicator_on": "self"
     },
@@ -1318,6 +1143,293 @@
     },
     {
       "page": "/me",
+      "tag": "button",
+      "id": null,
+      "label": "Изменить ссылки",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "Перейти к содержимому",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "Главная",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "Разработка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "Фото",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "Блог",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "input",
+      "id": null,
+      "label": "",
+      "indicator_on": "parent"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "button",
+      "id": null,
+      "label": "Переключить тему",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "button",
+      "id": null,
+      "label": "Меню администратора",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "button",
+      "id": null,
+      "label": "Просмотр",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "button",
+      "id": null,
+      "label": "Правка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "Кабинет",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "button",
+      "id": null,
+      "label": "Выйти",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "События",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "Сводка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "Медиа",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "GitHub",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "Telegram",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "VK",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "a",
+      "id": null,
+      "label": "YouTube",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/stats",
+      "tag": "button",
+      "id": null,
+      "label": "Изменить ссылки",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "Перейти к содержимому",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "Главная",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "Разработка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "Фото",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "Блог",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "input",
+      "id": null,
+      "label": "",
+      "indicator_on": "parent"
+    },
+    {
+      "page": "/me/media",
+      "tag": "button",
+      "id": null,
+      "label": "Переключить тему",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "button",
+      "id": null,
+      "label": "Меню администратора",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "button",
+      "id": null,
+      "label": "Просмотр",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "button",
+      "id": null,
+      "label": "Правка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "Кабинет",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "button",
+      "id": null,
+      "label": "Выйти",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "События",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "Сводка",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "Медиа",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "button",
+      "id": null,
+      "label": "Проверить",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "GitHub",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "Telegram",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "VK",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
+      "tag": "a",
+      "id": null,
+      "label": "YouTube",
+      "indicator_on": "self"
+    },
+    {
+      "page": "/me/media",
       "tag": "button",
       "id": null,
       "label": "Изменить ссылки",

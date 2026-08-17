@@ -1,8 +1,55 @@
-/* The cabinet (F62). Five lists, no forms and one button — see ADR-029 for why
-   it is a summary rather than an admin panel. Served only to a signed-in owner,
-   because only a signed-in owner can reach the page at all. */
+/* The cabinet (F62, F64). Three rooms of lists and figures, no forms and two
+   buttons — see ADR-029 for why it is a summary rather than an admin panel, and
+   ADR-036 for why the rooms are addresses rather than tabs. Served only to a
+   signed-in owner, because only a signed-in owner can reach any of it at all. */
 
 @layer components {
+  /* The room menu. Deliberately the same shape as the site navigation: it is the
+     same gesture on the same kind of thing, and the owner should not have to
+     learn a second one. */
+  .cabinet-nav {
+    margin-block-end: var(--space-m);
+  }
+
+  .cabinet-nav__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  .cabinet-nav__link {
+    display: block;
+    padding: 0.45rem 0.85rem;
+    border-radius: var(--radius-pill);
+    font-size: var(--step--1);
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--text-muted);
+    background-color: var(--surface);
+  }
+
+  .cabinet-nav__link:hover {
+    color: var(--text);
+  }
+
+  .cabinet-nav__link[aria-current="page"] {
+    color: var(--on-accent);
+    background-color: var(--accent);
+  }
+
+  /* Forced colours repaint every background with the system's own, so the accent
+     that says «you are here» goes with them. A border survives (UI-AUDIT
+     F-013) — the same treatment `.nav__link` already has. */
+  @media (forced-colors: active) {
+    .cabinet-nav__link[aria-current="page"] {
+      border: 2px solid Highlight;
+    }
+
+    .cabinet-nav__link:hover {
+      text-decoration: underline;
+    }
+  }
+
   .cabinet__group + .cabinet__group {
     margin-block-start: var(--space-l);
   }
@@ -52,5 +99,55 @@
     display: block;
     margin-block-start: var(--space-xl);
     max-inline-size: 48ch;
+  }
+
+  /* «Сводка». A definition list per panel: every figure is a name and a value,
+     and `auto-fit` puts as many across as the column has room for without a
+     breakpoint of its own. */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: var(--space-s) var(--space-m);
+  }
+
+  .stats__figure {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    padding-block-end: var(--space-xs);
+    border-block-end: 1px solid var(--line);
+  }
+
+  .stats__value {
+    font-size: var(--step-1);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* «Медиа». The scan's own region, below the button that fills it. */
+  .cabinet__scan {
+    margin-block-start: var(--space-xs);
+  }
+
+  .cabinet__report:not(:empty) {
+    margin-block-start: var(--space-s);
+    padding-block-start: var(--space-s);
+    border-block-start: 1px solid var(--line);
+  }
+
+  .cabinet__total {
+    margin-block-end: var(--space-xs);
+  }
+
+  /* A stem is a path, and a path is read character by character. */
+  .cabinet__stem {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    overflow-wrap: anywhere;
+  }
+
+  .cabinet__prune {
+    display: block;
+    margin-block-start: var(--space-m);
+    max-inline-size: 60ch;
   }
 }

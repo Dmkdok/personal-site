@@ -238,3 +238,67 @@ Suites afterwards: **306 unit/API** exit 0 (289 before, `+17` from the two param
 4. **`test_a_usable_token_does_produce_a_prefix_half` exists to guard the other guard.** Seven
    parametrisations assert `_prefix_tsquery(...) is None`, and a helper that returned `None`
    unconditionally would satisfy all seven while quietly deleting the feature.
+
+## T137 landed — and nine things the plan did not say
+
+Done 2026-08-17. Three rooms with their own addresses — `/me` «События», `/me/stats` «Сводка»,
+`/me/media` «Медиа» — sharing one layout and one menu that marks the room being read;
+«Снимки без описания» is gone from the cabinet; the disk walk moved into `app/services/storage.py`,
+which `scripts/media_orphans.py` now calls and «Медиа» calls on a press. Suites afterwards:
+**320 unit/API** exit 0 (306 before, `+14`), **99 e2e** exit 0 (97 before, `+2`), `ruff check` clean,
+`ruff format --check` 120 files exit 0. Accessibility sweeps over the two new surfaces: focus stops
+189 → 205 with **0** without an indicator, target sizes under 44 px 157 → 171 with **0** under
+WCAG 2.5.8's 24, contrast failures **0** in both themes.
+
+1. **Two templates the DoD's path list did not name.** `pages/me_base.html` is the layout ADR-036
+   asked for, as a *parent template* rather than an include: the three rooms `{% extends %}` it, so
+   `noindex, nofollow` and the room menu are structural and a fourth room gets both by existing.
+   Repeating the robots meta in three files would have made forgetting it a one-line mistake.
+   `partials/orphan_scan.html` is the second: the answer behind «Проверить» has to be renderable on
+   its own to be swapped into a region.
+
+2. **`scan()` deliberately does not carry the empty directories, and that is a near-miss.** The
+   script walks for those **after** `--prune`, so a directory the prune has just emptied is reported
+   and removed in the same run. The first version folded the walk into `scan()`, which moved it
+   *before* the deletion — a byte-identical report run and a quietly different `--prune`. The DoD's
+   own check would not have caught it, because the diff it prescribes is a report run.
+
+3. **The diff needed a planted orphan to mean anything.** Real storage had no orphans and no empty
+   directories, so a plain before/after diff would have exercised neither branch that changed. Two
+   files under `photos/zzz-t137-check/` and one empty directory were planted in the media volume, the
+   diff was taken with them there — identical from `media root:` down, including the `ORPHAN` line,
+   the shared-upload section and the empty-directory list — and they were removed afterwards. The
+   `--prune` branch is still not covered by that diff; it is the one branch a report run cannot
+   reach, and it is named here rather than implied to be verified.
+
+4. **The move left a name behind, and the command found it.** `if not args.prune and (orphans or
+   empty)` still referred to the local list the scan replaced, so the script printed its entire
+   report and *then* died on `NameError`. Only running it showed that — the diff the DoD asks for is
+   not paperwork.
+
+5. **Two size formats, on purpose.** `scripts/media_orphans.py` keeps its own B/KB/MB/GB ladder,
+   because its output had to stay identical to the byte; the page has `_megabytes` and one Russian
+   unit with a decimal comma. Formatting at each edge, not a second answer about what is on disk —
+   the number itself comes from the one `scan`.
+
+6. **«События» and «Медиа» share the failed photographs, through one function.** A failed photograph
+   is something waiting *and* something wrong with the pipeline, so both rooms want it;
+   `_failed_group` means they cannot end up listing it differently or offering two different retries.
+
+7. **Only articles carry a publication date.** An album and a project have `is_published` and nothing
+   else, and the DoD forbids a new column — so the figure is «Последняя статья», named for what it
+   actually measures, rather than «Последняя публикация» promising more than the schema knows.
+
+8. **The guard that the undescribed prompt survived was already written.**
+   `tests/api/test_photo.py::test_the_owner_is_told_how_many_photos_have_no_description` asserts the
+   count line and `photo-item--undescribed` on the album page and passes unchanged, so the deletion
+   is provably a *move*. `tests/api/test_me.py` now asserts the cabinet is silent about it and names
+   that test rather than duplicating it against a hand-made photograph whose `thumb_path` is `None`.
+
+9. **The red run was taken at the API level only.** With `app/` and `scripts/` stashed, twelve of the
+   twenty-two checks in `tests/api/test_me.py` failed on their own assertions and ten passed — the
+   ten being the four "no such address" cases, which a *missing* route also satisfies, and the
+   «События» checks that were already true. The new e2e checks make the same claims through a
+   browser, so they were not stashed a second time. T136's lesson was applied: the three tests that
+   need `app.services.storage` import it **inside** their bodies, so a tree without the module still
+   collects the file.

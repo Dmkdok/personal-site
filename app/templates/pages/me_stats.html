@@ -1,0 +1,22 @@
+{# «Сводка» — how much there is of everything (F64).
+
+   Definition lists, not a table: each figure is a name and a value, and nothing
+   here is a row in a grid of two dimensions. #}
+{% extends "pages/me_base.html" %}
+
+{% block room %}
+  {% for panel in panels %}
+    <section class="cabinet__group">
+      <h2 class="label cabinet__label">{{ t("me.panel_" ~ panel.key) }}</h2>
+
+      <dl class="stats">
+        {% for figure in panel.figures %}
+          <div class="stats__figure">
+            <dt class="meta stats__name">{{ t("me." ~ figure.key) }}</dt>
+            <dd class="stats__value">{{ figure.value }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
+    </section>
+  {% endfor %}
+{% endblock %}

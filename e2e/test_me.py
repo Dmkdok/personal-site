@@ -1,14 +1,14 @@
-"""F62 / ADR-029 — the cabinet gathers what needs the owner onto one screen.
+"""F62 / F64 — the cabinet gathers what needs the owner, in rooms of its own.
 
 The gap in-place editing cannot close is state that is not on the page you are
 looking at: a draft is visible only on `/blog`, an unpublished album only on
-`/photo`, a photograph nobody described only inside its own album. The cabinet
-answers one question — what needs attention — and links every answer back to the
-page that edits it. It authors nothing; the editing surface does not move.
+`/photo`, a photograph that failed to process only inside its own album. The
+cabinet answers that — and, since ADR-036, two more questions that have no place
+on the site itself: how much there is of everything, and what is in the storage.
+It authors nothing; the editing surface does not move.
 
-To anyone without a session the address does not exist, which is the same
-treatment a draft article gets: a redirect to `/login` would confirm the page is
-there.
+To anyone without a session no room's address exists, which is the same treatment
+a draft article gets: a redirect to `/login` would confirm the page is there.
 """
 
 from __future__ import annotations
@@ -19,8 +19,9 @@ from e2e.conftest import Trash, wait_for_ready
 from e2e.helpers import AdminApi, open_owner_menu, photo_bytes, ru
 
 
-def test_the_address_does_not_exist_for_a_visitor(page: Page) -> None:
-    assert page.request.get("/me").status == 404
+def test_no_room_exists_for_a_visitor(page: Page) -> None:
+    for address in ("/me", "/me/stats", "/me/media", "/me/media/orphans"):
+        assert page.request.get(address).status == 404, address
 
     page.goto("/")
     expect(page.get_by_role("link", name=ru("me.title"), exact=True)).to_have_count(0)
@@ -55,20 +56,68 @@ def test_the_cabinet_finds_everything_on_one_screen(
     expect(draft).to_be_visible()
     expect(admin_page.get_by_role("link", name=album.title, exact=True)).to_be_visible()
     expect(admin_page.get_by_role("link", name=project_title, exact=True)).to_be_visible()
-    # The photograph is ready and nobody has described it — the album's own
-    # fallback alt is a floor, not a description (UI-AUDIT F-017).
+    # The photograph is ready and nobody has described it, and «События» says
+    # nothing about it: a missing description is a hint in the album, in «Правка»,
+    # not a task in the cabinet (ADR-036). It used to be listed here, and on real
+    # data that section was two dozen rows that all read the same.
     expect(
         admin_page.get_by_role("link", name=ru("me.photo_in", album=album.title), exact=True)
-    ).to_be_visible()
+    ).to_have_count(0)
 
     # Every answer leads to the page that edits it, which is the whole claim.
     draft.click()
     admin_page.wait_for_url(f"**/blog/{post.slug}/edit")
 
 
-def test_the_cabinet_is_never_indexed(admin_page: Page) -> None:
-    admin_page.goto("/me")
-    robots_meta = admin_page.locator('meta[name="robots"]').get_attribute("content")
-    assert robots_meta == "noindex, nofollow", robots_meta
+def test_every_room_is_an_address_of_its_own(admin_page: Page) -> None:
+    """F64: the menu walks the rooms, and the browser knows where it has been.
 
+    Reached by link and left by the back button — which is what «its own address»
+    buys and what tabs swapped on one route would have cost (ADR-036).
+    """
+    admin_page.goto("/me")
+
+    for label, path in (
+        (ru("me.room_stats"), "/me/stats"),
+        (ru("me.room_media"), "/me/media"),
+        (ru("me.room_events"), "/me"),
+    ):
+        admin_page.get_by_role("link", name=label, exact=True).click()
+        admin_page.wait_for_url(f"**{path}")
+        expect(admin_page.get_by_role("link", name=label, exact=True)).to_have_attribute(
+            "aria-current", "page"
+        )
+
+    admin_page.go_back()
+    admin_page.wait_for_url("**/me/media")
+
+
+def test_the_disk_is_walked_only_when_the_owner_asks(admin_page: Page) -> None:
+    """ADR-037: «Медиа» opens without touching the storage it describes.
+
+    The region is empty on load — nothing has been walked — and the press fills
+    it. A room that scanned on load would be the cabinet's slowest page and its
+    front door at the same time, on the one screen that has to work when
+    something is wrong with the disk.
+    """
+    admin_page.goto("/me/media")
+
+    report = admin_page.locator("#orphan-report")
+    expect(report).to_be_empty()
+
+    admin_page.get_by_role("button", name=ru("me.disk_check"), exact=True).click()
+
+    expect(report).to_contain_text("Файлов —")
+    # It reports and never offers: deleting stays a command on the server.
+    expect(report).to_contain_text("--prune")
+
+
+def test_no_room_is_ever_indexed(admin_page: Page) -> None:
+    """All three, because all three extend the same layout — asserted, not assumed."""
+    for room in ("/me", "/me/stats", "/me/media"):
+        admin_page.goto(room)
+        robots_meta = admin_page.locator('meta[name="robots"]').get_attribute("content")
+        assert robots_meta == "noindex, nofollow", (room, robots_meta)
+
+    # One prefix rule covers the three, which is why `seo.py` did not change.
     assert "Disallow: /me" in admin_page.request.get("/robots.txt").text()

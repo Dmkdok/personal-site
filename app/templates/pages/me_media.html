@@ -1,0 +1,34 @@
+{# «Медиа» — the pipeline from the database, and the disk on request (F64). #}
+{% extends "pages/me_base.html" %}
+
+{% block room %}
+  {% if groups %}
+    {% for group in groups %}
+      {% include "partials/cabinet_group.html" %}
+    {% endfor %}
+  {% else %}
+    {% with title = t("me.media_clear_title"), note = t("me.media_clear_note") %}
+      {% include "partials/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
+
+  <section class="cabinet__group cabinet__disk">
+    <h2 class="label cabinet__label">{{ t("me.disk") }}</h2>
+    <p class="meta">{{ t("me.disk_note") }}</p>
+
+    {# On a press, never on load: the walk is a filesystem crawl of unbounded
+       duration, and this is the room that must stay usable when something is
+       wrong with the storage it describes (ADR-037). The answer lands in the
+       region below rather than replacing the button, so the caret stays where
+       the owner left it (F-002) and the press can be repeated. #}
+    <button
+      class="button button--quiet cabinet__scan"
+      type="button"
+      hx-get="/me/media/orphans"
+      hx-target="#orphan-report"
+      hx-swap="innerHTML"
+    >{{ t("me.disk_check") }}</button>
+
+    <div class="cabinet__report" id="orphan-report" role="region" aria-live="polite" aria-label="{{ t('me.disk_result') }}"></div>
+  </section>
+{% endblock %}

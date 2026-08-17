@@ -1,0 +1,31 @@
+{# What every room of the cabinet has in common (F64, ADR-036).
+
+   The three rooms extend this rather than repeating it, so `noindex, nofollow`
+   and the room menu are structural: a fourth room gets both by existing. `room`
+   comes from the router and names the one being rendered. #}
+{% extends "base.html" %}
+
+{% block title %}{{ t("me.room_" ~ room) }} — {{ t("me.title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ t("me.meta") }}{% endblock %}
+
+{% block head_extra %}
+  {# `nofollow` as well as `noindex`: every link in the cabinet leads somewhere
+     the owner edits, and half of them lead to unpublished content. `seo.py`
+     carries the matching `Disallow: /me`, which covers all three rooms because
+     it is a prefix, and `sitemap.xml` never knew about any of them — the address
+     is not meant to be discovered at all. #}
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="{{ static_url('css/me.css') }}" />
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-header__title">{{ t("me.title") }}</h1>
+    </header>
+
+    {% include "partials/cabinet_nav.html" %}
+
+    {% block room %}{% endblock %}
+  </div>
+{% endblock %}

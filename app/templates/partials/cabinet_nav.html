@@ -1,0 +1,20 @@
+{# The rooms of the cabinet (F64, ADR-036).
+
+   A real navigation landmark holding links, not a row of buttons swapping views
+   on one address: every room can be linked, bookmarked, opened in its own tab
+   and reached with the back button. `room` comes from the router and names the
+   one being read — it is marked with `aria-current="page"` rather than by colour
+   alone, so the mark survives `forced-colors` and reaches a screen reader. #}
+<nav class="cabinet-nav" aria-label="{{ t('me.rooms') }}">
+  <ul class="cabinet-nav__list" role="list">
+    {% for key, url in [("events", "/me"), ("stats", "/me/stats"), ("media", "/me/media")] %}
+      <li>
+        <a
+          class="cabinet-nav__link"
+          href="{{ url }}"
+          {% if room == key %}aria-current="page"{% endif %}
+        >{{ t("me.room_" ~ key) }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+</nav>

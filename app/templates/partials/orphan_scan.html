@@ -1,0 +1,46 @@
+{# The disk walk's answer (ADR-037). Rendered only into «Медиа»'s own region, on
+   a press. It reports and never offers: nothing in the cabinet deletes a file,
+   and the sentence at the end says where deleting lives. #}
+<p class="cabinet__total">{{ t("me.disk_total", files=files, uploads=uploads) }}</p>
+
+{% if orphans %}
+  <p class="cabinet__total">{{ t("me.orphans_found", count=orphans|length, size=orphan_size) }}</p>
+  <ul class="cabinet__list" role="list">
+    {% for orphan in orphans %}
+      <li class="cabinet__item">
+        <span class="cabinet__stem">{{ orphan.stem }}</span>
+        <span class="meta cabinet__reason">{{ t("me.orphan_files", files=orphan.files, size=orphan.size) }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="cabinet__total">{{ t("me.orphans_none") }}</p>
+{% endif %}
+
+{% if shared %}
+  {# One file, several pages — the deduplication in F42 showing through. Not a
+     problem to fix; a thing to know before editing the tree by hand. #}
+  <h3 class="label cabinet__label">{{ t("me.shared", count=shared|length) }}</h3>
+  <ul class="cabinet__list" role="list">
+    {% for upload in shared %}
+      <li class="cabinet__item">
+        <span class="cabinet__stem">{{ upload.stem }}</span>
+        <span class="meta cabinet__reason">{{ upload.owners|join(", ") }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if empty %}
+  <h3 class="label cabinet__label">{{ t("me.empty_dirs", count=empty|length) }}</h3>
+  <ul class="cabinet__list" role="list">
+    {% for path in empty[:10] %}
+      <li class="cabinet__item"><span class="cabinet__stem">{{ path }}</span></li>
+    {% endfor %}
+  </ul>
+  {% if empty|length > 10 %}
+    <p class="meta">{{ t("me.empty_dirs_more", count=empty|length - 10) }}</p>
+  {% endif %}
+{% endif %}
+
+<p class="meta cabinet__prune">{{ t("me.prune_note") }}</p>

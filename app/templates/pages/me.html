@@ -1,37 +1,20 @@
-{% extends "base.html" %}
+{# «События» — F62's list: what is waiting, and where it is dealt with. #}
+{% extends "pages/me_base.html" %}
 
-{% block title %}{{ t("me.title") }} — {{ t("site.name") }}{% endblock %}
-{% block meta_description %}{{ t("me.meta") }}{% endblock %}
+{% block room %}
+  {% if groups %}
+    {% for group in groups %}
+      {% include "partials/cabinet_group.html" %}
+    {% endfor %}
+  {% else %}
+    {% with title = t("me.empty_title"), note = t("me.empty_note") %}
+      {% include "partials/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
 
-{% block head_extra %}
-  {# `nofollow` as well as `noindex`: every link on this page leads somewhere
-     the owner edits, and half of them lead to unpublished content. `seo.py`
-     carries the matching `Disallow: /me`, and `sitemap.xml` never knew about
-     it — the address is not meant to be discovered at all. #}
-  <meta name="robots" content="noindex, nofollow" />
-  <link rel="stylesheet" href="{{ static_url('css/me.css') }}" />
-{% endblock %}
-
-{% block content %}
-  <div class="container">
-    <header class="page-header">
-      <h1 class="page-header__title">{{ t("me.title") }}</h1>
-    </header>
-
-    {% if groups %}
-      {% for group in groups %}
-        {% include "partials/cabinet_group.html" %}
-      {% endfor %}
-    {% else %}
-      {% with title = t("me.empty_title"), note = t("me.empty_note") %}
-        {% include "partials/empty_state.html" %}
-      {% endwith %}
-    {% endif %}
-
-    {# Stated rather than offered. `ensure_admin_user` rewrites the hash from
-       `ADMIN_PASSWORD` at every start, so a password set from here would revert
-       at the next restart — the page says where the password lives instead of
-       pretending to own it (ADR-029). No form on this page posts a credential. #}
-    <p class="meta cabinet__credentials">{{ t("me.credentials") }}</p>
-  </div>
+  {# Stated rather than offered. `ensure_admin_user` rewrites the hash from
+     `ADMIN_PASSWORD` at every start, so a password set from here would revert
+     at the next restart — the page says where the password lives instead of
+     pretending to own it (ADR-029). No form in the cabinet posts a credential. #}
+  <p class="meta cabinet__credentials">{{ t("me.credentials") }}</p>
 {% endblock %}

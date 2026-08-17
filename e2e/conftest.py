@@ -235,13 +235,22 @@ def admin_surfaces(
     anonymous sweeps; what makes these paths *admin* is the session they are
     opened in, not the state of the content.
 
-    `/me` joins the list rather than replacing anything: it exists only for the
-    owner, so no anonymous sweep can ever cover it (ADR-029). The draft post
-    created here is one of the things it lists, so the page is never swept
-    empty.
+    All three rooms of the cabinet join the list rather than replacing anything:
+    they exist only for the owner, so no anonymous sweep can ever cover them
+    (ADR-029, ADR-036). The draft post created here is one of the things «События»
+    lists, so that room is never swept empty; «Сводка» always has figures, and
+    «Медиа» always has its «Проверить».
     """
     post = trash.post(admin_api.create_post(f"E2E админ-свип {run_token}"))
-    return ["/", "/dev", f"/photo/{published_album.slug}", f"/blog/{post.slug}/edit", "/me"]
+    return [
+        "/",
+        "/dev",
+        f"/photo/{published_album.slug}",
+        f"/blog/{post.slug}/edit",
+        "/me",
+        "/me/stats",
+        "/me/media",
+    ]
 
 
 @pytest.fixture(scope="session")
