@@ -1,13 +1,14 @@
 ---
 name: ui-quality-audit
 description: >-
-  OPTIONAL read-only UI/UX and front-end architecture audit. Produces an
-  evidence-based improvement plan (what to change/rewrite and target state)
-  using Nielsen heuristics, Laws of UX, WCAG 2.2 AA, WAI-ARIA APG, platform
-  HIG/Material, and proven UI structure practices. Never edits code. Use only
-  when the user explicitly asks for a UI/UX audit, deep usability/a11y review,
-  design-system critique, or a polish plan after MVP — not during default
-  orchestrate-product Phase 6 (that uses web-design-guidelines).
+  OPTIONAL read-only UI/UX and front-end architecture audit against Nielsen,
+  WCAG 2.2 AA and WAI-ARIA APG. Produces an evidence-based improvement plan;
+  never edits code. Use only when the user explicitly asks for a UI/UX audit,
+  deep usability/a11y review, design-system critique, or a polish plan after
+  MVP — not during default orchestrate-product Phase 6 (that uses
+  web-design-guidelines).
+context: fork
+background: false
 metadata:
   author: product-factory
   version: "1.0.0"

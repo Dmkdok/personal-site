@@ -2,6 +2,12 @@
   "attribution": {
     "commit": ""
   },
+  "permissions": {
+    "deny": [
+      "Read(docs/qa/screenshots/**)",
+      "Read(docs/qa/*.jpg)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {

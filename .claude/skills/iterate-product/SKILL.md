@@ -1,14 +1,11 @@
 ---
 name: iterate-product
 description: >-
-  Delivery pipeline for changing a product that already ships. Runs a green
-  baseline, delta intake, an impact and regression map, amendments to
-  SPEC/DECISIONS/TASKS, an approval gate, then delegates implementation,
-  testing and review. Use when the work starts from an existing codebase and
-  its docs/ — remediating a UI, security or QA audit, a bug report, a new
-  owner request, a refactor, a performance target — and not from an empty
-  repo. Use instead of orchestrate-product whenever docs/SPEC.md already
-  describes a product that was built.
+  Delivery pipeline for changing a product that already ships: green baseline,
+  delta intake, impact and regression map, amendments to SPEC/DECISIONS/TASKS,
+  an approval gate, then implementation, testing and review. Use instead of
+  orchestrate-product whenever docs/SPEC.md already describes a built product —
+  audits, bug reports, owner requests, refactors, performance targets.
 compatibility: >-
   Claude Code, Cursor Agent. Requires a previous delivery's docs/SPEC.md,
   docs/PLAN.md and docs/TASKS.md, and a runnable test suite.

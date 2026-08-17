@@ -6,6 +6,8 @@ description: >-
   Use during review-product Phase 6, before handoff, or when the user asks for
   a security audit. Lean checklist inspired by Trail of Bits static-analysis
   practice — not a full Semgrep/CodeQL plugin clone.
+context: fork
+background: false
 metadata:
   author: product-factory
   version: "1.0.0"

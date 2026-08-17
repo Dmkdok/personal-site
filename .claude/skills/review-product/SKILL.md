@@ -4,6 +4,8 @@ description: >-
   Independent delivery review for correctness, security, UX, and completeness
   against SPEC.md. Use after tests, before handoff, or when verifying claimed
   work. Pairs with web-design-guidelines for UI audits.
+context: fork
+background: false
 ---
 
 # Review Product

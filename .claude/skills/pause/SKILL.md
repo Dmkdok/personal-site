@@ -35,7 +35,9 @@ Look at what is in flight — edits, background commands, subagents.
 docker compose run --rm tests
 ```
 
-Never pipe it through `tail`/`head` — you get the pipe's exit code and a red suite reads as green.
+In Bash never pipe it through `tail`/`head` — you get the pipe's exit code and a red suite reads as
+green. In PowerShell a cmdlet pipe leaves `$LASTEXITCODE` alone, so
+`... 2>&1 | Tee-Object $log | Select-Object -Last 30; $LASTEXITCODE` is safe there.
 
 The e2e suite runs on the host against `make up`, not in that container (`tests` mounts only
 `tests/`): `uv run pytest e2e/`. If it is too slow to re-run at this hour, do not invent a result —
@@ -60,7 +62,8 @@ If the suite is red, still commit — but say so in the commit body.
 - **`## Resume here`** at the top, rewritten (not appended to). It carries: branch and whether the
   tree is clean; where the work stands in one line; **the next three actions in order**, each
   concrete enough to start without re-reading the code; and any decision that is waiting on the
-  owner, marked as theirs.
+  owner, marked as theirs. **Keep it under 40 lines** — the SessionStart hook injects only the first
+  60 and truncates the rest, so anything past that is paid for on every read and delivered to no one.
 - **`## Test report`** — every suite, with its own last-run timestamp and command. Name the failing
   tests individually.
 - **`## Notes`** — append dated entries for what this session learned. Root causes and traps, not a
@@ -68,6 +71,19 @@ If the suite is red, still commit — but say so in the commit body.
 
 Then `docs/TASKS.md`: tick only what its DoD actually meets, and write the open half of a partly
 done task into the task line itself.
+
+### 4b. Keep the handoff small
+
+`docs/STATUS.md` is read at every session start and by every subagent that resumes work, so its size
+is a recurring cost. Before finishing, move what is no longer live:
+
+- Notes older than the current iteration → `docs/status-archive.md`, under a dated heading.
+- A baseline whose iteration has closed → `docs/status-archive.md`.
+- A milestone whose tasks are all ticked → `docs/tasks-archive.md`.
+
+Move the text, never summarise it, and leave the pointer in `## History` accurate. **`docs/STATUS.md`
+past ~20 KB means this step was skipped.** A trap that is still load-bearing does not go to the
+archive — it goes to `CLAUDE.md` or `docs/CONVENTIONS.md`, where it is read at the moment it applies.
 
 Re-read what you wrote against the tree. A "Resume here" that says the tree is dirty after you
 committed it is worse than no handoff.
