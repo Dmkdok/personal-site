@@ -239,6 +239,13 @@ class AdminApi:
         assert ids, "the board came back with no project on it — not signed in?"
         return int(ids[-1])
 
+    def publish_project(self, project_id: int) -> None:
+        """Publish a project — the endpoint toggles, so this is not idempotent."""
+        response = self._request.post(
+            f"/dev/admin/projects/{project_id}/publish", headers=self._headers()
+        )
+        assert response.status == 200, f"publish project → {response.status}"
+
     def delete_project(self, project_id: int) -> None:
         self._request.delete(f"/dev/admin/projects/{project_id}", headers=self._headers())
 

@@ -100,6 +100,29 @@
     inline-size: 100%;
   }
 
+  /* The same handle the photo boards draw, restated here because `.photo-handle`
+     lives in photo.css and /dev does not load it. */
+  .project__handle {
+    display: grid;
+    place-items: center;
+    inline-size: 1.7rem;
+    block-size: 1.7rem;
+    flex: none;
+    border-radius: var(--radius-s);
+    color: var(--text-faint);
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .project__handle:active {
+    cursor: grabbing;
+  }
+
+  .project__handle svg {
+    inline-size: 14px;
+    block-size: 14px;
+  }
+
   /* --- Tech stack --------------------------------------------------------- */
   /* A dot-separated run of words. Laid out as text rather than as a flex row:
      flex would treat each entry as its own line box and break the run apart. */
