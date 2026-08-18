@@ -66,6 +66,24 @@ def settled(db, photo_id: int) -> Photo:
     raise AssertionError(f"photo {photo_id} never left the pipeline")
 
 
+def cover_of(db, album_id: int) -> int | None:
+    """Wait for the cover the pipeline assigns in a commit of its own.
+
+    `_ensure_cover` runs *after* `process_photo` has committed READY, in a
+    second transaction, so `settled` can return before the cover exists. The
+    assertion used to read the album straight after settling and lost that race
+    whenever the pool was busy — green alone, red in a full run.
+    """
+    deadline = time.monotonic() + PROCESS_TIMEOUT
+    while time.monotonic() < deadline:
+        db.rollback()  # a fresh snapshot; the pool commits from its own session
+        album = db.get(Album, album_id)
+        if album is not None and album.cover_photo_id is not None:
+            return album.cover_photo_id
+        time.sleep(0.1)
+    raise AssertionError(f"album {album_id} never got a cover")
+
+
 def files_of(photo: Photo) -> list:
     paths = [settings.originals_dir / photo.original_path]
     paths += [
@@ -292,8 +310,7 @@ def test_upload_happy_path_produces_a_ready_photo_with_srcset(admin_client, db, 
     assert all(path.is_file() for path in files_of(photo))
 
     # The first ready photo becomes the cover, so the index card is never empty.
-    db.rollback()
-    assert db.get(Album, album.id).cover_photo_id == photo.id
+    assert cover_of(db, album.id) == photo.id
 
     page = admin_client.get(f"/photo/{album.slug}").text
     assert 'srcset="' in page
@@ -442,8 +459,7 @@ def test_cover_can_be_moved_to_another_photo(admin_client, db, album):
         db, upload(admin_client, album.id, make_jpeg(600, 800), "b.jpg", "image/jpeg").json()["id"]
     )
 
-    db.rollback()
-    assert db.get(Album, album.id).cover_photo_id == first.id
+    assert cover_of(db, album.id) == first.id
 
     assert admin_client.post(f"/photo/admin/photos/{second.id}/cover").status_code == 200
     db.rollback()
