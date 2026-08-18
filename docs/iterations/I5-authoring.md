@@ -427,3 +427,61 @@ exit 0. Admin sweeps: contrast **141 samples, 0 failures** in both themes, focus
    being opened, that it covers every shape the renderer understands, and that each new button leaves
    Markdown that actually renders. The table one asserts a `<table>` in the preview, not three lines
    that look like one.
+
+## Run 7 landed — the one thing five tasks and eight criteria did not catch
+
+Done 2026-08-18, in the review phase rather than in a task, because the review is
+what found it. `docs/REVIEW.md` run 7 has the finding and the resolution table;
+this is the part worth reading later.
+
+1. **In «Просмотр», `/dev` could still be dragged into a new public order.**
+   `dev-sortable.js` dragged from `.project__body` — the card's own text, laid out
+   in both modes and carrying no marker. Every other owner affordance on the site
+   is an element the marker can take away; this one was the *content*, so
+   `owner-only` had nothing to hold on to. The drop posted `/dev/admin/order` and
+   the order a visitor reads changed, from the page that claims to be the
+   visitor's.
+
+2. **Exit criterion 4 could not have caught it, and the reason generalises.**
+   The criterion measures rendered boxes, which is the right measure for anything
+   a pointer can hit, a screen reader can walk or a tab stop can need. A drag
+   target is none of those: it is a selector a script hands to a library. **The
+   marker only reaches what the marker is written on** — so a behaviour attached
+   to a shared element by a *selector in JavaScript* is invisible to a box count.
+   `photo-sortable.js` was correct by accident of shape: it already dragged from a
+   handle, and the handle already sat inside the owner block.
+
+3. **The fix is a handle, not a mode read.** `<span class="project__handle"
+   data-drag-handle>` now lives inside `.project__admin owner-only`, and
+   `dev-sortable.js` uses `[data-drag-handle]` — the hook the photo boards
+   already use. Teaching the script to read `show-edits` was the other option and
+   was rejected: ADR-032 says one mechanism decides the mode, and a second reader
+   in JavaScript would need re-evaluating on every mode switch and every htmx
+   swap. `.project__handle` is restated in `dev.css` because `.photo-handle` lives
+   in `photo.css`, which `/dev` does not load; unifying them belongs to an intake,
+   not to a review fix.
+
+4. **The drag on `/dev` is now by handle rather than by card**, which is the
+   interaction `/photo` and the album grid already had. That is a change the owner
+   will notice, and it is the price of the marker being able to reach the target.
+
+5. **A "nothing happened" test passes whenever nothing happened, for any reason.**
+   The first version of the red run passed on the broken tree twice.
+   `bounding_box()` is viewport-relative, so cards below the fold gave
+   coordinates outside the window and the drag never began; then, once it began,
+   `reload()` straight after `mouse.up()` aborted the htmx POST before it landed,
+   and the server order read as unchanged. Both are silent. The check now asserts
+   on the **request** — which exists if and only if a drop did — and only then on
+   the order after a reload.
+
+6. **Two Mediums became ADRs rather than fixes.** ADR-038 leaves a video's own
+   label at the front of a video-first article's meta description; ADR-039 leaves
+   the home page's copy blocks rendering prose without `prose.css` or `video.js`.
+   Both were named in this record already; neither was in `DECISIONS.md`, and the
+   regression contract says a deferral is a line there and silence is not one.
+
+**Gates after the fix, none piped:** unit/API **353** exit 0, e2e **110** exit 0
+(107 before, `+3`), `ruff check` clean, `ruff format --check` **122 files** exit 0.
+Admin sweeps unchanged: focus 207 stops / **0** without an indicator, targets 171
+under 44 px / **0** under WCAG 2.5.8, contrast 141 samples / **0** failures in both
+themes.

@@ -34,10 +34,10 @@ alongside I5's own amendments, so the two are in one commit rather than two.
 - [x] 2 impact map written
 - [x] 3 docs amended (SPEC F55/F38/F62 + F63–F65, ADR-032…037, TASKS M17)
 - [x] GATE approved by the owner — «утверждаю», 2026-08-17
-- [ ] 4 implementation
-- [ ] 5 verification green, baseline suites still green
-- [ ] 6 review clean or waived
-- [ ] 7 closed (STATUS rewritten, milestone ticked)
+- [x] 4 implementation — T135–T139, five commits
+- [x] 5 verification green, baseline suites still green — 353 / 110 / clean / 122
+- [x] 6 review — `docs/REVIEW.md` run 7, PASS; one High fixed, two Mediums to ADR-038/039
+- [ ] 7 closed (STATUS rewritten, milestone ticked) — **blocked on exit criterion 8, the owner's**
 ```
 
 Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: `docs/TASKS.md` M17,
@@ -45,29 +45,76 @@ Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: 
 
 ## Resume here
 
-**I5's delta is approved and M17 is in progress on `iteration/I5-authoring`.** The order is fixed by
-the impact map: **T135 first and alone**, then T136–T139 (T139 after T138).
+**I5's code, verification and review are finished. The iteration is not, and M17
+is not ticked.** All five tasks are implemented, tested, reviewed and committed on
+`iteration/I5-authoring` (cut from `iteration/I4-editing-mode` at `5bd408f`).
+**What remains is exit criterion 8, the owner's own pass: write one article with a
+picture at a chosen width and a video, using only the editor's own cheat sheet,
+publish it, and read it in both modes.** No test stands in for it, and the
+written-but-never-run tick is the T073 mistake this project already paid for once
+in T086.
 
-**T135 is done** — the shared-primitive change is in, so T136–T139 are no longer blocked and may be
-taken in any order that respects T139-after-T138. Gates on the tree at that commit, none piped:
-unit/API **289** exit 0, e2e **97** exit 0 (92 at the baseline, `+5` for `e2e/test_view_parity.py`),
-`ruff check` clean, `ruff format --check` **119 files** exit 0.
+| | | State |
+|---|---|---|
+| **T135** | «Просмотр» is the page a visitor reads, on every page | **done**, `2c88ae6` |
+| **T136** | «фотогр» finds «фотография» — a union, not a substitution | **done**, `584e561` |
+| **T137** | the cabinet gets rooms, and «Снимки без описания» leaves it | **done**, `ea3e1bf` |
+| **T138** | a video is a facade the reader opts into | **done**, `c59260a` |
+| **T139** | the editor says how the markup works | **done**, `33381b5` |
+| | review run 7's High: `/dev` was still draggable in «Просмотр» | **fixed**, this session |
 
-**Read `docs/iterations/I5-authoring.md` § «T135 landed» before touching any of this.** Three things
-in it change how the next task should be approached:
+**Gates on the closing tree, none piped:** unit/API **353** exit 0 (289 at the
+baseline), e2e **110** exit 0 (92 at the baseline, 107 before the review fix),
+`ruff check` clean, `ruff format --check` **122 files** exit 0. Admin sweeps: focus
+**207 stops / 0** without an indicator, targets **171 under 44 px / 0** under WCAG
+2.5.8, contrast **141 samples / 0 failures** in both themes.
 
-1. **The grep list in every remaining DoD catches classes and misses `get_by_role`.** T135's
-   undercount was `e2e/test_login.py`, which reaches an owner control by accessible name. Three
-   iterations running, the missed tests were role-based selectors.
-2. **`show-edits` ended at three CSS rules, not the two T135's DoD predicted.** One decides
-   visibility; two draw a hint on a block that is present in both modes. Do not "tidy" the third away
-   — `.photo-item--undescribed` is a modifier on the tile, and `owner-only` there removes the
-   photograph.
-3. **A test whose docstring claims «without a mouse» cannot call `switch_mode`** — the helper clicks.
-   `test_a11y.py` now enters «Правка» from the keyboard.
+**Review: `docs/REVIEW.md` run 7, PASS**, independent of the implementing
+sessions. One High, fixed; four Mediums, all closed — two by the fix and the
+close, two by **ADR-038** and **ADR-039**; five Lows carried with reasons. It
+records `secure-review` run as the manual checklist with **no Critical or High
+security finding**, and says plainly that Semgrep is not installed on this host
+and no scan was fabricated.
 
-Nothing below the next horizontal rule has been implemented yet; the section after it is I4's record
-and is still true.
+**What actually landed, in one paragraph each, is in
+`docs/iterations/I5-authoring.md`** — six sections, one per task plus *Run 7
+landed*, each listing what the plan did not say. Read those before touching any of
+this; they are where the reasons live.
+
+**Three things to expect if you carry this forward.**
+
+1. **The marker only reaches what the marker is written on.** Run 7's High was
+   `/dev` still being drag-reorderable in «Просмотр», because `dev-sortable.js`
+   dragged from `.project__body` — the card's own content, which no `owner-only`
+   can take away. Exit criterion 4 counts rendered boxes and a drag target is not
+   a box. **Before trusting a box count, grep the JavaScript for selectors that
+   name a shared element** — a behaviour attached by a selector in a script is
+   invisible to it.
+2. **A test that asserts «nothing happened» passes whenever nothing happened, for
+   any reason.** The red run for that fix passed twice on the broken tree:
+   `bounding_box()` is viewport-relative, so cards below the fold gave
+   coordinates the mouse could not reach; and `reload()` straight after
+   `mouse.up()` aborted the htmx POST before it landed. Assert on the request,
+   which exists only if the thing happened, and only then on the state.
+3. **A new i18n key still needs `docker compose restart web`**, and a full e2e run
+   started before `/healthz` answers fails all of them in fixture setup. Both cost
+   a debugging round in earlier iterations and nothing since they were written
+   down.
+
+**Two lines for the next intake, deliberately not fixed here.** `.project__handle`
+in `dev.css` restates `.photo-handle` from `photo.css` because `/dev` does not load
+that stylesheet — one drag handle, two definitions. And ADR-038's excerpt fix is
+one branch in `excerpt_from`, held back only because it changes every card and
+every meta description on two sections and deserves an intake line rather than a
+quiet ride on a review.
+
+**Merging is the owner's call** and, since T127, a push to `main` runs the suite
+and the lint gate before it builds anything.
+
+Everything below this line is I4's record and is still true. **M16 remains open:
+T128 and T129 are the owner's and need the appliance, and I4's exit criterion 7 —
+the owner's own pass through one publishing flow — is outstanding alongside I5's
+criterion 8.**
 
 ---
 

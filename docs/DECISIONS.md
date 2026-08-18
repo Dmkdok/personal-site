@@ -41,6 +41,8 @@ ADR-lite. All proposed on 2026-08-04, pending the approval gate.
 - **ADR-035** — Video is a facade the reader opts into, and `iframe` never enters the allow-list
 - **ADR-036** — The cabinet becomes rooms with their own addresses; the undescribed list leaves it
 - **ADR-037** — The orphan scan runs on request, and the script and the page share one implementation
+- **ADR-038** — A video's own label stays out of the excerpt only in the next iteration
+- **ADR-039** — The home page's copy blocks render prose without the prose assets
 
 Read one entry, not the file: `Select-String -Path docs/DECISIONS.md -Pattern '^## ADR-029' -Context 0,12`.
 
@@ -369,3 +371,22 @@ Read one entry, not the file: `Select-String -Path docs/DECISIONS.md -Pattern '^
 - Decision: the room renders immediately from the database — photographs in flight, failed, totals, `SUM(media_asset.byte_size)` — and the disk walk happens only when the owner presses «Проверить», answering into its own region via htmx. The walk itself moves out of the script into a service both call, so the number on the page and the number the command prints cannot disagree; the script keeps `--prune` and keeps being the only thing that deletes.
 - Alternatives rejected: **walk on page load** — makes the cabinet's slowest room its front door, on the one page that must stay usable when something is wrong. **Cache the result** — a stored number about a directory that changes under it, and the first question about it is always "when was this measured". **Duplicate the walk in the router** — two implementations of "what is an orphan", and ADR-013 is precisely about not having two answers to who owns a file.
 - Consequences: `scripts/media_orphans.py` is edited by a task that names it, and its behaviour from the command line must be identical afterwards — verified by running it before and after and diffing the output. The room shows a size and a count and offers no delete; pruning stays a deliberate command on the server, where the owner can read what will go before it goes.
+
+## ADR-038 — A video's own label stays out of the excerpt only in the next iteration
+
+- Date: 2026-08-18
+- Status: accepted
+- Context: `excerpt_from` (`app/services/markdown.py:504`) renders the body and strips every tag, keeping the text inside. Since T138 a paragraph that is only a video link renders as a `<button>` whose label is «▶ Смотреть видео», so an article that *opens* with a video and has no excerpt of its own puts that label at the front of its meta description and its card. Run 7 of the review confirmed it by probe. Before T138 the same article put a raw URL there, so nothing that read well now reads worse.
+- Decision: leave it. It is recorded here and in `docs/iterations/I5-authoring.md` (T138, note 10) and goes to the next intake as its own item.
+- Alternatives rejected: **fix it inside T138** — the task's DoD says nothing about excerpts, and the regression contract puts code a task does not name out of bounds; **strip `figure.prose-video` in `excerpt_from` now** — the right fix, but it is a change to what every card and every meta description on two sections contains, which is an owner-visible SEO change and deserves its own line in an intake rather than a quiet ride on a review.
+- Consequences: one class of article — video first, no excerpt written — carries a control's label in its description until the next iteration takes it. The owner can defeat it today by writing an excerpt or by putting a sentence above the video.
+
+## ADR-039 — The home page's copy blocks render prose without the prose assets
+
+- Date: 2026-08-18
+- Status: accepted
+- Context: `/` edits its eyebrow and its intro in place through the same `render_markdown` the blog uses (`app/routers/pages.py:45,108`), but it loads neither `prose.css` nor `video.js` — those are on `blog/post.html`, `dev/detail.html` and `blog/editor.html`. A bare video link pasted into a home block therefore renders the facade with no styling and a play control that does nothing, because the delegated listener that builds the `iframe` is not on the page. Found by run 7 of the review; not a regression, since before T138 the same paste produced a bare link.
+- Decision: leave the home page as it is. The two blocks are one-line copy — an eyebrow and an intro — not an article, and no requirement asks them to carry video.
+- Alternatives rejected: **load `prose.css` and `video.js` on `/`** — a stylesheet and a script on the site's most-visited page, for every visitor, to cover a video in a hero eyebrow; **give the copy blocks a restricted renderer** — a second definition of what Markdown means on this site, and F28's whole point is that preview and published output come from one renderer.
+- Consequences: a video link in a home block is a dead control that only the owner can produce and only the owner sees the consequence of. If the home page ever gains a real prose block, this decision is the thing to revisit, and the fix is two lines.
+
