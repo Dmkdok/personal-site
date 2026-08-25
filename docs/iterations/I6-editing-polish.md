@@ -43,8 +43,19 @@ mandatory security-review flag.
 
 ## Expectations that change
 
-None. Every existing test named above passes unchanged; each new behaviour ships with its own new
-test, watched failing first.
+**One, found during implementation and not by this intake.** T142's own DoD requires `videoAction()`
+to stop inserting a bare address — which is exactly what
+`e2e/test_editor_sheet.py::test_the_video_button_writes_a_paragraph_of_its_own` asserted
+(`text.endswith("\n\n" + ru("blog.md.ph_url"))`, plus the selection). The impact map's own T142 row
+said the toolbar's inserted text had no existing coverage; it had one, missed at Phase 2. Run 8's
+review judged the fix correct rather than a quiet edit: the assertion could not survive the approved
+DoD, the replacement (`test_the_video_button_writes_a_captioned_paragraph_of_its_own`) is the same
+strength — exact inserted shape *plus* the selection — and the rename and reason are in both the
+test's own docstring and its commit (`109c38a`). No ADR needed: nothing was decided that SPEC or an
+ADR already governed: a plan was under-described, and this line is the correction.
+
+Every other existing test named in the impact map passes unchanged; each remaining new behaviour
+ships with its own new test, watched failing first.
 
 ## Exit criteria
 

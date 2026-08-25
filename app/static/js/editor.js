@@ -320,8 +320,12 @@
 
   // ==========================================================================
   // Video title: fetched once, server-side, when a recognised link lands in
-  // the caption placeholder T142 leaves selected (F66, ADR-040). VK is
-  // unaffected — the server never attempts it, so no request is ever made
+  // either half of the skeleton T142 inserts (F66, ADR-040). videoAction()
+  // leaves the *caption* selected — so a paste that follows the button
+  // without moving the caret lands there, not in the address, and has to be
+  // recognised too, or the most direct gesture ("press the button, paste the
+  // link I already copied") would leave a dead link instead of a player. VK
+  // is unaffected — the server never attempts it, so no request is ever made
   // for one.
   // ==========================================================================
   function maybeFillVideoCaption() {
@@ -329,17 +333,23 @@
     var lineStart = value.lastIndexOf("\n", area.selectionStart - 1) + 1;
     var lineEnd = value.indexOf("\n", area.selectionEnd);
     if (lineEnd === -1) lineEnd = value.length;
-
-    // Only while the caption is still the untouched placeholder — an owner
-    // who already typed their own title keeps exactly what they typed.
-    var caption = placeholder("video-text");
-    var prefix = "[" + caption + "](";
     var line = value.slice(lineStart, lineEnd);
-    if (line.indexOf(prefix) !== 0 || line.charAt(line.length - 1) !== ")") return;
-    var url = line.slice(prefix.length, -1);
+
+    var shape = /^\[([^[\]]*)\]\(([^()]*)\)$/.exec(line);
+    if (!shape) return;
+
+    // Exactly one half must still be its untouched placeholder; the other is
+    // what the owner just pasted, wherever it landed. An owner who already
+    // typed their own title into an untouched address keeps what they typed —
+    // neither half matches, and nothing here fires.
+    var captionPh = placeholder("video-text");
+    var urlPh = placeholder("video-url");
+    var pastedIntoAddress = shape[1] === captionPh && shape[2] !== urlPh;
+    var pastedIntoCaption = shape[1] !== captionPh && shape[2] === urlPh;
+    if (!pastedIntoAddress && !pastedIntoCaption) return;
+    var url = pastedIntoAddress ? shape[2] : shape[1];
     if (!url) return;
 
-    var captionStart = lineStart + 1;
     var body = new URLSearchParams();
     body.set("url", url);
     fetch("/blog/admin/video-title", {
@@ -351,18 +361,18 @@
       .then(function (response) {
         return response.ok ? response.json() : null;
       })
-      .then(function (body) {
-        var title = body && body.title;
+      .then(function (responseBody) {
+        var title = responseBody && responseBody.title;
         if (!title) return;
-        // The request took a moment; only replace what is still untouched.
-        if (area.value.slice(captionStart, captionStart + caption.length) !== caption) return;
-        replaceRange(
-          captionStart,
-          captionStart + caption.length,
-          title,
-          captionStart,
-          captionStart + title.length
-        );
+        // The request took a moment. Only write back if the line is still
+        // exactly what it was when asked (an owner who kept typing meanwhile
+        // is left alone) and the owner has not moved on to something else —
+        // this is unrequested, so it must never pull focus back to steal
+        // the next keystroke.
+        if (document.activeElement !== area) return;
+        if (area.value.slice(lineStart, lineStart + line.length) !== line) return;
+        var text = "[" + title + "](" + url + ")";
+        replaceRange(lineStart, lineStart + line.length, text, lineStart + 1, lineStart + 1 + title.length);
       })
       .catch(function () {});
   }

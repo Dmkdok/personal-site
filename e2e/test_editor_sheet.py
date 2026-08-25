@@ -13,6 +13,8 @@ worse than no button, because the owner finds out in the preview.
 
 from __future__ import annotations
 
+import json
+
 from playwright.sync_api import Page, expect
 
 from e2e.conftest import Trash
@@ -108,6 +110,97 @@ def test_the_video_button_writes_a_captioned_paragraph_of_its_own(
         )
         == caption
     )
+
+
+def test_a_link_pasted_over_the_selected_caption_still_becomes_a_player(
+    admin_page: Page, admin_api: AdminApi, trash: Trash, run_token: str
+) -> None:
+    """F66, ADR-040 — the direct gesture the button invites must not produce a dead link.
+
+    videoAction() leaves the *caption* selected (T142), so pressing the button
+    and immediately pasting the address already on the clipboard — the most
+    direct thing to do — lands the address in the caption slot, not the
+    address slot. `maybeFillVideoCaption` (`editor.js`) has to recognise that
+    shape too and put the address back where a player is built from it,
+    server-fetched title and all — found by Run 8's review as a High, fixed
+    in the same session.
+    """
+    post = trash.post(admin_api.create_post(f"E2E видео мимо подписи {run_token}"))
+    admin_page.goto(f"/blog/{post.slug}/edit")
+
+    admin_page.route(
+        "**/blog/admin/video-title",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({"title": "Название с сервиса"}),
+        ),
+    )
+
+    body = admin_page.locator("#post-body")
+    body.click()
+    admin_page.get_by_role("button", name=ru("blog.md.video"), exact=True).click()
+
+    # The caption is selected; paste the address straight over it, exactly as
+    # a real paste would leave the value and the caret — no native clipboard
+    # needed to prove what the listener does with the result.
+    url = "https://youtu.be/dQw4w9WgXcQ"
+    admin_page.evaluate(
+        """(url) => {
+            const area = document.getElementById('post-body');
+            const start = area.selectionStart, end = area.selectionEnd;
+            area.value = area.value.slice(0, start) + url + area.value.slice(end);
+            const caret = start + url.length;
+            area.setSelectionRange(caret, caret);
+            area.dispatchEvent(new Event('paste', { bubbles: true }));
+        }""",
+        url,
+    )
+
+    expect(body).to_have_value("[Название с сервиса](" + url + ")")
+
+
+def test_a_link_pasted_into_the_address_slot_fills_the_caption(
+    admin_page: Page, admin_api: AdminApi, trash: Trash, run_token: str
+) -> None:
+    """The flow T142 was written for: type over the selected caption, tab to
+    the address, paste the link there — still fetches and fills the caption,
+    exactly as when the paste lands the other way round.
+    """
+    post = trash.post(admin_api.create_post(f"E2E видео в адрес {run_token}"))
+    admin_page.goto(f"/blog/{post.slug}/edit")
+
+    admin_page.route(
+        "**/blog/admin/video-title",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body=json.dumps({"title": "Название с сервиса"}),
+        ),
+    )
+
+    body = admin_page.locator("#post-body")
+    body.click()
+    admin_page.get_by_role("button", name=ru("blog.md.video"), exact=True).click()
+
+    # Move the caret into the address slot — the caption stays the untouched
+    # placeholder — then paste there.
+    url = "https://youtu.be/dQw4w9WgXcQ"
+    admin_page.evaluate(
+        """(url) => {
+            const area = document.getElementById('post-body');
+            const value = area.value;
+            const open = value.lastIndexOf('(');
+            const close = value.lastIndexOf(')');
+            area.value = value.slice(0, open + 1) + url + value.slice(close);
+            const caret = open + 1 + url.length;
+            area.setSelectionRange(caret, caret);
+            area.dispatchEvent(new Event('paste', { bubbles: true }));
+        }""",
+        url,
+    )
+
+    expect(body).to_have_value("[Название с сервиса](" + url + ")")
 
 
 def test_the_table_button_writes_a_table_that_renders(

@@ -1,12 +1,219 @@
 # Review
 
-Seven Phase 6 runs. **Run 7 is the current one and is below**; the earlier six
+Eight Phase 6 runs. **Run 8 is the current one and is below**; the earlier seven
 are kept underneath it because their findings are the reason half of M9 exists,
 and a reviewer arriving later should be able to see what was already looked at.
 
 ---
 
-# Run 7 — Phase 6 against I5 (M17), 2026-08-18
+# Run 8 — Phase 6 against I6 (M18), 2026-08-25
+
+Scope is the I6 delta only: `d90ec48..HEAD` (`8c4f0db`) on
+`iteration/I6-editing-polish`, judged against the impact map, the non-negotiables
+(there are none new this round beyond "no task changes a test that passes
+today" — see M-4) and the six exit criteria in
+`docs/iterations/I6-editing-polish.md`.
+
+**Independent of the implementing session**: run by a separate reviewer agent
+with no write access to application code, in its own context, with `secure-review`
+applied to T143 specifically per ADR-040's own instruction. Every count below
+was produced by commands that agent ran in this session, on this tree; no claim
+in `docs/TASKS.md` or in the iteration record was taken on trust. Semgrep is not
+installed on this host; the checklist was applied by hand plus direct runtime
+probes (a stubbed `urlopen`, a real browser with the route stubbed, and one live
+call to YouTube's own oEmbed endpoint from inside the `web` container).
+
+## Verdict
+
+**PASS with findings, all resolved same day, same branch.** No Critical. One
+**High** (H-1) — the button's own next gesture produced a dead link instead of
+a player on the most direct path a user would take, defeating T143 entirely on
+that path — found by probing the actual browser interaction rather than reading
+the code, together with four Mediums and six Lows. All four gates re-run met or
+beat their claimed counts before any fix; the security review of T143 found the
+SSRF surface provably closed by construction, not merely absent of an example
+attack. Every finding below was fixed in this same session before the branch
+moved on — see **Resolution**.
+
+## High — fixed
+
+**H-1 — The video button's own next gesture now produces a dead link, and it
+defeats T143.** `app/static/js/editor.js:234-238` (pre-fix) left the **caption**
+selected; `maybeFillVideoCaption` only fired when the URL landed in the
+**address** slot with the caption still untouched. The two halves of this round
+fought each other: press «видео», then paste the clipboard's video link
+immediately — the ordinary, most direct thing to do — and the paste replaces
+the *selected caption*, producing `[https://youtu.be/…](адрес)`, a dead
+relative link, not a player. Probed in a real browser with the route stubbed;
+nothing in the suite as shipped caught it, because `e2e/test_editor_sheet.py`
+asserted only the button's own output and selection, never a subsequent paste,
+and T143's client wiring had no e2e case at all. The code matched T142's DoD
+exactly ("with the caption words selected first") — the defect was in the plan,
+written before T143's trigger was designed, not a deviation from it.
+
+## Medium — fixed
+
+**M-1 — The lookup could steal focus back to the textarea up to 3 s after the
+paste.** `replaceRange` calls `area.focus()` unconditionally; the only guard was
+that the caption text was unchanged, not that the owner was still in the field.
+Probed with a stubbed delay: focus elsewhere before the response, caret pulled
+back into `#post-body` with the fetched title selected after it — silently, no
+toast, no live region (F-002).
+
+**M-2 — The fetched title reached Markdown source unescaped and uncapped.** No
+XSS (`ALLOWED_URL_SCHEMES` and the video-paragraph recogniser both hold), but a
+title containing `](` could restructure the link a third party's own text
+becomes, and nothing capped its length.
+
+**M-3 — `docs/STATUS.md` contradicted the tree.** Still read "gate approved,
+Phase 4 implementation" with Phase 4/5 unticked while `docs/TASKS.md` and the
+iteration doc ticked all five tasks and all six exit criteria. Run 7's M-1
+recurring, on the one file `CLAUDE.md` sends every resuming session to first.
+
+**M-4 — "Expectations that change: None" was false when it was written.**
+T142's own DoD requires `videoAction()` to stop inserting a bare address, which
+is exactly what `test_the_video_button_writes_a_paragraph_of_its_own` asserted.
+**The rewrite itself was judged the right call and is not undone by this
+review** — the old assertion could not survive the approved DoD, the
+replacement is the same strength (exact shape *plus* the selection), and the
+implementer named the change in the docstring and the commit rather than doing
+it quietly. What needed fixing was the record, not the code.
+
+## Low — fixed or carried
+
+- **L-1 fixed** — `response.read()` had no size cap; a trickling host could hold
+  a thread-pool worker past the per-operation timeout. Capped at 64 KiB.
+- **L-2 fixed** — `url` reaching the route was unbounded; a large value did
+  cheap-but-needless regex work and produced a multi-megabyte outbound request.
+  Capped at 2048 chars before any pattern match.
+- **L-3 carried** — `app/templates/blog/editor.html` moved under T142 but is not
+  in that task's declared paths list in `docs/TASKS.md`. Unavoidable (`data-ph-*`
+  and the cheat-sheet loop both live there; T139 listed the same file for the
+  same reason) — an under-declared plan, not a scope breach. Left as recorded
+  here rather than rewriting an already-approved DoD.
+- **L-4 fixed as a side effect of H-1's fix** — two pastes into the same slot
+  inside the response window could race; the rewritten handler compares the
+  *whole line* against what it was when asked, which a second paste always
+  changes, so a stale response now always no-ops correctly.
+- **L-5 carried** — `e2e/test_me.py`'s empty-state assertion depends on no photo
+  anywhere in the shared test database being in flight or failed. True under
+  this project's serial e2e run; still an assertion on global state, not a
+  regression from this round.
+- **L-6 carried** — `app/static/css/photo.css` still calls `.photo-item__admin`
+  "the scrim" in its comments although T140 removed what it painted. Cosmetic;
+  left for whoever next touches that block.
+
+## Resolution — same day, same branch
+
+Written by the session that acted on this run, appended rather than editing the
+findings above, so what was found and what was done about it stay separable.
+
+| | Finding | Disposition |
+|---|---|---|
+| **H-1** | button's next gesture produced a dead link | **Fixed** — `maybeFillVideoCaption` now recognises either half of the skeleton receiving the paste, resolves the correct address either way, and rebuilds `[title](url)` in the right order regardless of which slot was pasted into |
+| **M-1** | fetched title could steal focus back | **Fixed** — `document.activeElement !== area` guards the write-back, alongside the existing unchanged-content check |
+| **M-2** | fetched title unescaped and uncapped | **Fixed** — `video_title.py`'s new `_as_caption`: whitespace collapsed, `[`/`]`/`(`/`)` backslash-escaped, capped at 200 chars with an ellipsis |
+| **M-3** | `docs/STATUS.md` contradicts the tree | **Fixed** — rewritten at the close of I6 (Phase 7, this session) |
+| **M-4** | changed-expectations list was falsely empty | **Fixed** — `docs/iterations/I6-editing-polish.md` "Expectations that change" and the `docs/TASKS.md` M18 preamble both now name the T142 test rename and why |
+| **L-1** | unbounded response read | **Fixed** — `response.read(64 * 1024)` |
+| **L-2** | unbounded input before regex work | **Fixed** — `len(href) > 2048` refused before any pattern match |
+| **L-3** | `editor.html` not in T142's declared paths | **Carried, recorded** — DoD text not rewritten after approval |
+| **L-4** | race between two pastes | **Fixed** — subsumed by H-1's whole-line staleness check |
+| **L-5** | global-state assumption in `test_me.py` | **Carried, unchanged, as recorded** |
+| **L-6** | stale "scrim" comment in `photo.css` | **Carried, unchanged, as recorded** |
+
+**Two new e2e cases, watched failing first against the pre-fix code**, added
+alongside the fix in `e2e/test_editor_sheet.py`: pasting the address over the
+selected caption (H-1's exact reproduction) and pasting it into the address
+slot (the flow T142 was written for) both now resolve to the same fetched,
+captioned link — proven with the route stubbed, no real network call, no native
+clipboard needed (the paste is simulated by setting the textarea's value and
+dispatching a `paste` event, the same technique this suite already uses for
+drop events in `e2e/test_upload_guard.py`).
+
+Nine new unit tests in `app/services/video_title.py`'s test file cover the
+escaping, the length cap and the read cap directly.
+
+## Gates, re-run after the fix
+
+| Suite | Command | Before fix (this run) | After fix (same session) |
+|-------|---------|------------------------|---------------------------|
+| unit/API | `docker compose run --rm tests` | **367 passed**, exit 0 | **370 passed**, exit 0 |
+| e2e | `uv run pytest e2e -q` | **111 passed**, exit 0 | **113 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean | clean |
+| format | `uv run ruff format --check .` | **124 files** | **124 files** |
+
+Baseline I6 (Phase 0) was 353 / 110 / clean / 122. Nothing regressed and no
+count was overstated. Sweeps re-run after the fix, unchanged from both the
+pre-fix run and the Phase 0 baseline: focus **207 / 0** without an indicator
+(admin), **88 / 0** (anonymous); contrast **141 / 0** failures (admin, both
+themes), **85 / 0** (anonymous, both themes); target-size **171 / 0** and
+**65 / 0** under WCAG 2.5.8.
+
+## Exit criteria
+
+| | Criterion | Status |
+|---|---|---|
+| 1 | a photograph in «Правка» reads sharp under the owner's tools, both themes | **Pass** — verified by grep, not assumption: `.photo-item__tools` and `.photo-item__alt-input` carry their own opaque `--surface-raised` background; nothing rested on the removed scrim |
+| 2 | `/me/media` with nothing to flag clears «Файлы на диске» of the empty state's frame | **Pass** — `.empty + .cabinet__group` matches in exactly the one place it needs to (`pages/me_media.html`), verified by grepping every `.empty`/`.cabinet__group` pairing in `app/templates/` |
+| 3 | the video toolbar button and the cheat sheet produce a captioned link, not a bare one | **Pass** — and, after H-1's fix, produce one regardless of which slot a follow-up paste lands in |
+| 4 | a YouTube or Rutube link inserted through the toolbar fills its own caption from that host's title, editable before save; VK unaffected | **Pass** — live-probed against YouTube's real oEmbed endpoint from inside the `web` container; VK and unrecognised hosts provably never fetched (SSRF probes below) |
+| 5 | an uncaptioned-video-first article no longer carries the player's own label in its card or meta description | **Pass** — probed directly: a literal `</button>` typed into an article is escaped and survives (parser has `html: False`); bare video excerpts to `""`; captioned video + prose keeps both sets of words |
+| 6 | baseline suites green at Phase 0 counts or better | **Pass** — 370 ≥ 353, 113 ≥ 110, lint and format clean |
+
+## Security
+
+**T143 reviewed specifically, per ADR-040's own instruction.**
+
+- **SSRF — closed, proved not argued.** Eight inputs driven through
+  `video_title()` with `urlopen` stubbed: the fetched target's host is always
+  `www.youtube.com` or `rutube.ru`, scheme always `https`, regardless of a
+  second URL, a redirect parameter or a fragment carried in the submitted
+  link's own query string. `file://`, a foreign host wrapping a real video path,
+  a VK link and an over-long id all produce **no call at all**. Two independent
+  locks: `video_host()` gates on the anchored per-host patterns first, and
+  `quote(href, safe="")` percent-encodes `:`, `/`, `?`, `&`, `#`, so the
+  submitted link can only ever be a query *value* against a literal host.
+- **Authz** — `admin: CurrentAdmin` on the new route; `test_authz_sweep.py`
+  walks the whole route tree and would fail on an unguarded mutating route.
+- **CSRF** — the route is a POST (not the GET the original DoD sketched — see
+  the T143 commit message for why: a GET failing auth redirects to `/login`
+  under this project's own 401 handler, which is written for page navigation
+  and would hand a JSON-expecting caller a login page's HTML instead of a 401);
+  it is therefore correctly inside `_csrf_guard`'s scope, and the client sends
+  `csrfHeaders()`.
+- **Timeout / blocking** — 3.0 s per socket operation, response body capped at
+  64 KiB after this session's fix (L-1); the route is a plain `def`, so FastAPI
+  runs it in the thread pool, per ADR-040.
+- **XSS** — none: the title reaches the browser as JSON into a textarea value;
+  published output still goes through `nh3.clean` with the existing allow-list.
+  The residual (Markdown-structure injection via `[`/`]`/`(`/`)` in a title) is
+  closed by this session's fix (M-2).
+- **Secrets** — none introduced; not holding a VK `access_token` is ADR-040's
+  whole point.
+- **CSP** — untouched by this delta; the new `fetch` is same-origin.
+
+## What was checked and found clean
+
+- **T144 cannot be defeated from prose.** The renderer's `html: False` means a
+  literal `<button class="prose-video__play">…</button>` typed into an article
+  is escaped and survives the excerpt rather than being stripped as if it were
+  the real control; the regex in `excerpt_from` runs only on the renderer's own
+  output, never on raw input.
+- **The `video_host` refactor loosened nothing.** `_VIDEO_SERVICES`'s five
+  patterns are byte-identical to before T143; `video_embed` and `video_host`
+  both still `fullmatch` on the stripped input.
+- **Ordering held and scope held.** T140/T141/T144 touch disjoint files; T142
+  precedes T143; the only file outside a declared task path is `editor.html`
+  (L-3, carried).
+
+## Carried, with reasons
+
+- **T140 has no automated proof and cannot have one.** "Reads sharp in both
+  themes" is not measurable by the contrast sweep — the CSS half was verified
+  by grep, the visual half is the owner's, per the impact map's own plan.
+- **The route has no rate limit**, consistent with every route on this site
+  except login; admin-gated.
 
 Scope is the I5 delta only: `5bd408f..HEAD` (`33381b5`) on
 `iteration/I5-authoring`, judged against the impact map, the non-negotiables and

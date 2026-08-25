@@ -23,8 +23,8 @@ class _Response:
         self.status = status
         self._body = body
 
-    def read(self) -> bytes:
-        return self._body
+    def read(self, size: int = -1) -> bytes:
+        return self._body if size < 0 else self._body[:size]
 
     def __enter__(self) -> _Response:
         return self
@@ -118,3 +118,35 @@ def test_unparseable_json_answers_no_title(monkeypatch):
     monkeypatch.setattr(video_title_module, "urlopen", fake)
 
     assert video_title(YOUTUBE_URL) is None
+
+
+def test_an_overlong_link_is_never_fetched(monkeypatch):
+    """A many-kilobyte `url` field does no regex work and no round trip."""
+    fake, calls = _fake_urlopen(json.dumps({"title": "x"}))
+    monkeypatch.setattr(video_title_module, "urlopen", fake)
+
+    overlong = YOUTUBE_URL + "?" + "a" * 3000
+    assert video_title(overlong) is None
+    assert calls == []
+
+
+def test_a_title_carrying_markdown_syntax_is_escaped(monkeypatch):
+    """A third party's own text must not restructure the link it becomes."""
+    fake, _calls = _fake_urlopen(json.dumps({"title": "Название] (https://evil.example) [x"}))
+    monkeypatch.setattr(video_title_module, "urlopen", fake)
+
+    caption = video_title(YOUTUBE_URL)
+
+    assert caption == r"Название\] \(https://evil.example\) \[x"
+    assert "](" not in caption
+
+
+def test_an_overlong_title_is_capped(monkeypatch):
+    fake, _calls = _fake_urlopen(json.dumps({"title": "слово " * 100}))
+    monkeypatch.setattr(video_title_module, "urlopen", fake)
+
+    caption = video_title(YOUTUBE_URL)
+
+    assert caption is not None
+    assert len(caption) <= 201
+    assert caption.endswith("…")

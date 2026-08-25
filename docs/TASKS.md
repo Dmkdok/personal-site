@@ -99,7 +99,13 @@ Agent column marks who executes after the approval gate: **parent** (shared/inte
 > `secure-review` must look at regardless of size, because it is the first thing in this codebase
 > that has the server itself call out to a third-party host on the owner's own action.
 >
-> No task changes a test that passes today; the changed-expectations list is empty.
+> This preamble said the changed-expectations list was empty; it was not. T142's own DoD requires
+> `videoAction()` to stop inserting a bare address, which is what one existing e2e test asserted —
+> missed at Phase 2, found during implementation, judged correct rather than reverted by Run 8's
+> review. Recorded in `docs/iterations/I6-editing-polish.md` "Expectations that change".
+>
+> **Closed 2026-08-25.** All five tasks implemented, tested and reviewed on `iteration/I6-editing-polish`
+> — see `docs/REVIEW.md` Run 8 and `docs/iterations/I6-editing-polish.md` for what actually landed.
 
 - [x] **T140** — the owner's tools stop blurring the photograph they sit on — paths: `app/static/css/photo.css` — deps: none — DoD: the owner-only scrim over a photo tile in «Правка» (`.photo-item__admin`, `photo.css:460`) loses its `background-color` and `backdrop-filter` — both `.photo-item__tools` (`photo.css:494`) and `.photo-item__alt-input` (`photo.css:507`) already carry their own fully opaque `--surface-raised` background, a border and a shadow, so nothing sitting over the photograph ever needed the scrim for legibility; the photograph under the tools reads sharp, with no blur, in both themes; contrast for the tools and the alt field is unchanged because they were never resting on the scrim's background to begin with — `test_a11y.py`'s contrast sweep passes at its current sample count; nothing about visibility, `owner-only`, or the F55/T135 marker rule changes.
 - [x] **T141** — the disk section gets a top when the room above it is empty — paths: `app/static/css/me.css` — deps: none — DoD: F64's «Медиа» room; when `groups` is empty, `me_media.html` renders `partials/empty_state.html`'s `.empty` box immediately before `<section class="cabinet__group cabinet__disk">`, and `.cabinet__group + .cabinet__group` (`me.css:53`) never matches that pair, so the disk section's heading has no top margin and crowds `.empty`'s dashed border; the selector gains `.empty + .cabinet__group`, giving the disk section the same `--space-l` gap it already gets when a real group precedes it; a new e2e check visits `/me/media` as an owner with nothing to flag (no failed photo, no missing alt, no unpublished item) and asserts `.cabinet__disk`'s top edge clears `.empty`'s bottom edge by at least that gap, watched failing first; the non-empty case (`.cabinet__group + .cabinet__group`, already covered) is untouched.
