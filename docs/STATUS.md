@@ -7,6 +7,39 @@ i4_delta_approved_at: 2026-08-16
 i5_delta_approved_at: 2026-08-17
 i6_delta_approved_at: 2026-08-25
 
+## Baseline I7
+
+Recorded 2026-08-25 on `iteration/I7-direct-video-embed`, cut from `main` at `ce8cc84`, which already
+carries every I6 commit merged, pushed and deployed. Tree was clean before the branch. Every command
+below ran in this session, on this tree, none piped.
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **370 passed**, exit 0 |
+| e2e | `uv run pytest e2e -q` | **113 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | **124 files**, exit 0 |
+
+Same counts as I6's closing tree — nothing regressed between the two sessions.
+
+## Iteration I7 progress
+
+```text
+- [x] 0 baseline recorded (branch, suite result, timestamp)
+- [x] 1 delta intake agreed (in / out / deferred) — agreed in chat, formalised in the iteration doc
+- [x] 2 impact map written
+- [x] 3 docs amended (SPEC F63 edited in place, ADR-041 supersedes ADR-035, TASKS M19)
+- [ ] GATE approved by the owner
+- [ ] 4 implementation
+- [ ] 5 verification green, baseline suites still green
+- [ ] 6 review
+- [ ] 7 closed
+```
+
+Intake, impact map and exit criteria: `docs/iterations/I7-direct-video-embed.md`. Tasks:
+`docs/TASKS.md` M19, **T145** — one task; the video-rendering path, its templates, CSS, i18n and
+tests all move together.
+
 ## Baseline I6
 
 Recorded 2026-08-25 on `iteration/I6-editing-polish`, cut from `main` at `d90ec48` — which already

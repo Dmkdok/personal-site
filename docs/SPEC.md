@@ -203,7 +203,7 @@ leave this site's own origin, and it does so only after the reader asks for it.
 
 | ID | Requirement | Acceptance |
 |----|-------------|------------|
-| F63 | A video can be part of an article | Given an article, when the author writes a paragraph holding nothing but a link to a supported video service — optionally wrapping a picture from this site's own media, which becomes the poster — then the published page renders a player in place of it; **no request reaches the video host until the reader presses play**, the page's HTML contains no `iframe`, raw HTML stays disabled at the parser, and a link to any other host is rendered as an ordinary link rather than as a player |
+| F63 | A video can be part of an article | Given an article, when the author writes a paragraph holding nothing but a link to a supported video service, then the published page renders a real `<iframe>` player in its place immediately — **no press is required to see or start it**, per ADR-041 (I7; supersedes this row's original "no request until the press" / "no `iframe`" form, ADR-035) — raw HTML stays disabled at the parser regardless, so a hand-typed `<iframe>` or `<button>` in the source still cannot survive as an element, and a link to any other host is rendered as an ordinary link rather than as a player. *(I7: the clause letting the link wrap a picture from this site's own media to become a poster is withdrawn, ADR-041 — a live iframe already shows the host's own thumbnail before any interaction, so a second, separately-uploaded image has nothing left to do; the picture's `title`, or its `alt` if it has none, still becomes the figure's caption.)* |
 | F64 | The cabinet has rooms, and room for the next one | Given a signed-in owner in the cabinet, when they open it, then a menu names its rooms and marks the one they are in: **«События»** (F62), **«Сводка»** — how much there is of everything and when the last thing was published — and **«Медиа»** — photographs still in flight, and, on request rather than on load, the files on disk nothing on the site points at, with their size; every room is its own address, none is indexed, and none of them deletes anything |
 | F65 | Search finds a word from its beginning | Given any search, when the query is the start of a word rather than the whole of it, then the things containing that word are found and ranked among the results; **nothing that the whole word finds today stops being found**, quoted phrases and excluded terms keep working, and the answer still comes from the existing generated columns and their indexes with no extension and no migration |
 
@@ -219,6 +219,15 @@ unchanged.
 | ID | Requirement | Acceptance |
 |----|-------------|------------|
 | F66 | A YouTube or Rutube link's own title fills the caption automatically | Given the author inserts a link to a supported YouTube or Rutube video, when the editor recognises the host, then the server asks that host's own public oEmbed endpoint for the video's title once, at edit time, and offers it as the link's caption text — still editable before the post is saved; the request is made by the server itself, never by a reader's browser and never while a page is being served to one; a VK link is unaffected and keeps the caption the author writes by hand (no public, unauthenticated oEmbed exists for it); a lookup that fails, times out or finds nothing leaves the caption empty rather than blocking the save |
+
+### Added by iteration I7 — a video embeds directly
+
+Added 2026-08-25, an owner request made in chat after seeing a published article. Intake, impact
+map and exit criteria: `docs/iterations/I7-direct-video-embed.md`. F63 above is edited in place, not
+replaced — its identifier and its place in the table are unchanged, only its acceptance is. The I5
+lead-in's claim that F63 "does so only after the reader asks for it" no longer holds for F63 itself
+(ADR-041 supersedes ADR-035); F66's fetch above was already a narrower, server-side exception to that
+same clause and is unaffected either way.
 
 ## Non-functional
 
