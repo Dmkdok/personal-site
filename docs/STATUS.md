@@ -1,11 +1,12 @@
 # Status
 
-phase: iteration I6 closed 2026-08-25 (M18 done; M16 still open, owner's appliance work only)
+phase: iteration I7 in progress (M19, T145; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
 i5_delta_approved_at: 2026-08-17
 i6_delta_approved_at: 2026-08-25
+i7_delta_approved_at: 2026-08-25
 
 ## Baseline I7
 
@@ -29,7 +30,8 @@ Same counts as I6's closing tree — nothing regressed between the two sessions.
 - [x] 1 delta intake agreed (in / out / deferred) — agreed in chat, formalised in the iteration doc
 - [x] 2 impact map written
 - [x] 3 docs amended (SPEC F63 edited in place, ADR-041 supersedes ADR-035, TASKS M19)
-- [ ] GATE approved by the owner
+- [x] GATE approved by the owner — «утверждаю», 2026-08-25, including the two consequences the
+      impact map surfaced beyond chat (poster picture retired, editor preview now reaches the host)
 - [ ] 4 implementation
 - [ ] 5 verification green, baseline suites still green
 - [ ] 6 review
