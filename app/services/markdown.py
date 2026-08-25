@@ -501,9 +501,19 @@ def render_inline(text: str) -> str:
     )
 
 
+_VIDEO_PLAY_BUTTON = re.compile(r'<button class="prose-video__play"[^>]*>.*?</button>', re.DOTALL)
+
+
 def excerpt_from(text: str, limit: int = 220) -> str:
-    """Plain-text summary for cards and meta descriptions."""
-    plain = nh3.clean(_md.render(text or ""), tags=set(), attributes={}).strip()
+    """Plain-text summary for cards and meta descriptions.
+
+    The play control's own label («Смотреть видео», ADR-038) is stripped before
+    the tags are, because `nh3.clean` with an empty tag set drops the `<button>`
+    but keeps the text inside it — the button and its label are removed as one
+    unit, leaving any `<figcaption>` on the same figure untouched.
+    """
+    html = _VIDEO_PLAY_BUTTON.sub("", _md.render(text or ""))
+    plain = nh3.clean(html, tags=set(), attributes={}).strip()
     plain = " ".join(plain.split())
     if len(plain) <= limit:
         return plain

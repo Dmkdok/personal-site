@@ -50,10 +50,10 @@ test, watched failing first.
 
 - [x] A photograph in «Правка» reads sharp under the owner's tools, in both themes
 - [x] `/me/media` with nothing to flag shows «Файлы на диске» clear of the empty state's frame
-- [ ] The video toolbar button and the cheat sheet produce a captioned link, not a bare one
+- [x] The video toolbar button and the cheat sheet produce a captioned link, not a bare one
 - [ ] A YouTube or Rutube link inserted through the toolbar fills its own caption from that host's
       title, editable before save; a VK link is unaffected
-- [ ] An article opening with an uncaptioned video and no written excerpt no longer carries the
+- [x] An article opening with an uncaptioned video and no written excerpt no longer carries the
       player's own label in its card or its `<meta name="description">`
 - [ ] Baseline suites green at their Phase 0 counts or better (unit/API ≥ 353, e2e ≥ 110, lint and
       format clean)

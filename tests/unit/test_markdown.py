@@ -167,6 +167,21 @@ def test_excerpt_of_nothing_is_empty():
     assert excerpt_from("") == ""
 
 
+def test_excerpt_of_a_bare_video_is_empty_not_the_buttons_label():
+    """T144, ADR-038: the play control's own label must not fill a missing excerpt."""
+    assert excerpt_from(f"https://youtu.be/{YOUTUBE_ID}") == ""
+
+
+def test_excerpt_of_a_captioned_video_keeps_the_caption_and_the_prose():
+    excerpt = excerpt_from(
+        f"[Разбор съёмки](https://youtu.be/{YOUTUBE_ID})\n\nДальше текст статьи."
+    )
+
+    assert "Разбор" in excerpt
+    assert "Дальше" in excerpt
+    assert "Смотреть" not in excerpt
+
+
 # --------------------------------------------------------------------------
 # Pictures: width, caption, srcset (F9)
 #
