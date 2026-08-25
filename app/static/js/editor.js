@@ -319,6 +319,60 @@
   });
 
   // ==========================================================================
+  // Video title: fetched once, server-side, when a recognised link lands in
+  // the caption placeholder T142 leaves selected (F66, ADR-040). VK is
+  // unaffected — the server never attempts it, so no request is ever made
+  // for one.
+  // ==========================================================================
+  function maybeFillVideoCaption() {
+    var value = area.value;
+    var lineStart = value.lastIndexOf("\n", area.selectionStart - 1) + 1;
+    var lineEnd = value.indexOf("\n", area.selectionEnd);
+    if (lineEnd === -1) lineEnd = value.length;
+
+    // Only while the caption is still the untouched placeholder — an owner
+    // who already typed their own title keeps exactly what they typed.
+    var caption = placeholder("video-text");
+    var prefix = "[" + caption + "](";
+    var line = value.slice(lineStart, lineEnd);
+    if (line.indexOf(prefix) !== 0 || line.charAt(line.length - 1) !== ")") return;
+    var url = line.slice(prefix.length, -1);
+    if (!url) return;
+
+    var captionStart = lineStart + 1;
+    var body = new URLSearchParams();
+    body.set("url", url);
+    fetch("/blog/admin/video-title", {
+      method: "POST",
+      body: body,
+      headers: csrfHeaders(),
+      credentials: "same-origin"
+    })
+      .then(function (response) {
+        return response.ok ? response.json() : null;
+      })
+      .then(function (body) {
+        var title = body && body.title;
+        if (!title) return;
+        // The request took a moment; only replace what is still untouched.
+        if (area.value.slice(captionStart, captionStart + caption.length) !== caption) return;
+        replaceRange(
+          captionStart,
+          captionStart + caption.length,
+          title,
+          captionStart,
+          captionStart + title.length
+        );
+      })
+      .catch(function () {});
+  }
+
+  area.addEventListener("paste", function () {
+    // After the browser's own paste has landed in the value, not before.
+    setTimeout(maybeFillVideoCaption, 0);
+  });
+
+  // ==========================================================================
   // Images: the toolbar button, a drop on the textarea, or a paste.
   // ==========================================================================
   function csrfHeaders() {

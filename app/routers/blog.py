@@ -33,6 +33,7 @@ from app.services.images import (
 from app.services.markdown import excerpt_from, render_markdown
 from app.services.pagination import page_for
 from app.services.slugs import unique_slug
+from app.services.video_title import video_title
 from app.templating import render, toast_headers, translate
 
 router = APIRouter(prefix="/blog", tags=["blog"])
@@ -236,6 +237,24 @@ def preview(admin: CurrentAdmin, body_md: str = Form("")) -> HTMLResponse:
     cannot drift apart.
     """
     return HTMLResponse(render_markdown(body_md))
+
+
+@router.post("/admin/video-title")
+def video_title_lookup(admin: CurrentAdmin, url: str = Form("")) -> JSONResponse:
+    """A YouTube or RuTube link's own title, or none (F66, ADR-040).
+
+    Called once, at edit time, when the owner pastes a recognised link into
+    the caption snippet T142 inserts — never while a page is served to a
+    reader. `video_title` already turns every failure mode — a VK link, an
+    unrecognised host, a timeout, a bad response — into `None`, so this route
+    has nothing left to distinguish and nothing that can raise.
+
+    A **POST**, like every other admin endpoint that answers JSON rather than
+    a page: a `GET` that fails auth redirects to `/login` (`main.py`'s 401
+    handler is written for page navigation), which would hand the caller a
+    login page's HTML instead of a 401.
+    """
+    return JSONResponse({"title": video_title(url)})
 
 
 @router.post("/admin/posts/{post_id}", response_class=HTMLResponse)

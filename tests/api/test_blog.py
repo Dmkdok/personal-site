@@ -574,6 +574,43 @@ def test_preview_requires_a_session(client):
 
 
 # --------------------------------------------------------------------------
+# F66 — a YouTube or Rutube link's own title, fetched once at edit time (ADR-040)
+# --------------------------------------------------------------------------
+def test_video_title_lookup_requires_a_session(client):
+    response = client.post("/blog/admin/video-title", data={"url": "https://youtu.be/dQw4w9WgXcQ"})
+
+    assert response.status_code in (401, 403)
+
+
+def test_video_title_lookup_answers_the_hosts_title(admin_client, monkeypatch):
+    from app.routers import blog as blog_router
+
+    monkeypatch.setattr(blog_router, "video_title", lambda url: "Заголовок")
+
+    response = admin_client.post(
+        "/blog/admin/video-title", data={"url": "https://youtu.be/dQw4w9WgXcQ"}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"title": "Заголовок"}
+
+
+def test_video_title_lookup_answers_none_rather_than_failing(admin_client, monkeypatch):
+    """A VK link, an unrecognised host or a failed fetch — `video_title` already
+    turns every one of them into None; the route only passes it through."""
+    from app.routers import blog as blog_router
+
+    monkeypatch.setattr(blog_router, "video_title", lambda url: None)
+
+    response = admin_client.post(
+        "/blog/admin/video-title", data={"url": "https://vk.com/video-1_2"}
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"title": None}
+
+
+# --------------------------------------------------------------------------
 # F29 — images
 # --------------------------------------------------------------------------
 def test_inline_image_upload_returns_markdown_for_the_cursor(admin_client):

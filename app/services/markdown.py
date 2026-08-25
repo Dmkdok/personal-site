@@ -76,24 +76,32 @@ _VIDEO_TAIL = r"(?:[?&#]\S*)?"
 #: to be built here from groups this module constrained — exactly the reason
 #: `WIDTH_WORDS` exists for the class attribute. `autoplay=1` is part of the
 #: embed because the reader has already pressed play once by then.
-_VIDEO_SERVICES: tuple[tuple[re.Pattern[str], str], ...] = (
+#:
+#: The third element is the host name — used by `video_host` (F66, ADR-040) so
+#: a title lookup considers exactly the links this module would already turn
+#: into a player, never a wider match built independently that could drift.
+_VIDEO_SERVICES: tuple[tuple[re.Pattern[str], str, str], ...] = (
     (
         re.compile(
             rf"https?://(?:www\.|m\.)?youtube\.com/watch\?v=(?P<id>{_VIDEO_ID}){_VIDEO_TAIL}"
         ),
         "https://www.youtube.com/embed/{id}?autoplay=1",
+        "youtube",
     ),
     (
         re.compile(rf"https?://youtu\.be/(?P<id>{_VIDEO_ID}){_VIDEO_TAIL}"),
         "https://www.youtube.com/embed/{id}?autoplay=1",
+        "youtube",
     ),
     (
         re.compile(rf"https?://(?:www\.)?youtube\.com/shorts/(?P<id>{_VIDEO_ID}){_VIDEO_TAIL}"),
         "https://www.youtube.com/embed/{id}?autoplay=1",
+        "youtube",
     ),
     (
         re.compile(rf"https?://rutube\.ru/video/(?P<id>[0-9a-f]{{32}})/?{_VIDEO_TAIL}"),
         "https://rutube.ru/play/embed/{id}/?autoplay=1",
+        "rutube",
     ),
     (
         re.compile(
@@ -101,6 +109,7 @@ _VIDEO_SERVICES: tuple[tuple[re.Pattern[str], str], ...] = (
             + _VIDEO_TAIL
         ),
         "https://vk.com/video_ext.php?oid={oid}&id={id}&autoplay=1",
+        "vk",
     ),
 )
 
@@ -113,10 +122,23 @@ def video_embed(href: str) -> str | None:
     link to anywhere else. A `None` here is what keeps every other link an
     ordinary link.
     """
-    for pattern, embed in _VIDEO_SERVICES:
+    for pattern, embed, _host in _VIDEO_SERVICES:
         match = pattern.fullmatch(href.strip())
         if match:
             return embed.format(**match.groupdict())
+    return None
+
+
+def video_host(href: str) -> str | None:
+    """Which service `href` is a link to — `"youtube"`, `"rutube"`, `"vk"` — or None.
+
+    The same anchored, per-host patterns `video_embed` matches against, so a
+    title lookup (F66, ADR-040) can never consider a link this module would not
+    already turn into a player.
+    """
+    for pattern, _embed, host in _VIDEO_SERVICES:
+        if pattern.fullmatch(href.strip()):
+            return host
     return None
 
 
