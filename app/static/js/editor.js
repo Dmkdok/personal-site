@@ -228,10 +228,13 @@
     replaceRange(start, end, lead + text + tail, caret, caret + length);
   }
 
-  /** An address on a line of its own — the shape `render_markdown` turns into a player. */
+  /** A captioned link on a line of its own — the shape `render_markdown` turns
+   * into a named player instead of an anonymous one (T142). The caption is
+   * selected first, so typing over it is the very next thing that happens. */
   function videoAction() {
-    var url = placeholder("url");
-    insertBlock(url, 0, url.length);
+    var text = placeholder("video-text");
+    var url = placeholder("video-url");
+    insertBlock("[" + text + "](" + url + ")", 1, text.length);
   }
 
   /** Header row, the dashes that make it a header, and one row of data. */

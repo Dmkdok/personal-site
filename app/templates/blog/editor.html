@@ -69,6 +69,8 @@
               data-ph-url="{{ t('blog.md.ph_url') }}"
               data-ph-th="{{ t('blog.md.ph_th') }}"
               data-ph-td="{{ t('blog.md.ph_td') }}"
+              data-ph-video-text="{{ t('blog.md.ph_video_text') }}"
+              data-ph-video-url="{{ t('blog.md.ph_video_url') }}"
             >
               <button class="md-toolbar__button" type="button" data-md="bold" title="{{ t('blog.md.bold') }}">
                 <span class="md-toolbar__glyph" aria-hidden="true">**</span>
@@ -149,7 +151,7 @@
                   {{ t("blog.md.size_" ~ form ~ "_text") }}
                 </p>
               {% endfor %}
-              {% for form in ["video", "table", "quote", "code", "link", "list", "heading", "strike"] %}
+              {% for form in ["video", "video_poster", "table", "quote", "code", "link", "list", "heading", "strike"] %}
                 {%- set snippet = t("blog.md.sheet_" ~ form ~ "_code") %}
                 <p class="field__hint">
                   {# A snippet of more than one line keeps its line breaks: a table

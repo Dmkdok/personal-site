@@ -54,6 +54,7 @@ def test_the_sheet_covers_every_shape_the_renderer_understands(
         "size_full_code",
         "size_caption_code",
         "sheet_video_code",
+        "sheet_video_poster_code",
         "sheet_table_code",
         "sheet_quote_code",
         "sheet_code_code",
@@ -67,7 +68,7 @@ def test_the_sheet_covers_every_shape_the_renderer_understands(
         expect(sheet).to_contain_text(ru(f"blog.md.{key}").split("\n")[0])
 
 
-def test_the_video_button_writes_a_paragraph_of_its_own(
+def test_the_video_button_writes_a_captioned_paragraph_of_its_own(
     admin_page: Page, admin_api: AdminApi, trash: Trash, run_token: str
 ) -> None:
     """The shape `render_markdown` turns into a player, and nothing less (F63).
@@ -75,6 +76,13 @@ def test_the_video_button_writes_a_paragraph_of_its_own(
     A video link among other text is an ordinary link, so a button that dropped
     the address at the caret would produce something that looks inserted and does
     not play.
+
+    T142 changed what the button writes — a bare address used to leave every
+    video anonymous until the author knew to wrap it. It now inserts the
+    captioned form `_video_paragraph` already turns into a `<figcaption>`, with
+    the caption selected so typing over it is the next thing that happens. This
+    assertion changed under T142 for exactly that reason, named rather than
+    quiet, per the regression contract.
     """
     post = trash.post(admin_api.create_post(f"E2E кнопка видео {run_token}"))
     admin_page.goto(f"/blog/{post.slug}/edit")
@@ -88,12 +96,18 @@ def test_the_video_button_writes_a_paragraph_of_its_own(
 
     text = body.input_value()
     assert text.startswith("Первый абзац.")
-    assert text.endswith("\n\n" + ru("blog.md.ph_url")), repr(text)
-    # The address is selected, so pasting a real one replaces the placeholder.
-    assert admin_page.evaluate(
-        "() => { const a = document.getElementById('post-body');"
-        " return a.value.slice(a.selectionStart, a.selectionEnd); }"
-    ) == ru("blog.md.ph_url")
+    caption = ru("blog.md.ph_video_text")
+    address = ru("blog.md.ph_video_url")
+    assert text.endswith("\n\n[" + caption + "](" + address + ")"), repr(text)
+    # The caption is selected, so typing a real title replaces the placeholder
+    # immediately — the address is filled in afterward.
+    assert (
+        admin_page.evaluate(
+            "() => { const a = document.getElementById('post-body');"
+            " return a.value.slice(a.selectionStart, a.selectionEnd); }"
+        )
+        == caption
+    )
 
 
 def test_the_table_button_writes_a_table_that_renders(
