@@ -467,8 +467,8 @@
     gap: var(--space-2xs);
     padding: var(--space-3xs);
     border-radius: inherit;
-    background-color: color-mix(in srgb, var(--surface-raised) 55%, transparent);
-    backdrop-filter: blur(2px);
+    /* The tools/alt-input children already carry an opaque --surface-raised
+       background of their own; no scrim is needed under them. */
     /* The scrim must never intercept the click that opens the photograph. */
     pointer-events: none;
   }
