@@ -1,6 +1,6 @@
 # Status
 
-phase: iteration I6 — gate approved, Phase 4 implementation (M17 closed prior session; M16 still open)
+phase: iteration I6 closed 2026-08-25 (M18 done; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
@@ -31,10 +31,12 @@ Same counts as I5's closing tree — nothing regressed between the two sessions.
 - [x] 2 impact map written
 - [x] 3 docs amended (SPEC F66, ADR-040, TASKS M18)
 - [x] GATE approved by the owner — «утверждаю», 2026-08-25
-- [ ] 4 implementation
-- [ ] 5 verification green, baseline suites still green
-- [ ] 6 review clean or waived
-- [ ] 7 closed (STATUS rewritten, milestone ticked)
+- [x] 4 implementation — T140–T144, four commits (T140 landed prior session; T141–T143 plus the
+      review fix this session)
+- [x] 5 verification green — unit/API **370** exit 0 (353 at Phase 0), e2e **113** exit 0 (110)
+- [x] 6 review — `docs/REVIEW.md` run 8, PASS with findings; one High and four Mediums fixed same
+      session, six Lows fixed or carried
+- [x] 7 closed 2026-08-25 — all six exit criteria met; see Resume here
 ```
 
 Intake, impact map and exit criteria: `docs/iterations/I6-editing-polish.md`. Tasks: `docs/TASKS.md`
@@ -80,19 +82,71 @@ Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: 
 
 ## Resume here
 
-**I6's delta is approved — «утверждаю», 2026-08-25 — and Phase 4 is starting in the same session
-on the owner's explicit instruction.** Branch `iteration/I6-editing-polish`, cut from `main` at
-`d90ec48` — clean tree, baseline recorded above. Phases 0–3 are done: intake, impact map,
-`docs/SPEC.md` (F66), `docs/DECISIONS.md` (ADR-040) and `docs/TASKS.md` (M18, **T140–T144**) are
-amended. **Nothing under `app/` has changed yet** as of this note — Phase 4 begins right after it.
+**I6 is closed, 2026-08-25, in the same session that opened it.** Branch
+`iteration/I6-editing-polish`, cut from `main` at `d90ec48`. All five tasks in M18 are implemented,
+tested and reviewed; all six exit criteria in `docs/iterations/I6-editing-polish.md` are met.
+**Not merged to `main` yet** — merging is the owner's call, as always.
 
-M18 in one line each: **T140** stops the owner's tools from blurring the photograph under them in
-«Правка»; **T141** gives «Файлы на диске» its top margin when the room above it is otherwise empty;
-**T142** makes the video toolbar and cheat sheet teach the captioned link form every service
-already supports; **T143** fetches a YouTube or Rutube link's own title automatically, server-side,
-once, at edit time (F66, ADR-040 — VK stays manual, no public oEmbed exists for it without a new
-access token); **T144** closes ADR-038's deferred fix — a video's own control label no longer
-leaks into an auto-generated excerpt or meta description.
+M18 in one line each: **T140** stopped the owner's tools from blurring the photograph under them in
+«Правка»; **T141** gave «Файлы на диске» its top margin when the room above it is otherwise empty;
+**T142** taught the video toolbar and cheat sheet the captioned link form every service already
+supports; **T143** fetches a YouTube or Rutube link's own title automatically, server-side, once, at
+edit time (F66, ADR-040 — VK stays manual); **T144** closed ADR-038's deferred fix — a video's own
+control label no longer leaks into an auto-generated excerpt or meta description.
+
+| | | State |
+|---|---|---|
+| **T140** | the owner's tools stop blurring the photo they sit on | **done**, `28938e0` |
+| **T141** | the disk section gets a top when the room above it is empty | **done**, `4f5bf91` |
+| **T142** | the editor teaches the captioned form, not just the bare link | **done**, `109c38a` |
+| **T144** | a video's own label stays out of the excerpt | **done**, `910c7fe` |
+| **T143** | a YouTube or Rutube link fills its own caption | **done**, `8c4f0db` |
+| | review run 8's High: the button's own next gesture produced a dead link | **fixed**, `ec9b573` |
+
+**Gates on I6's closing tree, none piped:** unit/API **370** exit 0 (353 at the baseline, 367 before
+the review fix), e2e **113** exit 0 (110 at the baseline, 111 before the review fix), `ruff check`
+clean, `ruff format --check` **124 files** exit 0. Admin sweeps: focus **207 stops / 0** without an
+indicator (88/0 anonymous), targets **171 under 44 px / 0** under WCAG 2.5.8 (65/0 anonymous),
+contrast **141 samples / 0 failures** admin, **85/0** anonymous, both themes.
+
+**Review: `docs/REVIEW.md` run 8, PASS with findings, all resolved same day, same branch** — run by
+an independent reviewer agent, no write access to application code, with `secure-review` mandatory
+on T143 per ADR-040 (first time this codebase has the server call out to a third party on the
+owner's own action). One High fixed (see table above), four Mediums fixed, six Lows fixed or carried
+with reasons. SSRF on T143 was probed with eight adversarial inputs and found closed by
+construction, not merely untested.
+
+**What actually landed, in one paragraph each, is in `docs/iterations/I6-editing-polish.md`.** Read
+that before touching any of this.
+
+**Two things to expect if you carry this forward.**
+
+1. **Two tasks that each look correct in isolation can still fight each other at the interaction
+   level.** T142 deliberately left the video button's caption selected (so a video starts captioned
+   rather than anonymous); T143's paste-triggered auto-fill only recognised the address landing in
+   the address slot. Pressing the button and immediately pasting the clipboard's video link — the
+   most direct thing to do — landed the paste in the *selected caption* instead, and nothing in the
+   suite caught it because no test simulated a paste *after* a toolbar insertion, only the
+   insertion's own output. **Before trusting a multi-step UI flow, act it out**, not just each
+   step's own assertion — an interaction's correctness is not the sum of its parts' correctness.
+2. **A GET that can fail auth is not a safe default for a JSON endpoint on this site.** `main.py`'s
+   401 handler redirects any failing `GET` to `/login` (written for page navigation), so a JSON
+   route reachable by `GET` hands an anonymous caller a login page's HTML instead of a 401. T143's
+   own anonymous test caught this before it shipped; every admin JSON endpoint in this codebase is
+   now consistently a `POST` for exactly this reason — check that first, not the auth dependency,
+   the next time an admin JSON route answers something unexpected to a stubbed anonymous test.
+
+**Merging is the owner's call** and, since T127, a push to `main` runs the suite and the lint gate
+before it builds anything.
+
+Everything below this line is I5's record and is still true.
+
+**One thing not ticked, and not this session's to tick.** I4's exit criterion 7 — the owner's own
+pass through one full publishing flow using only the new menu and the new mode — looks, on the face
+of it, satisfied by the pass that closed I5's criterion 8 (it used exactly that menu and mode). It is
+left unticked here anyway: nobody has said so explicitly, and M16 cannot close in any case until
+T128 and T129 (the appliance) are also done. Worth asking the owner directly rather than inferring
+it.
 
 **M17 closed 2026-08-25.** All five tasks were already implemented, tested, reviewed and committed
 on `iteration/I5-authoring`, which this session found already fast-forwarded into `main` at
@@ -102,13 +156,6 @@ article with a picture at a chosen width and a video, using only the editor's ow
 publishing it and reading it in both modes — is done, by the owner's confirmation**, and it is what
 surfaced the three findings I6 opens with. The written-but-never-run tick this project paid for
 once in T086 did not repeat here: the pass was actually run, and it is the reason I6 exists.
-
-**One thing not ticked, and not this session's to tick.** I4's exit criterion 7 — the owner's own
-pass through one full publishing flow using only the new menu and the new mode — looks, on the
-face of it, satisfied by the same pass that closed I5's criterion 8 (it used exactly that menu and
-mode). It is left unticked here anyway: nobody has said so explicitly, and M16 cannot close in any
-case until T128 and T129 (the appliance) are also done. Worth asking the owner directly rather than
-inferring it.
 
 | | | State |
 |---|---|---|
@@ -160,7 +207,7 @@ this; they are where the reasons live.
 **One line still open, one taken up.** `.project__handle` in `dev.css` restates `.photo-handle`
 from `photo.css` because `/dev` does not load that stylesheet — one drag handle, two definitions,
 still unfixed. ADR-038's excerpt fix — held back at I5's close because it changes every card and
-every meta description on two sections — **is T144 in I6** (`docs/TASKS.md` M18).
+every meta description on two sections — **was T144 in I6**, now done.
 
 **Merging is the owner's call** and, since T127, a push to `main` runs the suite
 and the lint gate before it builds anything.
