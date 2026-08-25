@@ -207,6 +207,19 @@ leave this site's own origin, and it does so only after the reader asks for it.
 | F64 | The cabinet has rooms, and room for the next one | Given a signed-in owner in the cabinet, when they open it, then a menu names its rooms and marks the one they are in: **«События»** (F62), **«Сводка»** — how much there is of everything and when the last thing was published — and **«Медиа»** — photographs still in flight, and, on request rather than on load, the files on disk nothing on the site points at, with their size; every room is its own address, none is indexed, and none of them deletes anything |
 | F65 | Search finds a word from its beginning | Given any search, when the query is the start of a word rather than the whole of it, then the things containing that word are found and ranked among the results; **nothing that the whole word finds today stops being found**, quoted phrases and excluded terms keep working, and the answer still comes from the existing generated columns and their indexes with no extension and no migration |
 
+### Added by iteration I6 — editing polish
+
+Added 2026-08-25 from three owner findings made during I5's own exit-criterion-8 pass. Intake,
+impact map and exit criteria: `docs/iterations/I6-editing-polish.md`. F66 is a second, narrower
+exception to the F63 lead-in above: the server itself may ask a video host's own public oEmbed
+endpoint for a title, but only once, only at edit time and only for the two hosts named below —
+never while serving a page to a reader, so F63's own guarantee about the published page is
+unchanged.
+
+| ID | Requirement | Acceptance |
+|----|-------------|------------|
+| F66 | A YouTube or Rutube link's own title fills the caption automatically | Given the author inserts a link to a supported YouTube or Rutube video, when the editor recognises the host, then the server asks that host's own public oEmbed endpoint for the video's title once, at edit time, and offers it as the link's caption text — still editable before the post is saved; the request is made by the server itself, never by a reader's browser and never while a page is being served to one; a VK link is unaffected and keeps the caption the author writes by hand (no public, unauthenticated oEmbed exists for it); a lookup that fails, times out or finds nothing leaves the caption empty rather than blocking the save |
+
 ## Non-functional
 
 **Performance**

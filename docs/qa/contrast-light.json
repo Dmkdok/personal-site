@@ -38,7 +38,7 @@
     },
     {
       "selector": "time",
-      "text": "18 августа 2026",
+      "text": "25 августа 2026",
       "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
@@ -70,7 +70,7 @@
     },
     {
       "selector": "time",
-      "text": "18 августа 2026",
+      "text": "25 августа 2026",
       "color": "rgb(100, 108, 119)",
       "backdrop": [
         "rgb(238, 240, 243)"
@@ -79,7 +79,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-video-svip-lmuhimdnc",
+      "page": "/blog/e2e-video-svip-hsyvevipn",
       "theme": "light",
       "ratio": 4.65,
       "required": 4.5
@@ -191,7 +191,7 @@
       "fontSize": 14.24,
       "fontWeight": 500,
       "onImage": false,
-      "page": "/photo/e2e-galereia-lmuhimdnc",
+      "page": "/photo/e2e-galereia-hsyvevipn",
       "theme": "light",
       "ratio": 5.03,
       "required": 4.5

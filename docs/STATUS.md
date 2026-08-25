@@ -1,10 +1,45 @@
 # Status
 
-phase: iteration I5 — implementation (M17 in progress, M16 still open)
+phase: iteration I6 — gate approved, Phase 4 implementation (M17 closed prior session; M16 still open)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
 i5_delta_approved_at: 2026-08-17
+i6_delta_approved_at: 2026-08-25
+
+## Baseline I6
+
+Recorded 2026-08-25 on `iteration/I6-editing-polish`, cut from `main` at `d90ec48` — which already
+carries every I5 commit (`iteration/I5-authoring` was fast-forwarded into `main`) plus one test-only
+flakiness fix (`d90ec48`, `cover_of` waits for the album's own commit). Tree was clean before the
+branch. Every command below ran in this session, on this tree, none piped.
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **353 passed**, exit 0 |
+| e2e | `uv run pytest e2e -q` | **110 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | **122 files**, exit 0 |
+
+Same counts as I5's closing tree — nothing regressed between the two sessions.
+
+## Iteration I6 progress
+
+```text
+- [x] 0 baseline recorded (branch, suite result, timestamp)
+- [x] 1 delta intake agreed (in / out / deferred)
+- [x] 2 impact map written
+- [x] 3 docs amended (SPEC F66, ADR-040, TASKS M18)
+- [x] GATE approved by the owner — «утверждаю», 2026-08-25
+- [ ] 4 implementation
+- [ ] 5 verification green, baseline suites still green
+- [ ] 6 review clean or waived
+- [ ] 7 closed (STATUS rewritten, milestone ticked)
+```
+
+Intake, impact map and exit criteria: `docs/iterations/I6-editing-polish.md`. Tasks: `docs/TASKS.md`
+M18, **T140–T144**. T142 lands before T143; T140, T141 and T144 are independent and may land in any
+order.
 
 ## Baseline I5
 
@@ -37,7 +72,7 @@ alongside I5's own amendments, so the two are in one commit rather than two.
 - [x] 4 implementation — T135–T139, five commits
 - [x] 5 verification green, baseline suites still green — 353 / 110 / clean / 122
 - [x] 6 review — `docs/REVIEW.md` run 7, PASS; one High fixed, two Mediums to ADR-038/039
-- [ ] 7 closed (STATUS rewritten, milestone ticked) — **blocked on exit criterion 8, the owner's**
+- [x] 7 closed 2026-08-25 — exit criterion 8 done, by the owner's confirmation; see Resume here
 ```
 
 Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: `docs/TASKS.md` M17,
@@ -45,14 +80,35 @@ Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: 
 
 ## Resume here
 
-**I5's code, verification and review are finished. The iteration is not, and M17
-is not ticked.** All five tasks are implemented, tested, reviewed and committed on
-`iteration/I5-authoring` (cut from `iteration/I4-editing-mode` at `5bd408f`).
-**What remains is exit criterion 8, the owner's own pass: write one article with a
-picture at a chosen width and a video, using only the editor's own cheat sheet,
-publish it, and read it in both modes.** No test stands in for it, and the
-written-but-never-run tick is the T073 mistake this project already paid for once
-in T086.
+**I6's delta is approved — «утверждаю», 2026-08-25 — and Phase 4 is starting in the same session
+on the owner's explicit instruction.** Branch `iteration/I6-editing-polish`, cut from `main` at
+`d90ec48` — clean tree, baseline recorded above. Phases 0–3 are done: intake, impact map,
+`docs/SPEC.md` (F66), `docs/DECISIONS.md` (ADR-040) and `docs/TASKS.md` (M18, **T140–T144**) are
+amended. **Nothing under `app/` has changed yet** as of this note — Phase 4 begins right after it.
+
+M18 in one line each: **T140** stops the owner's tools from blurring the photograph under them in
+«Правка»; **T141** gives «Файлы на диске» its top margin when the room above it is otherwise empty;
+**T142** makes the video toolbar and cheat sheet teach the captioned link form every service
+already supports; **T143** fetches a YouTube or Rutube link's own title automatically, server-side,
+once, at edit time (F66, ADR-040 — VK stays manual, no public oEmbed exists for it without a new
+access token); **T144** closes ADR-038's deferred fix — a video's own control label no longer
+leaks into an auto-generated excerpt or meta description.
+
+**M17 closed 2026-08-25.** All five tasks were already implemented, tested, reviewed and committed
+on `iteration/I5-authoring`, which this session found already fast-forwarded into `main` at
+`d90ec48` (one test-only flakiness fix past I5's own last commit, `cover_of` waits for the album's
+own commit rather than the photo's). **Exit criterion 8 — the owner's own pass, writing one
+article with a picture at a chosen width and a video, using only the editor's own cheat sheet,
+publishing it and reading it in both modes — is done, by the owner's confirmation**, and it is what
+surfaced the three findings I6 opens with. The written-but-never-run tick this project paid for
+once in T086 did not repeat here: the pass was actually run, and it is the reason I6 exists.
+
+**One thing not ticked, and not this session's to tick.** I4's exit criterion 7 — the owner's own
+pass through one full publishing flow using only the new menu and the new mode — looks, on the
+face of it, satisfied by the same pass that closed I5's criterion 8 (it used exactly that menu and
+mode). It is left unticked here anyway: nobody has said so explicitly, and M16 cannot close in any
+case until T128 and T129 (the appliance) are also done. Worth asking the owner directly rather than
+inferring it.
 
 | | | State |
 |---|---|---|
@@ -61,9 +117,9 @@ in T086.
 | **T137** | the cabinet gets rooms, and «Снимки без описания» leaves it | **done**, `ea3e1bf` |
 | **T138** | a video is a facade the reader opts into | **done**, `c59260a` |
 | **T139** | the editor says how the markup works | **done**, `33381b5` |
-| | review run 7's High: `/dev` was still draggable in «Просмотр» | **fixed**, this session |
+| | review run 7's High: `/dev` was still draggable in «Просмотр» | **fixed**, prior session |
 
-**Gates on the closing tree, none piped:** unit/API **353** exit 0 (289 at the
+**Gates on I5's closing tree, none piped:** unit/API **353** exit 0 (289 at the
 baseline), e2e **110** exit 0 (92 at the baseline, 107 before the review fix),
 `ruff check` clean, `ruff format --check` **122 files** exit 0. Admin sweeps: focus
 **207 stops / 0** without an indicator, targets **171 under 44 px / 0** under WCAG
@@ -101,20 +157,19 @@ this; they are where the reasons live.
    a debugging round in earlier iterations and nothing since they were written
    down.
 
-**Two lines for the next intake, deliberately not fixed here.** `.project__handle`
-in `dev.css` restates `.photo-handle` from `photo.css` because `/dev` does not load
-that stylesheet — one drag handle, two definitions. And ADR-038's excerpt fix is
-one branch in `excerpt_from`, held back only because it changes every card and
-every meta description on two sections and deserves an intake line rather than a
-quiet ride on a review.
+**One line still open, one taken up.** `.project__handle` in `dev.css` restates `.photo-handle`
+from `photo.css` because `/dev` does not load that stylesheet — one drag handle, two definitions,
+still unfixed. ADR-038's excerpt fix — held back at I5's close because it changes every card and
+every meta description on two sections — **is T144 in I6** (`docs/TASKS.md` M18).
 
 **Merging is the owner's call** and, since T127, a push to `main` runs the suite
 and the lint gate before it builds anything.
 
 Everything below this line is I4's record and is still true. **M16 remains open:
-T128 and T129 are the owner's and need the appliance, and I4's exit criterion 7 —
-the owner's own pass through one publishing flow — is outstanding alongside I5's
-criterion 8.**
+T128 and T129 are the owner's and need the appliance.** I4's exit criterion 7 — the
+owner's own pass through one publishing flow — is likely satisfied by the same pass
+that closed I5's criterion 8 (see "One thing not ticked" above), but that is an
+inference, not a confirmation, and M16 cannot close on T128/T129 alone regardless.
 
 ---
 
