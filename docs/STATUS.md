@@ -85,7 +85,15 @@ Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: 
 **I6 is closed, 2026-08-25, in the same session that opened it.** Branch
 `iteration/I6-editing-polish`, cut from `main` at `d90ec48`. All five tasks in M18 are implemented,
 tested and reviewed; all six exit criteria in `docs/iterations/I6-editing-polish.md` are met.
-**Not merged to `main` yet** — merging is the owner's call, as always.
+
+**Merged, pushed and deployed, 2026-08-25, on the owner's instruction.** `main` fast-forwarded
+`d90ec48..30010b9` and pushed to `origin`. The `publish` run on that push (`32886056210`) is green —
+`tests` passed, then both images built and `latest` moved to `sha-30010b9`. **The NAS stack picked it
+up via the Portainer API** (stack `id=1` `portfolio`, endpoint 3, `https://192.168.1.20:31015`):
+fetched the live stack file and env unchanged, PUT back with `pullImage: true`, HTTP 200. All three
+containers came up healthy on the new image (`web` container recreated `2026-08-25T18:57:05Z`);
+`/healthz` answers 200 on both `http://192.168.1.20:8080` and
+`https://profile.dmkdok.crazedns.ru:8443`.
 
 M18 in one line each: **T140** stopped the owner's tools from blurring the photograph under them in
 «Правка»; **T141** gave «Файлы на диске» its top margin when the room above it is otherwise empty;
