@@ -50,7 +50,11 @@
     }
   }
 
-  .cabinet__group + .cabinet__group {
+  /* Same gap whether the group before it is another group or the empty state
+     («Медиа» with nothing in flight and nothing failed, T141) — the disk
+     section should not crowd whichever one it lands after. */
+  .cabinet__group + .cabinet__group,
+  .empty + .cabinet__group {
     margin-block-start: var(--space-l);
   }
 

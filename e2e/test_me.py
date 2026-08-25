@@ -112,6 +112,39 @@ def test_the_disk_is_walked_only_when_the_owner_asks(admin_page: Page) -> None:
     expect(report).to_contain_text("--prune")
 
 
+def test_the_disk_section_clears_the_empty_room_above_it(admin_page: Page) -> None:
+    """T141: `.empty` and a real group give the disk section the same gap.
+
+    Nothing is in flight and nothing has failed, so «Медиа» renders the shared
+    `.empty` box instead of a `.cabinet__group` — and `.cabinet__group +
+    .cabinet__group` (me.css) never matches that pair. The disk section still
+    needs `--space-l` of clearance above `.empty`'s dashed border, exactly as it
+    gets above a real group.
+    """
+    admin_page.goto("/me/media")
+
+    empty = admin_page.locator(".empty")
+    disk = admin_page.locator(".cabinet__disk")
+    expect(empty).to_be_visible()
+    expect(disk).to_be_visible()
+
+    space_l = admin_page.evaluate(
+        """() => {
+            const root = document.documentElement;
+            const raw = getComputedStyle(root).getPropertyValue('--space-l');
+            return parseFloat(raw) * parseFloat(getComputedStyle(root).fontSize);
+        }"""
+    )
+
+    empty_box = empty.bounding_box()
+    disk_box = disk.bounding_box()
+    assert empty_box is not None
+    assert disk_box is not None
+
+    gap = disk_box["y"] - (empty_box["y"] + empty_box["height"])
+    assert gap >= space_l - 1, (gap, space_l)
+
+
 def test_no_room_is_ever_indexed(admin_page: Page) -> None:
     """All three, because all three extend the same layout — asserted, not assumed."""
     for room in ("/me", "/me/stats", "/me/media"):
