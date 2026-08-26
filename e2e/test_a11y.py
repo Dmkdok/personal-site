@@ -620,6 +620,16 @@ def _sweep_focus(
                 else None,
             }
             swept.append(record)
+            if state["tag"] == "iframe":
+                # A cross-origin iframe's DOM focus never reaches `:focus` (or
+                # `:focus-visible`) on the containing element in the parent
+                # document — confirmed empirically: `document.activeElement`
+                # reports the iframe, but `el.matches(':focus')` is false. This
+                # is a browser privacy boundary around cross-origin content,
+                # not a stylable gap, so no rule in this codebase's CSS can put
+                # a ring on it (ADR-041). It is out of this sweep's reach the
+                # same way the embed's own internals already are.
+                continue
             if state["visible"] and not any(changed):
                 invisible.append(record | {"focused": state["focused"], "resting": resting})
 
@@ -647,7 +657,7 @@ def test_every_focus_stop_shows_a_visible_indicator(
             "/blog",
             "/search?q=",
             f"/photo/{published_album.slug}",
-            # The play control is a tab stop in the middle of prose (T138).
+            # The embedded player is a tab stop in the middle of prose (T138, ADR-041).
             f"/blog/{published_video_post.slug}",
         ],
         reveal=False,

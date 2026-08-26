@@ -17,10 +17,15 @@ SCRIPTING_URL = re.compile(r"(href|src)\s*=\s*[\"']?\s*(javascript|data|vbscript
 
 
 def assert_inert(html: str) -> None:
-    """No tag in the output may carry a handler or a scripting URL."""
+    """No tag in the output may carry a handler or a scripting URL.
+
+    `iframe` is deliberately not in this list (ADR-041): the renderer itself
+    now builds one, legitimately, for every recognised video link — the same
+    reason `button` was never in it while `button` was the thing being built.
+    """
     assert not EVENT_ATTRIBUTE.search(html), f"event handler survived: {html}"
     assert not SCRIPTING_URL.search(html), f"scripting URL survived: {html}"
-    for tag in ("<script", "<style", "<iframe", "<object", "<embed", "<form", "<svg"):
+    for tag in ("<script", "<style", "<object", "<embed", "<form", "<svg"):
         assert tag not in html.lower(), f"{tag} survived: {html}"
 
 
@@ -168,11 +173,13 @@ def test_excerpt_of_nothing_is_empty():
 
 
 def test_excerpt_of_a_bare_video_is_empty_not_the_buttons_label():
-    """T144, ADR-038: the play control's own label must not fill a missing excerpt."""
+    """T144: falls out of ordinary tag-stripping now — no control label exists
+    to leak, so no special case is needed (ADR-041 retired ADR-038's guard)."""
     assert excerpt_from(f"https://youtu.be/{YOUTUBE_ID}") == ""
 
 
 def test_excerpt_of_a_captioned_video_keeps_the_caption_and_the_prose():
+    """Falls out of ordinary tag-stripping now — no special case needed."""
     excerpt = excerpt_from(
         f"[Разбор съёмки](https://youtu.be/{YOUTUBE_ID})\n\nДальше текст статьи."
     )
@@ -448,13 +455,14 @@ def test_a_width_on_something_that_is_not_an_image_is_literal_text():
 
 
 # --------------------------------------------------------------------------
-# Video: a facade the reader opts into (F63, ADR-035)
+# Video: an iframe the renderer builds directly (F63, ADR-041)
 #
 # The embed URL reaches the page as an attribute *value*, and nh3 filters
 # attribute names only — the same hole `WIDTH_WORDS` closes for the class. So the
-# recogniser is a set of anchored per-host patterns, and these are the tests that
-# keep it anchored. Nothing here may ever produce an `<iframe>`, which
-# `assert_inert` asserts on every one of them.
+# recogniser is a set of anchored per-host patterns, and these are the tests
+# that keep it anchored: the only way this module ever emits `iframe.src` is
+# with a value `video_embed` returned, never anything else derived from
+# author input.
 # --------------------------------------------------------------------------
 YOUTUBE_ID = "dQw4w9WgXcQ"
 RUTUBE_ID = "c0b4c4e2a8f14a1cb0f5e2d3a4b5c6d7"
@@ -462,11 +470,11 @@ YOUTUBE_EMBED = f"https://www.youtube.com/embed/{YOUTUBE_ID}?autoplay=1"
 
 
 def embed_of(html: str) -> str | None:
-    """The URL in `data-video`, unescaped — `&` arrives as `&amp;` in an attribute."""
+    """The `src` of the rendered `<iframe class="prose-video__frame">`, unescaped."""
     import html as html_module
 
-    found = re.findall(r'data-video="([^"]*)"', html)
-    assert len(found) < 2, f"more than one facade: {found}"
+    found = re.findall(r'<iframe class="prose-video__frame" src="([^"]*)"', html)
+    assert len(found) < 2, f"more than one embed: {found}"
     return html_module.unescape(found[0]) if found else None
 
 
@@ -498,26 +506,31 @@ def test_a_lone_video_link_becomes_a_facade(url, expected):
     html = render_markdown(url)
 
     assert '<figure class="prose-video">' in html
-    assert '<button class="prose-video__play" type="button"' in html
+    assert '<iframe class="prose-video__frame"' in html
+    assert "<button" not in html
+    assert "<a " not in html, "the link became the player, it did not stay beside it"
+    assert url not in html, "the pasted address is not printed raw on the page"
     assert embed_of(html) == expected
-    assert "<a " not in html, "the link became the control, it did not stay beside it"
-    assert url not in html, "the pasted address is not printed inside the button"
     assert_inert(html)
 
 
-def test_the_facade_names_the_video_host_only_inside_the_data_attribute():
-    """The security claim of ADR-035, in one place.
+def test_the_iframes_src_is_never_anything_but_a_matched_embed_url():
+    """The security claim of ADR-041, in one place.
 
-    `iframe` is not in `ALLOWED_TAGS`, so there is no path through the parser or
-    the sanitiser to one, and the only third-party string on the page is a URL in
-    a data attribute — which no browser fetches on its own.
+    `iframe` re-entering `ALLOWED_TAGS` is safe only because `link_open`'s
+    video branch has exactly one source for `src`: `video_embed`'s return
+    value, built from `_VIDEO_SERVICES`'s anchored per-host patterns. A link
+    this module does not recognise never reaches that branch at all — it
+    stays an ordinary `<a href>` (`test_a_link_to_another_host_stays_an_
+    ordinary_link`), never an `<iframe src>` built from the raw address.
     """
-    html = render_markdown(f"https://youtu.be/{YOUTUBE_ID}")
-    embed = embed_of(html)
+    from app.services.markdown import video_embed
 
-    assert "<iframe" not in html
-    assert embed
-    assert "youtube" not in html.replace(embed, "")
+    href = f"https://youtu.be/{YOUTUBE_ID}"
+    html = render_markdown(href)
+
+    assert embed_of(html) == video_embed(href)
+    assert href not in html
 
 
 @pytest.mark.parametrize(
@@ -562,7 +575,7 @@ def test_a_video_link_among_other_text_stays_a_link():
     html = render_markdown(f"Смотрите https://youtu.be/{YOUTUBE_ID} сегодня вечером.")
 
     assert "prose-video" not in html
-    assert "<button" not in html
+    assert "<iframe" not in html
     assert f'<a href="https://youtu.be/{YOUTUBE_ID}"' in html
 
 
@@ -570,15 +583,20 @@ def test_two_video_links_in_one_paragraph_are_not_a_facade():
     html = render_markdown(f"https://youtu.be/{YOUTUBE_ID} https://youtu.be/{YOUTUBE_ID}")
 
     assert "prose-video" not in html
-    assert "<button" not in html
+    assert "<iframe" not in html
 
 
-def test_a_picture_from_our_own_media_becomes_the_poster():
+def test_a_pictures_caption_survives_the_retired_poster():
+    """The poster affordance is retired (ADR-041): the picture never renders,
+    but its own alt text still reaches the figure as a caption in place of the
+    title it does not have.
+    """
     html = render_markdown(f"[![вершина]({PICTURE}_1600.webp)](https://youtu.be/{YOUTUBE_ID})")
 
     assert '<figure class="prose-video">' in html
-    assert f'src="{PICTURE}_1600.webp"' in html
-    assert 'alt="вершина"' in html
+    assert f'src="{PICTURE}_1600.webp"' not in html
+    assert "<img" not in html
+    assert "<figcaption>вершина</figcaption>" in html
     assert embed_of(html) == YOUTUBE_EMBED
     assert "<a " not in html
     assert_inert(html)
@@ -617,28 +635,36 @@ def test_a_posters_markdown_title_becomes_the_caption():
     )
 
     assert "<figcaption>Эльбрус на рассвете</figcaption>" in html
-    # Not `title=` outright: the button carries `data-title`, which is the frame's
-    # accessible name and not a tooltip on the picture.
+    # The picture itself never renders (ADR-041): its own Markdown `title`
+    # reaches the figure's caption directly, not as a tooltip on an <img>
+    # that no longer exists.
     assert 'title="Эльбрус на рассвете"' not in html
 
 
-def test_a_handwritten_iframe_still_does_not_survive():
-    """ADR-035: `button` joined the allow-list and `iframe` did not."""
+def test_a_handwritten_iframe_does_not_survive_as_an_element():
+    """The renderer itself now builds real iframes for recognised video links
+    (ADR-041), but an author still cannot type one into existence.
+
+    Raw HTML is off at the parser, so it arrives as text: the tag showing up
+    as visible, escaped characters is the neutralisation working, the same
+    shape `test_a_handwritten_button_does_not_survive_either` asserts.
+    """
     html = render_markdown(
         f'Текст\n\n<iframe src="https://www.youtube.com/embed/{YOUTUBE_ID}"></iframe>\n\nДальше'
     )
 
     assert "<iframe" not in html
+    assert "&lt;iframe" in html
     assert_inert(html)
 
 
 def test_a_handwritten_button_does_not_survive_either():
-    """The tag is allowed in the *renderer's output*, not in an author's source.
-
-    Raw HTML is off at the parser, so it arrives as text: what must not exist is a
-    `<button>` element, and the attribute name showing up as visible characters is
-    the neutralisation working — the same shape `test_onerror_attribute_never_
-    becomes_a_tag` asserts for images.
+    """`button` is not in `ALLOWED_TAGS` at all any more (ADR-041 dropped it),
+    but this was never what stopped a hand-typed one from surviving: raw HTML
+    is off at the parser, so it arrives as text regardless of what the
+    allow-list contains — the attribute name showing up as visible characters
+    is the neutralisation working, the same shape `test_onerror_attribute_
+    never_becomes_a_tag` asserts for images.
     """
     html = render_markdown('<button data-video="https://evil.example/x">жми</button>')
 

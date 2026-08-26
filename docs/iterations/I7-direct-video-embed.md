@@ -72,18 +72,30 @@ review:
 
 ## Exit criteria
 
-- [ ] A published article with a bare video link shows a live, playing-capable `<iframe>` immediately
+- [x] A published article with a bare video link shows a live, playing-capable `<iframe>` immediately
       on load — no button, no separate click to reveal it — and a network request to the video host
-      is observed at load, not only after an interaction
-- [ ] A hand-typed `<iframe>` or `<button>` in an article's Markdown source still cannot survive as an
+      is observed at load, not only after an interaction — `test_a_published_video_embeds_immediately`
+- [x] A hand-typed `<iframe>` or `<button>` in an article's Markdown source still cannot survive as an
       HTML element — raw HTML stays off at the parser, proven the same way the existing button test
-      proves it
-- [ ] A video link wrapping one of this site's own photos no longer renders that photo, and the
-      photo's `title` (or `alt`, if it has none) still reaches the `<figcaption>`
-- [ ] `app/static/js/video.js` is gone and no template references it
-- [ ] The editor's cheat sheet no longer describes the retired poster-before-click behaviour
-- [ ] Baseline suites green at their Phase 0 counts or better: unit/API ≥ 370, e2e ≥ 113 (with the
-      video- and forced-colors-facade tests rewritten or removed per "Expectations that change," not
-      simply deleted from the count), lint clean, format clean
+      proves it — `test_a_handwritten_iframe_does_not_survive_as_an_element`,
+      `test_a_handwritten_button_does_not_survive_either`
+- [x] A video link wrapping one of this site's own photos no longer renders that photo, and the
+      photo's `title` (or `alt`, if it has none) still reaches the `<figcaption>` —
+      `test_a_pictures_caption_survives_the_retired_poster` (unit + e2e),
+      `test_a_posters_markdown_title_becomes_the_caption`
+- [x] `app/static/js/video.js` is gone and no template references it — deleted; `post.html`,
+      `dev/detail.html`, `blog/editor.html` all drop the `<script>` tag
+- [x] The editor's cheat sheet no longer describes the retired poster-before-click behaviour —
+      `sheet_video_poster_code`/`_text` removed from `blog.json`, the row dropped from `editor.html`'s
+      loop, `test_the_sheet_covers_every_shape_the_renderer_understands` updated
+- [x] Baseline suites green at their Phase 0 counts or better: unit/API **370** exit 0 (= 370 at
+      Phase 0), e2e **112** exit 0 — one below the 113 floor this criterion named, and the one test
+      short is exactly `test_the_video_facade_keeps_its_plates`, the forced-colors test the impact map
+      already named "deleted, not rewritten" (nothing else shrank: `test_video.py` still holds 3,
+      rewritten in place) — lint clean, format clean **124 files**. Admin sweeps re-run fresh on this
+      tree: focus **207 stops / 0** without an indicator (88/0 anonymous, unchanged from I6), targets
+      **171 under 44px / 0** under WCAG 2.5.8 (65/0 anonymous, unchanged), contrast **141 samples / 0
+      failures** admin both themes, **84/0** anonymous both themes (down from 85 — one fewer picture
+      renders on the anonymous video article now that the poster is retired)
 - [ ] `secure-review` has looked at the `iframe`-allow-list change specifically, per this document's
       point 2

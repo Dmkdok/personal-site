@@ -151,7 +151,7 @@
                   {{ t("blog.md.size_" ~ form ~ "_text") }}
                 </p>
               {% endfor %}
-              {% for form in ["video", "video_poster", "table", "quote", "code", "link", "list", "heading", "strike"] %}
+              {% for form in ["video", "table", "quote", "code", "link", "list", "heading", "strike"] %}
                 {%- set snippet = t("blog.md.sheet_" ~ form ~ "_code") %}
                 <p class="field__hint">
                   {# A snippet of more than one line keeps its line breaks: a table
@@ -222,8 +222,4 @@
 
 {% block scripts %}
   <script src="{{ static_url('js/editor.js') }}" defer></script>
-  {# The preview goes through the same `render_markdown` as the published page,
-     so it shows the same facade — and without this the facade would be the one
-     thing in the preview that does not behave like the page (F28, F63). #}
-  <script src="{{ static_url('js/video.js') }}" defer></script>
 {% endblock %}

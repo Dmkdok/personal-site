@@ -1,15 +1,11 @@
-"""F63 / ADR-035 — a video in an article is a facade the reader opts into.
+"""F63 / ADR-041 — a video in an article embeds directly.
 
-The claim being proved here is a negative one, and it is the reason the facade
-exists: a published page carrying a video contains **no `<iframe>`** and makes
-**no request to the video host** until the reader presses play. Both halves are
-watched rather than inferred — the requests through Playwright's own network
-events, the markup through the DOM.
-
-The press is asserted by the `<iframe>` that replaces the button and by where the
-caret lands (F-002). Whether the video host then answers is not asserted: that
-would make this test depend on somebody else's uptime, and it is not the property
-under test.
+The claim being proved here is the one the owner asked for: a published page
+carrying a video contains a real `<iframe>` **immediately**, on load, and a
+request to the video host is observed **at load**, not gated behind a click —
+the opposite of ADR-035's facade, which this iteration retires. Both halves
+are watched rather than inferred — the request through Playwright's own
+network events, the markup through the DOM.
 """
 
 from __future__ import annotations
@@ -31,7 +27,7 @@ def _third_party(urls: list[str]) -> list[str]:
     return [url for url in urls if any(host in url for host in VIDEO_HOSTS)]
 
 
-def test_a_published_video_asks_the_host_for_nothing_until_the_press(
+def test_a_published_video_embeds_immediately(
     page: Page, admin_api: AdminApi, trash: Trash, run_token: str
 ) -> None:
     post = trash.post(admin_api.create_post(f"E2E видео {run_token}"))
@@ -42,62 +38,41 @@ def test_a_published_video_asks_the_host_for_nothing_until_the_press(
 
     page.goto(f"/blog/{post.slug}")
 
-    # The visitor's page: a control, and nothing that loads.
-    facade = page.locator(".prose-video__play")
-    expect(facade).to_be_visible()
-    assert page.locator("iframe").count() == 0, "the page shipped with a player in it"
-    assert facade.get_attribute("data-video") == EMBED
-    reached = _third_party(requested)
-    assert not reached, f"the page reached the video host before the press: {reached}"
-
-    facade.click()
-
     frame = page.locator("iframe.prose-video__frame")
     expect(frame).to_have_count(1)
     assert frame.get_attribute("src") == EMBED
     assert frame.get_attribute("title") == ru("prose.video_frame")
-    expect(page.locator(".prose-video__play")).to_have_count(0)
-    # F-002: the control the caret was on has left the document, and the caret
-    # went to the thing that replaced it rather than to <body>.
-    assert page.evaluate("() => document.activeElement.tagName.toLowerCase()") == "iframe"
+    reached = _third_party(requested)
+    assert reached, "the video host was never asked for anything, on load"
 
 
-def test_a_picture_from_our_own_media_is_the_poster(
+def test_a_pictures_caption_survives_the_retired_poster(
     page: Page, admin_api: AdminApi, trash: Trash, run_token: str
 ) -> None:
-    """And the poster is our own file — the service's thumbnail is never fetched."""
+    """The poster affordance is retired (ADR-041): the picture never renders,
+    but its own alt text still reaches the page as the figure's caption."""
     post = trash.post(admin_api.create_post(f"E2E видео с постером {run_token}"))
     poster = admin_api.upload_inline_image(
         post, photo_bytes(1200, 675, seed=7), f"v-{run_token}.jpg"
     )
     admin_api.publish_post(post, body_md=f"[![Кадр]({poster})](https://youtu.be/{YOUTUBE_ID})\n")
 
-    requested: list[str] = []
-    page.on("request", lambda request: requested.append(request.url))
-
     page.goto(f"/blog/{post.slug}")
 
-    poster_image = page.locator(".prose-video__play img")
-    expect(poster_image).to_be_visible()
-    assert (poster_image.get_attribute("src") or "").startswith("/media/")
-    reached = _third_party(requested)
-    assert not reached, f"the page reached the video host: {reached}"
+    assert page.locator(".prose-video img").count() == 0, "the poster still rendered"
+    expect(page.locator(".prose-video figcaption")).to_have_text("Кадр")
 
 
-def test_the_owner_sees_the_same_facade_in_the_editors_preview(
+def test_the_owner_sees_the_same_embed_in_the_editors_preview(
     admin_page: Page, admin_api: AdminApi, trash: Trash, run_token: str
 ) -> None:
-    """F28: the preview and the page go through one `render_markdown`, and since
-    T138 through one script too — a facade that did nothing in the preview would
-    be the one thing there that does not behave like the published page."""
+    """F28: the preview and the page go through one `render_markdown`, so the
+    embed the owner sees while editing is the same one a reader gets."""
     post = trash.post(admin_api.create_post(f"E2E видео превью {run_token}"))
 
     admin_page.goto(f"/blog/{post.slug}/edit")
     admin_page.locator("#post-body").fill(f"https://youtu.be/{YOUTUBE_ID}\n")
 
-    preview = admin_page.locator(".editor__preview .prose-video__play")
-    expect(preview).to_be_visible()
-    assert preview.get_attribute("data-video") == EMBED
-
-    preview.click()
-    expect(admin_page.locator(".editor__preview iframe.prose-video__frame")).to_have_count(1)
+    frame = admin_page.locator(".editor__preview iframe.prose-video__frame")
+    expect(frame).to_have_count(1)
+    assert frame.get_attribute("src") == EMBED

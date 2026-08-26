@@ -20,13 +20,13 @@ typed, and nh3 cannot filter attribute values — only names. So the vocabulary
 is closed here, in the renderer, before the sanitiser ever sees the markup:
 anything outside `WIDTH_WORDS` is silently dropped.
 
-A video gets the same treatment one level up (F63, ADR-035): a paragraph holding
+A video gets the same treatment one level up (F63, ADR-041): a paragraph holding
 nothing but a link to one of the services in `_VIDEO_SERVICES` becomes a
-`<figure class="prose-video">` around a `<button>` carrying the embed URL, and
-`video.js` builds the `<iframe>` when a reader presses it. `iframe` is not in
-`ALLOWED_TAGS`, so nothing that comes through here can embed anything; the URL in
-the button is built from an anchored per-host pattern for the same reason
-`WIDTH_WORDS` exists.
+`<figure class="prose-video">` around an `<iframe>` this renderer builds
+directly, no press required. `iframe` is in `ALLOWED_TAGS` for exactly one
+reason: its `src` is built from an anchored per-host pattern for the same
+reason `WIDTH_WORDS` exists for the class attribute — never a value reflected
+off author input directly.
 """
 
 import re
@@ -61,7 +61,7 @@ _SIZES: dict[str | None, str] = {
 _MEDIA_PREFIX = "/media/"
 
 #: The characters a video service's own identifiers are made of. Deliberately
-#: narrow: the matched value ends up inside `data-video`, and a class that cannot
+#: narrow: the matched value ends up inside `iframe.src`, and an id that cannot
 #: hold a quote, a space, a colon or an angle bracket is what makes that
 #: attribute closed by this module rather than by the author.
 _VIDEO_ID = r"[A-Za-z0-9_-]{6,24}"
@@ -70,12 +70,12 @@ _VIDEO_ID = r"[A-Za-z0-9_-]{6,24}"
 #: `&t=90`, `?si=…`, `#`. Matched so the link is still recognised, never used.
 _VIDEO_TAIL = r"(?:[?&#]\S*)?"
 
-#: The three services the owner asked for (F63, ADR-035), each as an **anchored
+#: The three services the owner asked for (F63, ADR-041), each as an **anchored
 #: pattern per host** and the embed URL it becomes. Never a general URL parse:
-#: nh3 filters attribute names and never values, so the URL in `data-video` has
+#: nh3 filters attribute names and never values, so the URL in `iframe.src` has
 #: to be built here from groups this module constrained — exactly the reason
 #: `WIDTH_WORDS` exists for the class attribute. `autoplay=1` is part of the
-#: embed because the reader has already pressed play once by then.
+#: embed because the page itself is the thing pressing play now, not the reader.
 #:
 #: The third element is the host name — used by `video_host` (F66, ADR-040) so
 #: a title lookup considers exactly the links this module would already turn
@@ -227,10 +227,13 @@ def _video_paragraph(children: list[Token]) -> tuple[str, Token | None, str] | N
     be the whole paragraph. A video link **among other text** stays an ordinary
     link, which is the rule pictures follow too.
 
-    A picture from this site's own media inside the link becomes the poster. A
-    picture from anywhere else makes it not a video paragraph at all — `img-src
-    'self' data:` would not load a foreign poster (ADR-035 leaves that directive
-    alone), and a link wrapping a foreign picture is still a perfectly good link.
+    "Poster" is a historical name: since ADR-041 the picture never renders —
+    the iframe it used to sit behind is gone — it only ever contributes a
+    caption fallback (`paragraph_close`). A picture from this site's own media
+    inside the link still counts; one from anywhere else makes it not a video
+    paragraph at all, and a link wrapping a foreign picture is still a
+    perfectly good link — that restriction predates ADR-041 and is not this
+    iteration's to loosen.
     """
     if len(children) < 2 or children[0].type != "link_open" or children[-1].type != "link_close":
         return None
@@ -305,16 +308,20 @@ def _figure_paragraphs(state: Any) -> None:
         closing.meta["figure_caption"] = caption or (
             poster.attrGet("title") if poster is not None else ""
         )
-        # The link becomes the button, and everything the link held becomes the
-        # button's contents — except its text, which is a URL or a caption and in
-        # neither case something to print inside a control.
+        # The link becomes the iframe, and everything the link held collapses
+        # into it — except its text, which is a URL or a caption and in neither
+        # case something to print inside the player.
         children[0].meta["video_embed"] = embed
         children[-1].meta["video_embed"] = embed
         for child in children[1:-1]:
             if child.type == "text":
                 child.meta["video_text"] = True
         if poster is not None:
-            poster.meta["in_figure"] = True
+            # The poster no longer renders (ADR-041); `paragraph_close` still
+            # needs it, to fall back to its alt text when there is no caption
+            # and no title.
+            poster.meta["video_poster"] = True
+            closing.meta["figure_poster"] = poster
 
 
 class _ProseRenderer(RendererHTML):
@@ -322,6 +329,11 @@ class _ProseRenderer(RendererHTML):
 
     def image(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
         token = tokens[idx]
+        if token.meta.get("video_poster"):
+            # A video's own iframe already shows the host's live thumbnail
+            # before any interaction (ADR-041) — the picture that used to sit
+            # behind the click-to-build button has nothing left to render.
+            return ""
         src = token.attrGet("src") or ""
         alt = self.renderInlineAsText(token.children or [], options, env)
         in_figure = bool(token.meta.get("in_figure"))
@@ -367,35 +379,31 @@ class _ProseRenderer(RendererHTML):
         return f'<figure class="{classes}">\n'
 
     def link_open(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
-        """A recognised video link is a button, not an anchor (F63, ADR-035).
+        """A recognised video link becomes an `<iframe>`, not an anchor (F63, ADR-041).
 
-        The `<iframe>` is built by `video.js` on the press and by nothing else:
-        `iframe` is not in `ALLOWED_TAGS` and is never going in, so no path
-        through the parser or the sanitiser can produce one. Until the press the
-        page has asked the video host for nothing.
+        The renderer builds this element itself, directly — there is no facade
+        and no script in between. What keeps it safe is not the tag's absence
+        (that was `button`'s and `data-video`'s job under ADR-035) but the
+        closed `src` value: this branch only ever runs for a paragraph
+        `_video_paragraph` already matched against `_VIDEO_SERVICES`'s anchored
+        per-host patterns, so `embed` can never be an arbitrary string reflected
+        off author input.
         """
         embed = tokens[idx].meta.get("video_embed")
         if embed is None:
             return self.renderToken(tokens, idx, options, env)
-
         return (
-            '<button class="prose-video__play" type="button" '
-            f'data-video="{escapeHtml(embed)}" '
-            f'data-title="{escapeHtml(translate("prose.video_frame"))}">'
+            '<iframe class="prose-video__frame" '
+            f'src="{escapeHtml(embed)}" '
+            f'title="{escapeHtml(translate("prose.video_frame"))}" '
+            'allow="autoplay; fullscreen; encrypted-media; picture-in-picture" '
+            'allowfullscreen loading="lazy">'
         )
 
     def link_close(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
         if tokens[idx].meta.get("video_embed") is None:
             return self.renderToken(tokens, idx, options, env)
-
-        # The control's own name, so it does not depend on a poster's alt text or
-        # on the URL the author pasted. The triangle is text rather than a shape,
-        # because a shape drawn in CSS disappears under `forced-colors`.
-        label = escapeHtml(translate("prose.video_play"))
-        return (
-            '<span class="prose-video__glyph" aria-hidden="true">▶</span>'
-            f'<span class="prose-video__label">{label}</span></button>'
-        )
+        return "</iframe>"
 
     def text(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
         # The link text of a video paragraph: either the URL itself or the words
@@ -428,11 +436,20 @@ class _ProseRenderer(RendererHTML):
         if image is None and not token.meta.get("figure_video"):
             return self.renderToken(tokens, idx, options, env)
 
-        # A video figure carries its caption already resolved — the author's link
-        # text, or the poster's Markdown title. A picture's is its own title.
+        # A video figure carries its caption already resolved — the author's
+        # link text, or the poster's Markdown title — by the core rule that
+        # found it. A poster with neither falls back to its own alt text,
+        # resolved here rather than there because this is the first point in
+        # the pipeline with render context (`renderInlineAsText` needs
+        # `options`/`env`, which a core rule does not have). A picture
+        # figure's caption is simply its own title.
         caption = token.meta.get("figure_caption") or (
             image.attrGet("title") if image is not None else ""
         )
+        if not caption:
+            poster = token.meta.get("figure_poster")
+            if poster is not None:
+                caption = self.renderInlineAsText(poster.children or [], options, env)
         if not caption:
             return "\n</figure>\n"
         return f"\n<figcaption>{escapeHtml(caption)}</figcaption>\n</figure>\n"
@@ -455,11 +472,13 @@ ALLOWED_TAGS: set[str] = {
     "h1", "h2", "h3", "h4", "h5", "h6",
     "strong", "em", "s", "del", "code", "pre", "kbd", "sup", "sub",
     "blockquote", "ul", "ol", "li",
-    # `button` is the video facade and nothing else. **`iframe` is not here and
-    # is not going to be** (ADR-035): the only thing that ever builds one is
-    # `video.js`, on a reader's press, so no mistake in the parser configuration
-    # can turn an article into an embedding hole.
-    "a", "img", "figure", "figcaption", "button",
+    # `iframe` is the video facade's replacement (ADR-041): the renderer emits
+    # one only for a paragraph `_video_paragraph` already recognised, always
+    # with a `src` already matched against `_VIDEO_SERVICES`'s anchored
+    # per-host patterns — the same closure `button`'s `data-video` had under
+    # ADR-035, carried over onto the tag itself. No mistake in the parser
+    # configuration can turn an arbitrary author string into an embedding hole.
+    "a", "img", "figure", "figcaption", "iframe",
     "table", "thead", "tbody", "tr", "th", "td",
     "span", "div",
 }
@@ -484,12 +503,12 @@ ALLOWED_ATTRIBUTES: dict[str, set[str]] = {
     "th": {"align", "scope"},
     "code": {"class"},
     "span": {"class", "aria-hidden"},
-    # The video facade. `data-video` holds a URL this module built out of an
-    # anchored per-host pattern, which is the only reason it can be trusted here:
-    # nh3 filters attribute names and never values (ADR-035). An author cannot
-    # produce a `button` at all — raw HTML is off at the parser and
+    # The video embed. `src` holds a URL this module built out of an anchored
+    # per-host pattern, which is the only reason it can be trusted here: nh3
+    # filters attribute names and never values (ADR-041). An author cannot
+    # produce an `iframe` of their own — raw HTML is off at the parser and
     # `attrs_plugin` reaches images only.
-    "button": {"class", "type", "data-video", "data-title"},
+    "iframe": {"class", "src", "title", "allow", "allowfullscreen", "loading"},
 }
 
 ALLOWED_URL_SCHEMES: set[str] = {"http", "https", "mailto", "tel"}
@@ -523,19 +542,15 @@ def render_inline(text: str) -> str:
     )
 
 
-_VIDEO_PLAY_BUTTON = re.compile(r'<button class="prose-video__play"[^>]*>.*?</button>', re.DOTALL)
-
-
 def excerpt_from(text: str, limit: int = 220) -> str:
     """Plain-text summary for cards and meta descriptions.
 
-    The play control's own label («Смотреть видео», ADR-038) is stripped before
-    the tags are, because `nh3.clean` with an empty tag set drops the `<button>`
-    but keeps the text inside it — the button and its label are removed as one
-    unit, leaving any `<figcaption>` on the same figure untouched.
+    Ordinary tag-stripping is enough: `nh3.clean` with an empty tag set drops
+    every element and keeps the text it held, and there is no control label
+    left to strip first — ADR-041 retired the button ADR-038 wrote this
+    special case for.
     """
-    html = _VIDEO_PLAY_BUTTON.sub("", _md.render(text or ""))
-    plain = nh3.clean(html, tags=set(), attributes={}).strip()
+    plain = nh3.clean(_md.render(text or ""), tags=set(), attributes={}).strip()
     plain = " ".join(plain.split())
     if len(plain) <= limit:
         return plain

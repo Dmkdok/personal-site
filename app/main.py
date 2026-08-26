@@ -147,10 +147,11 @@ def apply_security_headers(response: Response, nonce: str) -> Response:
             "img-src 'self' data:",
             "font-src 'self'",
             # The only third-party hosts in the whole policy, and only as frames:
-            # the video facade in an article builds an `<iframe>` when the reader
-            # presses play (F63, ADR-035). Named one by one rather than by
-            # wildcard, and `img-src` is deliberately untouched — a poster is
-            # always this site's own file, never the service's thumbnail.
+            # a video in an article is a real `<iframe>` from the moment the page
+            # renders (F63, ADR-041; supersedes ADR-035's press-gated facade).
+            # Named one by one rather than by wildcard. `img-src` needs no
+            # widening either way — the service's own thumbnail is never fetched
+            # as a separate image; it is only ever what the iframe itself shows.
             "frame-src https://www.youtube.com https://rutube.ru https://vk.com",
             "connect-src 'self'",
             "form-action 'self'",

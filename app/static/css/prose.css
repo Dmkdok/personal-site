@@ -152,85 +152,15 @@
     --figure-full: 100%;
   }
 
-  /* --- The video facade ----------------------------------------------------
+  /* --- The video player ------------------------------------------------------
      A paragraph holding nothing but a link to a supported service is rendered as
-     this figure by app/services/markdown.py (F63, ADR-035). Until the press it is
-     a button and nothing else — there is no iframe in the page and no request to
-     the service — so everything below styles a control, not a player. */
+     this figure by app/services/markdown.py (F63, ADR-041). It is a player from
+     the start — there is no press and no control, so there is nothing here to
+     style but the figure's spacing and the frame itself. */
   .prose .prose-video {
     margin-block: var(--space-l);
   }
 
-  .prose .prose-video__play {
-    position: relative;
-    display: grid;
-    place-items: center;
-    inline-size: 100%;
-    aspect-ratio: 16 / 9;
-    padding: var(--space-s);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-m);
-    background-color: var(--surface-sunken);
-    color: var(--text);
-    cursor: pointer;
-  }
-
-  /* A poster covers the button, and the glyph and the label sit over it. The
-     picture comes from this site's own media — never the service's thumbnail,
-     which is why `img-src` did not have to change. */
-  .prose .prose-video__play img {
-    position: absolute;
-    inset: 0;
-    inline-size: 100%;
-    block-size: 100%;
-    object-fit: cover;
-    border-radius: calc(var(--radius-m) - 1px);
-  }
-
-  .prose .prose-video__glyph,
-  .prose .prose-video__label {
-    position: relative;
-    z-index: 1;
-  }
-
-  .prose .prose-video__glyph {
-    display: grid;
-    place-items: center;
-    inline-size: 3.5rem;
-    aspect-ratio: 1;
-    border-radius: var(--radius-pill);
-    background-color: var(--surface-raised);
-    box-shadow: 0 2px 12px var(--shadow-far);
-    font-size: var(--step-1);
-    /* The triangle is drawn to the right of its own optical centre. */
-    padding-inline-start: 0.15em;
-  }
-
-  .prose .prose-video__label {
-    margin-block-start: var(--space-2xs);
-    padding: var(--space-3xs) var(--space-2xs);
-    border-radius: var(--radius-s);
-    background-color: var(--surface-raised);
-    font-size: var(--step--1);
-    font-weight: 500;
-  }
-
-  .prose .prose-video__play:hover .prose-video__glyph {
-    background-color: var(--accent);
-    color: var(--on-accent);
-  }
-
-  /* Forced colours drop every background, so the glyph's disc and the label's
-     plate go with them and both would float over a poster with nothing behind
-     them. A border is what survives (UI-AUDIT F-013). */
-  @media (forced-colors: active) {
-    .prose .prose-video__glyph,
-    .prose .prose-video__label {
-      border: 1px solid CanvasText;
-    }
-  }
-
-  /* The player, built by video.js on the press and by nothing else. */
   .prose .prose-video__frame {
     inline-size: 100%;
     aspect-ratio: 16 / 9;

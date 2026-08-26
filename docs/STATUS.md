@@ -32,8 +32,10 @@ Same counts as I6's closing tree — nothing regressed between the two sessions.
 - [x] 3 docs amended (SPEC F63 edited in place, ADR-041 supersedes ADR-035, TASKS M19)
 - [x] GATE approved by the owner — «утверждаю», 2026-08-25, including the two consequences the
       impact map surfaced beyond chat (poster picture retired, editor preview now reaches the host)
-- [ ] 4 implementation
-- [ ] 5 verification green, baseline suites still green
+- [x] 4 implementation — T145, one commit
+- [x] 5 verification green — unit/API **370** exit 0 (= Phase 0), e2e **112** exit 0 (113 at Phase 0,
+      minus the one forced-colors test the impact map named "deleted, not rewritten"), lint clean,
+      format clean **124 files**
 - [ ] 6 review
 - [ ] 7 closed
 ```
@@ -41,6 +43,18 @@ Same counts as I6's closing tree — nothing regressed between the two sessions.
 Intake, impact map and exit criteria: `docs/iterations/I7-direct-video-embed.md`. Tasks:
 `docs/TASKS.md` M19, **T145** — one task; the video-rendering path, its templates, CSS, i18n and
 tests all move together.
+
+**T145 implemented and verified green this session.** `_ProseRenderer.link_open`/`link_close`'s video
+branch now emits `<iframe class="prose-video__frame" src="…">` directly; `ALLOWED_TAGS`/
+`ALLOWED_ATTRIBUTES` swap `button` for `iframe`, the `src` still closed to `_VIDEO_SERVICES`'s
+anchored per-host patterns. `video.js` is deleted, its `<script>` tag gone from all three templates
+that carried it. The poster-picture affordance no longer renders — `figure_caption` falls back to the
+picture's `alt` when there is no `title`. `excerpt_from`'s button-label special case (ADR-038) is
+deleted as dead code. The cheat sheet's poster row and the unused `video_play` i18n key are gone.
+Admin sweeps re-run fresh: focus 207/0 admin, 88/0 anonymous; targets 171/0 admin, 65/0 anonymous;
+contrast 141/0 admin both themes, 84/0 anonymous both themes (85 at I6 — one fewer picture renders on
+the anonymous video article now that the poster is retired). `secure-review` on the `iframe`-allow-list
+change (this document's exit criterion 7) has not run yet — that is the remainder of Phase 6.
 
 ## Baseline I6
 

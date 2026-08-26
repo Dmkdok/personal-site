@@ -56,7 +56,6 @@ def test_the_sheet_covers_every_shape_the_renderer_understands(
         "size_full_code",
         "size_caption_code",
         "sheet_video_code",
-        "sheet_video_poster_code",
         "sheet_table_code",
         "sheet_quote_code",
         "sheet_code_code",
