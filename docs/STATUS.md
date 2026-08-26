@@ -1,6 +1,6 @@
 # Status
 
-phase: iteration I7 in progress (M19, T145; M16 still open, owner's appliance work only)
+phase: iteration I7 closed, not yet merged (M19, T145 done; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
@@ -33,28 +33,17 @@ Same counts as I6's closing tree — nothing regressed between the two sessions.
 - [x] GATE approved by the owner — «утверждаю», 2026-08-25, including the two consequences the
       impact map surfaced beyond chat (poster picture retired, editor preview now reaches the host)
 - [x] 4 implementation — T145, one commit
-- [x] 5 verification green — unit/API **370** exit 0 (= Phase 0), e2e **112** exit 0 (113 at Phase 0,
-      minus the one forced-colors test the impact map named "deleted, not rewritten"), lint clean,
-      format clean **124 files**
-- [ ] 6 review
-- [ ] 7 closed
+- [x] 5 verification green — unit/API **371** exit 0 (370 at Phase 0, review Run 9 added one test),
+      e2e **112** exit 0 (113 at Phase 0, minus the one forced-colors test the impact map named
+      "deleted, not rewritten"), lint clean, format clean **124 files**
+- [x] 6 review — `docs/REVIEW.md` run 9, PASS with findings; one High and four Mediums fixed same
+      session, three Lows fixed alongside them, four carried
+- [x] 7 closed 2026-08-26 — all seven exit criteria met; see Resume here
 ```
 
 Intake, impact map and exit criteria: `docs/iterations/I7-direct-video-embed.md`. Tasks:
 `docs/TASKS.md` M19, **T145** — one task; the video-rendering path, its templates, CSS, i18n and
 tests all move together.
-
-**T145 implemented and verified green this session.** `_ProseRenderer.link_open`/`link_close`'s video
-branch now emits `<iframe class="prose-video__frame" src="…">` directly; `ALLOWED_TAGS`/
-`ALLOWED_ATTRIBUTES` swap `button` for `iframe`, the `src` still closed to `_VIDEO_SERVICES`'s
-anchored per-host patterns. `video.js` is deleted, its `<script>` tag gone from all three templates
-that carried it. The poster-picture affordance no longer renders — `figure_caption` falls back to the
-picture's `alt` when there is no `title`. `excerpt_from`'s button-label special case (ADR-038) is
-deleted as dead code. The cheat sheet's poster row and the unused `video_play` i18n key are gone.
-Admin sweeps re-run fresh: focus 207/0 admin, 88/0 anonymous; targets 171/0 admin, 65/0 anonymous;
-contrast 141/0 admin both themes, 84/0 anonymous both themes (85 at I6 — one fewer picture renders on
-the anonymous video article now that the poster is retired). `secure-review` on the `iframe`-allow-list
-change (this document's exit criterion 7) has not run yet — that is the remainder of Phase 6.
 
 ## Baseline I6
 
@@ -130,6 +119,73 @@ Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: 
 **T135–T139**. T135 is the shared-primitive change and lands first, alone.
 
 ## Resume here
+
+**I7 is closed, 2026-08-26, in the same session that opened it. Not yet merged.** Branch
+`iteration/I7-direct-video-embed`, cut from `main` at `ce8cc84` — which already carries every I6
+commit merged, pushed and deployed. The one task in M19 is implemented, tested and reviewed; all
+seven exit criteria in `docs/iterations/I7-direct-video-embed.md` are met.
+
+**T145 in one line: a video in an article is now a real `<iframe>` from the moment the page
+renders**, not a `<button>` facade a reader had to press first (F63, ADR-041, supersedes ADR-035).
+`ALLOWED_TAGS`/`ALLOWED_ATTRIBUTES` swap `button` for `iframe`, closed the same way `data-video` was
+— nh3 filters attribute names, never values, so `iframe.src` can only ever be a value already matched
+against `_VIDEO_SERVICES`'s anchored per-host patterns. `video.js` is deleted along with its three
+`<script>` inclusions and `prose.css`'s facade rules. The poster-picture affordance is retired — a
+live iframe already shows the host's own thumbnail, so the picture that used to sit behind the button
+no longer renders; its `title`, or `alt` failing that, still reaches the `<figcaption>`. ADR-038's
+excerpt special-case is deleted as dead code, its outcome now falling out of ordinary tag-stripping.
+
+| | | State |
+|---|---|---|
+| **T145** | a video plays from one press, not two, real embed from the start | **done**, `e4f01fc` |
+| | review run 9's High: `autoplay=1` survived the move with nothing gating it | **fixed**, same session |
+
+**Gates on I7's closing tree, none piped:** unit/API **371** exit 0 (370 at the baseline, review Run
+9 added one excerpt test), e2e **112** exit 0 (113 at the baseline — the one fewer is
+`test_the_video_facade_keeps_its_plates`, deleted per the impact map, not a silent loss), `ruff check`
+clean, `ruff format --check` **124 files** exit 0. Admin sweeps: focus **207 stops / 0** without an
+indicator (88/0 anonymous), targets **171 under 44 px / 0** under WCAG 2.5.8 (65/0 anonymous),
+contrast **141 samples / 0 failures** admin both themes, **84/0** anonymous both themes (85 at I6 —
+one fewer picture renders on the anonymous video article now that the poster is retired).
+
+**Review: `docs/REVIEW.md` run 9, PASS with findings, all resolved same day, same branch** — run by
+an independent reviewer agent, no write access to application code, with `secure-review` mandatory
+on the `iframe`-allow-list change per ADR-041 (the first time `iframe` has been allowed since
+ADR-035 first excluded it). `iframe.src` was probed with fifteen adversarial Markdown bodies and
+found closed by construction, not merely untested; two independent locks (nh3's own scheme filter,
+CSP's `frame-src`) were shown to survive even if that construction were ever wrong. One High fixed
+(see table above), four Mediums fixed, three Lows fixed alongside them, four Lows carried with
+reasons.
+
+**What actually landed is in `docs/iterations/I7-direct-video-embed.md`**, including two items ("no
+autoplay parameter", "focus-sweep exemption scoped to one class") added to "Expectations that
+change" after the review, not before — the plan approved in chat did not anticipate either.
+
+**Two things to expect if you carry this forward.**
+
+1. **A parameter correct under the old design can become actively wrong under the new one, and
+   nothing forces a re-read of *why* it was there.** `?autoplay=1` was right on ADR-035's facade — by
+   the time the iframe existed the reader had already pressed play once — and T145's own approved DoD
+   text carried it into the direct-embed rewrite unchanged, `allow="autoplay; …"` included. The
+   precondition that made it safe (a prior press) is exactly what this iteration removed, and nobody
+   re-derived the parameter from scratch until review did. **When a rewrite keeps a literal value from
+   the design it replaces, ask what made that value correct before, and whether the replacement still
+   provides it** — not whether the value itself still parses.
+2. **An element whose contents a browser never displays is not an element whose contents don't
+   matter.** `<iframe>…</iframe>`'s inner tokens are inert on screen, so `**bold**` or `` `code` ``
+   left inside one (only its *text* was being suppressed, not its markup tags) was invisible to a
+   reader and to every visual sweep — but `nh3.clean`'s tag-stripping still read those tags as
+   content, and `excerpt_from` stored what was left. **A defect three steps removed from anything a
+   screen renders can still land in a stored field a moment later in the same pipeline** — the fix
+   here was to drop the tokens from the stream entirely rather than trust a render-time suppression to
+   catch every token type that could appear between them.
+
+**Merging is the owner's call** and, since T127, a push to `main` runs the suite and the lint gate
+before it builds anything.
+
+Everything below this line is I6's record and is still true.
+
+---
 
 **I6 is closed, 2026-08-25, in the same session that opened it.** Branch
 `iteration/I6-editing-polish`, cut from `main` at `d90ec48`. All five tasks in M18 are implemented,

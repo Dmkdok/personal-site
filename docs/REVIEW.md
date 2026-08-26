@@ -1,8 +1,214 @@
 # Review
 
-Eight Phase 6 runs. **Run 8 is the current one and is below**; the earlier seven
+Nine Phase 6 runs. **Run 9 is the current one and is below**; the earlier eight
 are kept underneath it because their findings are the reason half of M9 exists,
 and a reviewer arriving later should be able to see what was already looked at.
+
+---
+
+# Run 9 — Phase 6 against I7 (M19), 2026-08-26
+
+Scope is the I7 delta only: `ce8cc84..HEAD` (`e4f01fc`) on
+`iteration/I7-direct-video-embed` — one implementation commit on top of two
+docs-only ones — judged against T145's own DoD and the seven exit criteria in
+`docs/iterations/I7-direct-video-embed.md`.
+
+**Independent of the implementing session**: run by a separate reviewer agent
+with no write access to application code, in its own context, with
+`secure-review` applied to the `iframe` allow-list change specifically, as both
+ADR-041 and T145's DoD require. Every count in this run was produced by
+commands the reviewer ran in its own session, on this tree; nothing in
+`docs/TASKS.md` or in the iteration record was taken on trust. **Semgrep is not
+installed on this host** — the checklist was applied by hand plus direct
+runtime probes: fifteen adversarial Markdown bodies driven through
+`render_markdown` inside the `web` container, six hand-built `<iframe>`
+payloads driven through `nh3.clean` with this module's own allow-list, and one
+Chromium probe of the cross-origin focus claim `e2e/test_a11y.py` rests on.
+
+## Verdict
+
+**PASS with findings.** No Critical. The security question this task was sent
+to review answered cleanly — `iframe.src` is closed by construction, proved by
+probe rather than by argument, and two independent locks (nh3's scheme filter,
+CSP's `frame-src`) survive even if that construction were ever wrong. One
+**High** (`autoplay=1` survived the move, with nothing gating it), four
+Mediums, seven Lows. **All four Mediums and the High are fixed in this same
+session, on this branch, before M19 is ticked** — see Resolution below; three
+Lows are fixed alongside them, four are carried with reasons.
+
+## High
+
+**H-1 — `autoplay=1` survived the move, and nothing gated it any more.** The
+five embed templates in `_VIDEO_SERVICES` kept `?autoplay=1` (a carry-over from
+ADR-035's facade, where it was correct — the reader had already pressed play
+once by the time the iframe existed), and `link_open`'s `allow` list granted
+`autoplay` to the frame. T145's title is "a video plays from one press, not
+two" — the owner asked for one press, not zero, and the two outcomes an
+unfiltered `autoplay=1` can produce are both wrong: either the browser refuses
+it (dead parameter, reader presses the host's own control once — the wanted
+outcome, achieved by accident) or it honours it, and an article starts playing
+video with sound on load, with `loading="lazy"` making the attempt fire mid-read
+as the frame scrolls into view, and the editor's 400 ms preview refresh
+(`app/templates/blog/editor.html`) re-attempting it on every keystroke while
+the owner edits a video paragraph. Flagged High because the affected path is
+every reader of every article carrying a video, and the failure mode
+(unrequested sound) is worse than the two-press defect this iteration set out
+to remove.
+
+## Medium
+
+**M-1 — An excerpt could carry escaped markup, and it was stored that way.**
+Deleting `_VIDEO_PLAY_BUTTON` (ADR-038's guard) removed more than a dead
+special case: a caption's own inline markup (`**bold**`, `` `code` ``) still
+rendered *inside* the `<iframe>` element, whose contents an HTML parser treats
+as raw text — so `nh3.clean(..., tags=set())` kept the tags' text instead of
+dropping it with the element. `excerpt_from` feeds `post.excerpt` and a
+project's `meta_description`, both stored, reader-visible fields; a bold or
+code-spanned video caption is an ordinary thing to write and no test covered
+it.
+
+**M-2 — The focus sweep gained a blanket carve-out; the DoD said its
+assertions were unchanged.** `e2e/test_a11y.py`'s sweep skipped every element
+whose tag is `iframe`, not only `.prose-video__frame`. The underlying browser
+claim is true (independently verified: a cross-origin frame's DOM focus never
+reaches `:focus`/`:focus-visible` on itself in the parent document — a privacy
+boundary, not a stylable gap), so the carve-out is factually justified, but it
+was not scoped to the element it was written for.
+
+**M-3 — `assert_inert` stopped asserting `<iframe`'s absence for all its
+callers to accommodate three.** Dropping `"<iframe"` from the forbidden-tag
+tuple relaxed roughly twenty adversarial tests that have nothing to do with
+video — `onerror=`, `javascript:` URLs, hand-typed tags — exactly the tests
+that would notice if some future change let an author's string reach an
+`iframe`.
+
+**M-4 — ADR-039's recorded consequence is now false, on the site's
+most-visited page.** ADR-039 says a bare video link pasted into a home copy
+block "renders the facade with no styling and a play control that does
+nothing, because the delegated listener that builds the `iframe` is not on the
+page." As of `e4f01fc` that paste renders a **live** cross-origin player on
+`/` — verified in the container — because the renderer builds the `<iframe>`
+itself regardless of which page called `render_markdown`, unstyled (`/` loads
+no `prose.css`) but functional. The *decision* to leave the home page alone
+may still stand; its stated reason no longer did.
+
+## Low
+
+- **L-1 fixed** — `test_a_lone_video_link_becomes_a_facade` kept the retired
+  word in its name while its body asserted an `<iframe>`.
+- **L-2 fixed, root cause of M-1** — non-text tokens inside a video link
+  (`strong_open`, `code_inline`, a soft break) still rendered inside the
+  frame, contradicting the comment beside them ("everything the link held
+  collapses into it").
+- **L-3, carried** — every frame is named «Видео» (`title` on the `<iframe>`),
+  so two videos in one article give two frames with identical accessible
+  names. This is the exact form T145's own DoD specifies
+  (`title="{translate('prose.video_frame')}"`) and no gate in this repo runs
+  axe to catch the duplication; changing it now would be design work the owner
+  did not ask for in this round, not a fix to something this round broke.
+  Worth a line in the next video-touching iteration, not this one.
+- **L-4 fixed** — `blog/post.html` and `dev/detail.html` overrode `scripts`
+  with a block identical to `base.html`'s own default, once `video.js`'s
+  inclusion was the only reason either override existed.
+- **L-5, carried** — a reader whose extension, proxy or corporate policy
+  blocks the video host now sees an empty box with no address in it, since the
+  `<a>` is consumed by the player. Not a regression this round (the facade had
+  no visible link either); recorded because the fallback question is more
+  visible now than it was.
+- **L-6, carried** — `www.youtube-nocookie.com` was not considered as the
+  embed host. ADR-041 already accepted the cost of contacting the host on
+  load, as the owner explicitly weighed; swapping the host is a privacy
+  trade-off nobody asked to revisit this round, not a defect.
+- **L-7, carried** — no perf artefact covers an article carrying an embed.
+  Consistent with the impact map, which asked for no perf work this round;
+  noted so the two re-recorded perf files are not read as covering it.
+
+## Security — `secure-review` of the `iframe` allow-list change
+
+**This is the review ADR-041 and T145's DoD both asked for, and it held up.**
+
+- **Can an author's Markdown reach `iframe.src`? No — proved by probe.**
+  `link_open` emits the element only when `video_embed`'s meta is present,
+  which is only ever a `pattern.format(**match.groupdict())` result over five
+  anchored per-host patterns, with capture-group alphabets
+  (`[A-Za-z0-9_-]{6,24}`, 32-char hex, `-?\d{1,20}`) that contain no quote,
+  space, colon, angle bracket or ampersand. Fifteen probes — including a
+  `?a="><script>alert(1)</script>` tail, a lookalike host
+  (`youtube.com.evil.example`), and VK's `&` — never produced a `src` outside
+  a `_VIDEO_SERVICES` template.
+- **Raw HTML still cannot survive the parser.** `_md` is built with
+  `{"html": False}`; a hand-typed `<iframe src="https://evil.example/">` in an
+  article body renders as `&lt;iframe …&gt;` text, confirmed live and by both
+  `test_a_handwritten_iframe_does_not_survive_as_an_element` and
+  `test_a_handwritten_button_does_not_survive_either`.
+- **The `<iframe>` cannot be broken out of from inside, either.** A literal
+  `</iframe>` inside it would need to reach that position unescaped; every
+  renderer that can emit into it escapes first — probed with
+  `` [`</iframe><img src=x onerror=alert(1)>`](…) ``, which round-trips inert.
+- **Two locks survive the renderer being wrong.** Feeding hand-built payloads
+  straight to `nh3.clean` with this module's allow-list: `srcdoc`, `onload`
+  and `sandbox` are stripped by name filtering; `src="javascript:…"` and
+  `src="data:text/html,…"` are dropped by nh3's own scheme filter. A bare host
+  swap (`src="https://evil.example/x"`) *does* survive the sanitiser, as
+  expected — nh3 filters names and schemes, never hosts — and is the reason
+  `frame-src https://www.youtube.com https://rutube.ru https://vk.com` exists,
+  pinned exactly (not "contains") by `tests/api/test_authz_sweep.py`.
+- **The CSP claim in T145 is true.** The diff of `app/main.py` touches only
+  comment lines; every directive is byte-identical to `main`.
+- **Nothing else in the checklist moved.** No new route, dependency, form or
+  secret; `render_inline` cannot produce a frame at all (no `paragraph_open`
+  in inline mode, confirmed by probe).
+
+**Outcome: the allow-list change is sound.** `iframe` carries the same
+renderer-closed invariant `button`'s `data-video` had, backed by nh3's scheme
+filter and a CSP naming three hosts. The one honest caveat: this is a
+single-authorship invariant in Python — a future edit letting any other value
+reach `link_open`'s `embed` would be caught by CSP at the browser and by
+nothing before that. A three-line prefix assertion in `link_open` against the
+three embed roots would restore a second Python-side lock; not required to
+pass this review, worth a line in the next task that touches this function.
+
+## Gates, re-run in this session (after the fixes below)
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **371 passed**, exit 0 (370 before H-1/M-1's fixes added one excerpt test) |
+| e2e | `uv run pytest e2e -q` | **112 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | **124 files**, exit 0 |
+
+Admin sweeps re-run fresh, unchanged from before the fixes: focus **207/0**
+admin, **88/0** anonymous; targets **171/0** admin, **65/0** anonymous;
+contrast **141/0** admin both themes, **84/0** anonymous both themes.
+
+## Exit criteria
+
+| | Criterion | Status |
+|---|---|---|
+| 1 | a live `<iframe>` on load, host contacted at load, no press | **Pass** |
+| 2 | hand-typed `<iframe>`/`<button>` still cannot survive | **Pass** |
+| 3 | poster picture no longer renders, its `title` or `alt` still reaches the caption | **Pass** |
+| 4 | `video.js` gone, no template references it | **Pass** |
+| 5 | cheat sheet no longer describes the retired behaviour | **Pass** |
+| 6 | baseline suites green at Phase 0 counts or better | **Pass** — 371 ≥ 370, 112 (113 at Phase 0, minus the one forced-colors test the impact map named "deleted, not rewritten") |
+| 7 | `secure-review` has looked at the `iframe` allow-list change | **Pass** — this run |
+
+## Resolution — same day, same branch
+
+| ID | Summary | Status |
+|---|---|---|
+| **H-1** | `autoplay=1` survived the move, nothing gated it | **Fixed** — dropped from all five `_VIDEO_SERVICES` templates and from the frame's `allow` list; the two comments arguing for it rewritten to explain why it is absent |
+| **M-1** | an excerpt could carry escaped markup | **Fixed** — subsumed by L-2's fix; new test `test_excerpt_of_an_emphasised_caption_holds_no_leftover_tag_text` |
+| **M-2** | focus-sweep carve-out not scoped to the element it was written for | **Fixed** — `SNAPSHOT_FOCUS` now reports `className`; the skip checks `"prose-video__frame" in state["className"]`, not the bare tag |
+| **M-3** | `assert_inert` relaxed for all callers | **Fixed** — `assert_inert(html, *, embed_allowed=False)`; only the three call sites that render a real video link (`test_a_lone_video_link_becomes_an_embed`, `test_a_pictures_caption_survives_the_retired_poster`, `test_the_authors_own_link_text_becomes_the_caption`) pass `embed_allowed=True` |
+| **M-4** | ADR-039's recorded consequence is stale | **Fixed** — an "Update, ADR-041" paragraph appended to ADR-039 in `docs/DECISIONS.md`, decision left standing, reason corrected |
+| **L-1** | stale test name | **Fixed** — renamed to `test_a_lone_video_link_becomes_an_embed` |
+| **L-2** | non-text tokens still rendered inside the frame | **Fixed** — `_figure_paragraphs` now deletes `inline.children[open_idx+1:close_idx]` outright once `caption`/`poster` are captured, rather than suppressing text tokens one at a time at render time; the now-dead `text()` override and the now-dead `video_poster` meta / `image()` guard (the poster token is deleted from the stream the same way, so it never reaches a renderer method to begin with) are removed with it |
+| **L-3** | duplicate accessible frame names | Carried — matches T145's own DoD text; not this round's to redesign |
+| **L-4** | dead empty `scripts` block overrides | **Fixed** — both overrides deleted; `base.html`'s own empty block applies |
+| **L-5** | no fallback if the frame is blocked | Carried — not a regression, pre-existing question sharpened |
+| **L-6** | `youtube-nocookie.com` not considered | Carried — a privacy trade-off already weighed and accepted in ADR-041, not this round's to revisit |
+| **L-7** | no perf artefact for an article with a video | Carried — explicitly out of scope per the impact map |
 
 ---
 

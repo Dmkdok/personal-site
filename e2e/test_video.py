@@ -16,7 +16,7 @@ from e2e.conftest import Trash
 from e2e.helpers import AdminApi, photo_bytes, ru
 
 YOUTUBE_ID = "dQw4w9WgXcQ"
-EMBED = f"https://www.youtube.com/embed/{YOUTUBE_ID}?autoplay=1"
+EMBED = f"https://www.youtube.com/embed/{YOUTUBE_ID}"
 
 #: Every host the three supported services could be reached at, so a request to
 #: any of them fails this test rather than only the one we happen to embed.

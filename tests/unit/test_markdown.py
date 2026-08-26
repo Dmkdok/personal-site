@@ -16,16 +16,22 @@ EVENT_ATTRIBUTE = re.compile(r"<[^>]*\son[a-z]+\s*=", re.IGNORECASE)
 SCRIPTING_URL = re.compile(r"(href|src)\s*=\s*[\"']?\s*(javascript|data|vbscript):", re.IGNORECASE)
 
 
-def assert_inert(html: str) -> None:
+def assert_inert(html: str, *, embed_allowed: bool = False) -> None:
     """No tag in the output may carry a handler or a scripting URL.
 
-    `iframe` is deliberately not in this list (ADR-041): the renderer itself
-    now builds one, legitimately, for every recognised video link — the same
-    reason `button` was never in it while `button` was the thing being built.
+    `iframe` stays in the forbidden list by default — it is exactly the tag an
+    injection would want, and most callers here are adversarial inputs that
+    have nothing to do with video. Only a test that renders a real, recognised
+    video link passes `embed_allowed=True` (ADR-041): the renderer legitimately
+    builds one there, the same reason `button` was never forbidden while
+    `button` was the thing being built.
     """
     assert not EVENT_ATTRIBUTE.search(html), f"event handler survived: {html}"
     assert not SCRIPTING_URL.search(html), f"scripting URL survived: {html}"
-    for tag in ("<script", "<style", "<object", "<embed", "<form", "<svg"):
+    tags = ("<script", "<style", "<object", "<embed", "<form", "<svg")
+    if not embed_allowed:
+        tags += ("<iframe",)
+    for tag in tags:
         assert tag not in html.lower(), f"{tag} survived: {html}"
 
 
@@ -187,6 +193,24 @@ def test_excerpt_of_a_captioned_video_keeps_the_caption_and_the_prose():
     assert "Разбор" in excerpt
     assert "Дальше" in excerpt
     assert "Смотреть" not in excerpt
+
+
+def test_excerpt_of_an_emphasised_caption_holds_no_leftover_tag_text():
+    """Review run 9, M-1: an emphasised caption used to leave its markup's own
+    tags — escaped, but present — in the excerpt, because the `<iframe>` its
+    inline tokens end up inside is opaque to `nh3.clean`'s tag stripping (a
+    browser reads an iframe's contents as raw text, never as child elements,
+    so the element and the tags inside it both survive as visible text once
+    the tag itself is stripped). The caption's own inline tokens are dropped
+    from the token stream entirely now (`_figure_paragraphs`), not merely
+    hidden by a since-removed special case, so there is nothing left to leak.
+    """
+    excerpt = excerpt_from(f"[**Разбор**](https://youtu.be/{YOUTUBE_ID})\n\nДальше текст.")
+
+    assert "Разбор" in excerpt
+    assert "Дальше" in excerpt
+    assert "<" not in excerpt
+    assert "&lt;" not in excerpt
 
 
 # --------------------------------------------------------------------------
@@ -466,7 +490,7 @@ def test_a_width_on_something_that_is_not_an_image_is_literal_text():
 # --------------------------------------------------------------------------
 YOUTUBE_ID = "dQw4w9WgXcQ"
 RUTUBE_ID = "c0b4c4e2a8f14a1cb0f5e2d3a4b5c6d7"
-YOUTUBE_EMBED = f"https://www.youtube.com/embed/{YOUTUBE_ID}?autoplay=1"
+YOUTUBE_EMBED = f"https://www.youtube.com/embed/{YOUTUBE_ID}"
 
 
 def embed_of(html: str) -> str | None:
@@ -489,19 +513,19 @@ def embed_of(html: str) -> str | None:
         (f"https://www.youtube.com/shorts/{YOUTUBE_ID}", YOUTUBE_EMBED),
         (
             f"https://rutube.ru/video/{RUTUBE_ID}/",
-            f"https://rutube.ru/play/embed/{RUTUBE_ID}/?autoplay=1",
+            f"https://rutube.ru/play/embed/{RUTUBE_ID}/",
         ),
         (
             "https://vk.com/video-22822305_456241864",
-            "https://vk.com/video_ext.php?oid=-22822305&id=456241864&autoplay=1",
+            "https://vk.com/video_ext.php?oid=-22822305&id=456241864",
         ),
         (
             "https://vkvideo.ru/video-22822305_456241864",
-            "https://vk.com/video_ext.php?oid=-22822305&id=456241864&autoplay=1",
+            "https://vk.com/video_ext.php?oid=-22822305&id=456241864",
         ),
     ],
 )
-def test_a_lone_video_link_becomes_a_facade(url, expected):
+def test_a_lone_video_link_becomes_an_embed(url, expected):
     """Every shape the owner might paste, and the embed each one becomes."""
     html = render_markdown(url)
 
@@ -511,7 +535,7 @@ def test_a_lone_video_link_becomes_a_facade(url, expected):
     assert "<a " not in html, "the link became the player, it did not stay beside it"
     assert url not in html, "the pasted address is not printed raw on the page"
     assert embed_of(html) == expected
-    assert_inert(html)
+    assert_inert(html, embed_allowed=True)
 
 
 def test_the_iframes_src_is_never_anything_but_a_matched_embed_url():
@@ -599,7 +623,7 @@ def test_a_pictures_caption_survives_the_retired_poster():
     assert "<figcaption>вершина</figcaption>" in html
     assert embed_of(html) == YOUTUBE_EMBED
     assert "<a " not in html
-    assert_inert(html)
+    assert_inert(html, embed_allowed=True)
 
 
 def test_a_picture_from_anywhere_else_is_not_a_poster_and_not_a_facade():
@@ -621,7 +645,7 @@ def test_the_authors_own_link_text_becomes_the_caption():
 
     assert "<figcaption>Разбор съёмки</figcaption>" in html
     assert html.count("Разбор съёмки") == 1, "the words are the caption, not the control's label"
-    assert_inert(html)
+    assert_inert(html, embed_allowed=True)
 
 
 def test_a_pasted_address_leaves_no_caption():

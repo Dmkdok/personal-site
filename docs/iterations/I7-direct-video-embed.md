@@ -68,7 +68,20 @@ review:
    admin/anonymous target and contrast sweeps mentioned in `docs/STATUS.md`): one button and the two
    plates behind it (glyph, label) leave the swept pages; a cross-origin `<iframe>`'s own internals
    are outside every sweep's reach either way. New counts are recorded fresh at Phase 5, not
-   predicted here.
+   predicted here. **The focus sweep itself gains a scoped exemption** for
+   `.prose-video__frame`: a cross-origin iframe's DOM focus never reaches `:focus`/`:focus-visible`
+   on the containing element in the parent document (a browser privacy boundary, confirmed
+   empirically in review Run 9), so it is out of that sweep's reach the same way the embed's own
+   internals already are — scoped to the one class, not every `iframe`, so an unrelated future frame
+   still has to earn its own way out.
+7. **No `autoplay` parameter reaches the embed, and the frame's `allow` grants none.** The five
+   `_VIDEO_SERVICES` templates carried `?autoplay=1` over from ADR-035's facade, where it was correct
+   — the reader had already pressed once by the time the iframe existed. Review Run 9 (High H-1)
+   caught that the reason no longer held: unfiltered, it either does nothing (dead parameter) or
+   plays an article's video with sound on load, neither of which is "one press instead of two." Both
+   were removed the same session; T145's DoD text (which specified `allow="autoplay; …"`) is
+   superseded by this correction, not by a second approval round — the owner's actual ask, "one press
+   not two," is what the fix restores.
 
 ## Exit criteria
 
@@ -88,14 +101,18 @@ review:
 - [x] The editor's cheat sheet no longer describes the retired poster-before-click behaviour —
       `sheet_video_poster_code`/`_text` removed from `blog.json`, the row dropped from `editor.html`'s
       loop, `test_the_sheet_covers_every_shape_the_renderer_understands` updated
-- [x] Baseline suites green at their Phase 0 counts or better: unit/API **370** exit 0 (= 370 at
-      Phase 0), e2e **112** exit 0 — one below the 113 floor this criterion named, and the one test
-      short is exactly `test_the_video_facade_keeps_its_plates`, the forced-colors test the impact map
-      already named "deleted, not rewritten" (nothing else shrank: `test_video.py` still holds 3,
-      rewritten in place) — lint clean, format clean **124 files**. Admin sweeps re-run fresh on this
-      tree: focus **207 stops / 0** without an indicator (88/0 anonymous, unchanged from I6), targets
-      **171 under 44px / 0** under WCAG 2.5.8 (65/0 anonymous, unchanged), contrast **141 samples / 0
-      failures** admin both themes, **84/0** anonymous both themes (down from 85 — one fewer picture
-      renders on the anonymous video article now that the poster is retired)
-- [ ] `secure-review` has looked at the `iframe`-allow-list change specifically, per this document's
-      point 2
+- [x] Baseline suites green at their Phase 0 counts or better: unit/API **371** exit 0 (370 at Phase
+      0; review Run 9's fixes added one excerpt test), e2e **112** exit 0 — one below the 113 floor
+      this criterion named, and the one test short is exactly `test_the_video_facade_keeps_its_plates`,
+      the forced-colors test the impact map already named "deleted, not rewritten" (nothing else
+      shrank: `test_video.py` still holds 3, rewritten in place) — lint clean, format clean **124
+      files**. Admin sweeps re-run fresh on this tree: focus **207 stops / 0** without an indicator
+      (88/0 anonymous, unchanged from I6), targets **171 under 44px / 0** under WCAG 2.5.8 (65/0
+      anonymous, unchanged), contrast **141 samples / 0 failures** admin both themes, **84/0**
+      anonymous both themes (down from 85 — one fewer picture renders on the anonymous video article
+      now that the poster is retired)
+- [x] `secure-review` has looked at the `iframe`-allow-list change specifically, per this document's
+      point 2 — `docs/REVIEW.md` Run 9, PASS with findings; the allow-list itself judged sound
+      (`iframe.src` closed by construction, proved by probe; nh3's scheme filter and CSP's `frame-src`
+      both survive even if that construction were ever wrong). One High (autoplay, above) and four
+      Mediums fixed same session; three Lows fixed alongside them, four carried with reasons

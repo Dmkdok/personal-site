@@ -572,6 +572,7 @@ SNAPSHOT_FOCUS = """
   return {
     tag: el.tagName.toLowerCase(),
     id: el.id || null,
+    className: (el.className || '').toString(),
     label: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 40),
     visible: box.width > 0 && box.height > 0,
     focused: window.__stops.map(window.__snap)
@@ -620,15 +621,16 @@ def _sweep_focus(
                 else None,
             }
             swept.append(record)
-            if state["tag"] == "iframe":
+            if state["tag"] == "iframe" and "prose-video__frame" in state["className"]:
                 # A cross-origin iframe's DOM focus never reaches `:focus` (or
                 # `:focus-visible`) on the containing element in the parent
                 # document — confirmed empirically: `document.activeElement`
                 # reports the iframe, but `el.matches(':focus')` is false. This
                 # is a browser privacy boundary around cross-origin content,
                 # not a stylable gap, so no rule in this codebase's CSS can put
-                # a ring on it (ADR-041). It is out of this sweep's reach the
-                # same way the embed's own internals already are.
+                # a ring on it (ADR-041). Scoped to this one class rather than
+                # every `iframe` so an unrelated future frame still has to earn
+                # its way out of the sweep.
                 continue
             if state["visible"] and not any(changed):
                 invisible.append(record | {"focused": state["focused"], "resting": resting})

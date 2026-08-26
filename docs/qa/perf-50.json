@@ -11,7 +11,7 @@
       ]
     }
   ],
-  "lcp_ms": 180,
+  "lcp_ms": 172,
   "lcp_element": "IMG.",
   "images": {
     "total": 50,
@@ -27,71 +27,71 @@
   },
   "media_requests_on_load": 39,
   "heaviest_media_kb": {
-    "url": "073ead2ba667487aa4dc9c89f25abc64_640.webp",
+    "url": "28994e91968c4d87bd701742c10af1e4_640.webp",
     "transferKB": 97.7,
     "encodedKB": 97.5,
-    "ms": 91
+    "ms": 95
   },
   "media": [
     {
-      "url": "073ead2ba667487aa4dc9c89f25abc64_640.webp",
+      "url": "28994e91968c4d87bd701742c10af1e4_640.webp",
       "transferKB": 97.7,
       "encodedKB": 97.5,
-      "ms": 91
+      "ms": 95
     },
     {
-      "url": "56e07ad3c89e41519481a7e95a3e6eb3_640.webp",
+      "url": "cd98cd4cd6fe4b99840aaa835cb368a8_640.webp",
       "transferKB": 97.5,
       "encodedKB": 97.2,
-      "ms": 92
+      "ms": 94
     },
     {
-      "url": "ef945d7af9b8425181eff60787e3a96c_640.webp",
+      "url": "e833557e18bf448ba8072d2a1548ff5b_640.webp",
       "transferKB": 96.9,
       "encodedKB": 96.6,
-      "ms": 73
+      "ms": 80
     },
     {
-      "url": "d0e908a49dd24fa09f6b0bb74fc76049_640.webp",
+      "url": "9cb4de5ee6b74a5a9b9b14a77fa940ac_640.webp",
       "transferKB": 96.7,
       "encodedKB": 96.4,
       "ms": 17
     },
     {
-      "url": "b34cb30015784a72b8d16bc375964f15_640.webp",
+      "url": "78dc63fe04ed47a995540536903b239d_640.webp",
       "transferKB": 96.7,
       "encodedKB": 96.4,
-      "ms": 89
+      "ms": 95
     },
     {
-      "url": "bdab1ebd186a42e0b72099c37e855fa1_640.webp",
+      "url": "e6e14de6b1a342a8997a9f38a0a74f66_640.webp",
       "transferKB": 96.3,
       "encodedKB": 96,
-      "ms": 31
+      "ms": 34
     },
     {
-      "url": "8cb33de2cf4b4f9ab9729fa27c98c178_640.webp",
+      "url": "3af09f7b7f9847849e1e8578075c2404_640.webp",
       "transferKB": 96.2,
       "encodedKB": 95.9,
       "ms": 79
     },
     {
-      "url": "c61ecb8120344faf82c4a9a3a0d51187_640.webp",
+      "url": "d631ca817fc84c3390f070f63a73c77c_640.webp",
       "transferKB": 96,
       "encodedKB": 95.7,
-      "ms": 102
+      "ms": 106
     },
     {
-      "url": "ec516fe274ef477ebae1b6534f510319_640.webp",
+      "url": "0e7dabc9de674e0e8da4ca31be4de855_640.webp",
       "transferKB": 95.8,
       "encodedKB": 95.5,
-      "ms": 17
+      "ms": 19
     },
     {
-      "url": "987b3ac8ad5d474a821acf0c6e6c216b_640.webp",
+      "url": "6b81df042ead44c1ae3e7c9200e4b73c_640.webp",
       "transferKB": 95.6,
       "encodedKB": 95.3,
-      "ms": 16
+      "ms": 19
     }
   ],
   "budgets": {

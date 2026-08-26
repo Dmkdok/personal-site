@@ -74,8 +74,10 @@ _VIDEO_TAIL = r"(?:[?&#]\S*)?"
 #: pattern per host** and the embed URL it becomes. Never a general URL parse:
 #: nh3 filters attribute names and never values, so the URL in `iframe.src` has
 #: to be built here from groups this module constrained — exactly the reason
-#: `WIDTH_WORDS` exists for the class attribute. `autoplay=1` is part of the
-#: embed because the page itself is the thing pressing play now, not the reader.
+#: `WIDTH_WORDS` exists for the class attribute. No `autoplay` parameter: the
+#: owner asked for one press instead of two, not zero — the reader still presses
+#: the host's own play button once, and `allow` below grants no autoplay
+#: capability for a browser to honour even if a host defaulted to it.
 #:
 #: The third element is the host name — used by `video_host` (F66, ADR-040) so
 #: a title lookup considers exactly the links this module would already turn
@@ -85,22 +87,22 @@ _VIDEO_SERVICES: tuple[tuple[re.Pattern[str], str, str], ...] = (
         re.compile(
             rf"https?://(?:www\.|m\.)?youtube\.com/watch\?v=(?P<id>{_VIDEO_ID}){_VIDEO_TAIL}"
         ),
-        "https://www.youtube.com/embed/{id}?autoplay=1",
+        "https://www.youtube.com/embed/{id}",
         "youtube",
     ),
     (
         re.compile(rf"https?://youtu\.be/(?P<id>{_VIDEO_ID}){_VIDEO_TAIL}"),
-        "https://www.youtube.com/embed/{id}?autoplay=1",
+        "https://www.youtube.com/embed/{id}",
         "youtube",
     ),
     (
         re.compile(rf"https?://(?:www\.)?youtube\.com/shorts/(?P<id>{_VIDEO_ID}){_VIDEO_TAIL}"),
-        "https://www.youtube.com/embed/{id}?autoplay=1",
+        "https://www.youtube.com/embed/{id}",
         "youtube",
     ),
     (
         re.compile(rf"https?://rutube\.ru/video/(?P<id>[0-9a-f]{{32}})/?{_VIDEO_TAIL}"),
-        "https://rutube.ru/play/embed/{id}/?autoplay=1",
+        "https://rutube.ru/play/embed/{id}/",
         "rutube",
     ),
     (
@@ -108,7 +110,7 @@ _VIDEO_SERVICES: tuple[tuple[re.Pattern[str], str, str], ...] = (
             r"https?://(?:m\.)?(?:vk\.com|vkvideo\.ru)/video(?P<oid>-?\d{1,20})_(?P<id>\d{1,20})"
             + _VIDEO_TAIL
         ),
-        "https://vk.com/video_ext.php?oid={oid}&id={id}&autoplay=1",
+        "https://vk.com/video_ext.php?oid={oid}&id={id}",
         "vk",
     ),
 )
@@ -308,19 +310,26 @@ def _figure_paragraphs(state: Any) -> None:
         closing.meta["figure_caption"] = caption or (
             poster.attrGet("title") if poster is not None else ""
         )
-        # The link becomes the iframe, and everything the link held collapses
-        # into it — except its text, which is a URL or a caption and in neither
-        # case something to print inside the player.
-        children[0].meta["video_embed"] = embed
-        children[-1].meta["video_embed"] = embed
-        for child in children[1:-1]:
-            if child.type == "text":
-                child.meta["video_text"] = True
+        # The link becomes the iframe. Everything it held — the URL text, the
+        # caption words, any inline markup on them — is already captured above
+        # (`caption`, `poster`), so it is dropped from the token stream here
+        # rather than suppressed per-token at render time: a browser treats an
+        # `<iframe>`'s contents as raw text, and a stray `<strong></strong>` or
+        # `<code>…</code>` left inside it would otherwise survive into
+        # `excerpt_from`, which strips tags but not the text they held.
+        open_token, close_token = children[0], children[-1]
+        raw = inline.children
+        open_idx = next(i for i, token in enumerate(raw) if token is open_token)
+        close_idx = next(i for i, token in enumerate(raw) if token is close_token)
+        del raw[open_idx + 1 : close_idx]
+        open_token.meta["video_embed"] = embed
+        close_token.meta["video_embed"] = embed
         if poster is not None:
-            # The poster no longer renders (ADR-041); `paragraph_close` still
-            # needs it, to fall back to its alt text when there is no caption
-            # and no title.
-            poster.meta["video_poster"] = True
+            # The poster is inside `[open_idx+1:close_idx)` above, so it is
+            # already gone from the token stream and never reaches a renderer
+            # method to begin with (ADR-041) — nothing left to mark. What
+            # `paragraph_close` still needs is the object itself, kept here to
+            # fall back to its alt text when there is no caption and no title.
             closing.meta["figure_poster"] = poster
 
 
@@ -329,11 +338,6 @@ class _ProseRenderer(RendererHTML):
 
     def image(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
         token = tokens[idx]
-        if token.meta.get("video_poster"):
-            # A video's own iframe already shows the host's live thumbnail
-            # before any interaction (ADR-041) — the picture that used to sit
-            # behind the click-to-build button has nothing left to render.
-            return ""
         src = token.attrGet("src") or ""
         alt = self.renderInlineAsText(token.children or [], options, env)
         in_figure = bool(token.meta.get("in_figure"))
@@ -396,7 +400,7 @@ class _ProseRenderer(RendererHTML):
             '<iframe class="prose-video__frame" '
             f'src="{escapeHtml(embed)}" '
             f'title="{escapeHtml(translate("prose.video_frame"))}" '
-            'allow="autoplay; fullscreen; encrypted-media; picture-in-picture" '
+            'allow="fullscreen; encrypted-media; picture-in-picture" '
             'allowfullscreen loading="lazy">'
         )
 
@@ -404,13 +408,6 @@ class _ProseRenderer(RendererHTML):
         if tokens[idx].meta.get("video_embed") is None:
             return self.renderToken(tokens, idx, options, env)
         return "</iframe>"
-
-    def text(self, tokens: list[Token], idx: int, options: Any, env: Any) -> str:
-        # The link text of a video paragraph: either the URL itself or the words
-        # that became the caption. Neither belongs inside the button.
-        if tokens[idx].meta.get("video_text"):
-            return ""
-        return super().text(tokens, idx, options, env)
 
     # A scrolling box has to be reachable without a mouse. Chrome 127+ makes
     # scroll containers focusable on its own; Firefox and Safari do not, and
