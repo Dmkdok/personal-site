@@ -45,6 +45,8 @@ Needs: no code, no file management, no fragile admin UI, clear feedback on long 
 9. **Write an article** — on `/blog` while logged in → «Новая статья» → editor screen with Markdown on the left and live preview on the right → image dropped into the editor uploads and inserts Markdown at the cursor → saved as a draft automatically → «Опубликовать» sets the publication date and makes it public.
 10. **Add a project** — on `/dev` while logged in → «Добавить проект» → inline card form: title, short description, optional long description in Markdown, repository URL, demo URL, tech stack, optional cover → save → card appears in the list; drag to reorder.
 11. **Edit intro copy** — on `/` while logged in → editable text blocks show an edit affordance on hover → click → inline editor → save → page updates in place.
+12. **Share a hidden article** (I8) — on `/me/shared` while logged in → «Новая статья» → editor with Markdown and live preview, same as the blog editor → save → «Скопировать ссылку» copies `/s/{token}` to the clipboard, sent to a friend outside the site (chat, messenger); «Перегенерировать» issues a new token and the old link stops working immediately.
+13. **Open a shared article** (I8) — a friend follows the `/s/{token}` link with no session and no registration → the article renders like any other page on the site; nothing about it is reachable by browsing, searching, or from `/sitemap.xml`.
 
 ## Functional requirements
 
@@ -229,6 +231,23 @@ lead-in's claim that F63 "does so only after the reader asks for it" no longer h
 (ADR-041 supersedes ADR-035); F66's fetch above was already a narrower, server-side exception to that
 same clause and is unaffected either way.
 
+### Added by iteration I8 — private articles by token link
+
+Added 2026-08-29, an owner request made in chat: friends need to read hidden articles (trip plans,
+personal links) without registering on the site. Intake, impact map and exit criteria:
+`docs/iterations/I8-token-shared-articles.md`. A `shared_article` is a separate entity from `post`
+(F67) — it never appears on `/blog`, has no draft/published lifecycle, and is reached only by its
+own secret link, never by browsing. ADR-042 records why a bearer-token link was chosen over a
+multi-user account system; ADR-043 records why the token route carries no rate limiter.
+
+| ID | Requirement | Acceptance |
+|----|-------------|------------|
+| F67 | A shared article is reachable only by its own secret link | Given a `shared_article` with a `share_token`, when `GET /s/{share_token}` is requested, then the article renders through the same sanitised Markdown pipeline as a blog post (F9, F31); when the token is missing or does not match any article, then the response is 404, byte-identical in both cases so the response never reveals whether a token once existed |
+| F68 | The token grants read only, never edit | Given a valid `share_token` and no admin session, when any create/update/delete request is made against `/s/{token}` or against a shared article's admin routes, then it is rejected per F18 — a shared-article link never becomes a way to modify content; editing is reachable only through the existing single admin session |
+| F69 | A shared article is invisible to discovery | Given a shared article, when `/sitemap.xml`, `/search` or any public navigation element renders, then the article appears in none of them, and its own page carries `<meta name="robots" content="noindex">` unconditionally |
+| F70 | Cabinet section for shared articles | Given a logged-in admin, when `/me/shared` is opened, then the owner's shared articles are listed with a way to create, edit and delete one, copy its link, and regenerate its token; unreachable to anyone without a session, same as every other cabinet room (F62, F64) |
+| F71 | Regenerating a token invalidates the old link immediately | Given a shared article's token is regenerated, when the old `share_token` is requested afterward at `/s/{old_token}`, then it returns 404, and the new token works at `/s/{new_token}` from that point on |
+
 ## Non-functional
 
 **Performance**
@@ -284,6 +303,7 @@ same clause and is unaffected either way.
 | `project` | `id`, `slug` (unique), `title`, `summary`, `body_md`, `body_html`, `repo_url`, `demo_url`, `tech_stack`, `cover_path`, `is_published`, `sort_order`, `lang`, `created_at`, `updated_at`, `search_vector` |
 | `site_content` | `key` (e.g. `home.intro`), `lang`, `value_md`, `value_html`, `updated_at` — inline-editable copy blocks |
 | `login_attempt` | `ip`, `attempted_at`, `success` — for rate limiting |
+| `shared_article` | `id`, `title`, `body_md`, `body_html`, `share_token` (unique, indexed), `created_at`, `updated_at` — reached only by `/s/{share_token}`, added I8 |
 
 Notes:
 - `lang` exists from day one but is fixed to `ru` in v1; it is what makes the later English version additive rather than a rewrite.

@@ -1,12 +1,57 @@
 # Status
 
-phase: iteration I7 closed, not yet merged (M19, T145 done; M16 still open, owner's appliance work only)
+phase: iteration I8 implementation (I7 merged and closed; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
 i5_delta_approved_at: 2026-08-17
 i6_delta_approved_at: 2026-08-25
 i7_delta_approved_at: 2026-08-25
+i8_delta_approved_at: 2026-08-29
+
+## Baseline I8
+
+Recorded 2026-08-28 on `iteration/I8-token-shared-articles`, cut from `main` at `b2318f0`. That tip
+is I7's own close (`ce8cc84`..`1a10e72`) plus one chore commit made at this baseline, committing
+tooling/doc leftovers (`deploy-product` skill, `RELEASE.template.md`, `CLAUDE.md` conventions
+sections) found uncommitted on `iteration/I7-direct-video-embed` — content untouched, just given a
+commit. `main` was fast-forwarded to that tip in this session (0 behind, 5 ahead before the merge).
+Tree was clean before the branch. Every command below ran in this session, on this tree, none piped.
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **371 passed**, exit 0 |
+| e2e | `uv run pytest e2e -q` | **112 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | **126 files**, exit 0 |
+
+Same counts as I7's closing tree (unit/API 371, e2e 112) — nothing regressed. Format's file count
+moved 124→126 from the two new tooling files committed at this baseline, not from anything this
+iteration changes.
+
+## Iteration I8 progress
+
+```text
+- [x] 0 baseline recorded (branch, suite result, timestamp)
+- [x] 1 delta intake agreed (in / out / deferred) — agreed in chat plus one AskUserQuestion round
+      (URL format, editor scope, rate-limit, iteration budget); formalised in the iteration doc
+- [x] 2 impact map written — `docs/iterations/I8-token-shared-articles.md`
+- [x] 3 docs amended — SPEC F67–F71 + `shared_article` row + two user flows, ADR-042 + ADR-043,
+      TASKS M20 (T146, T147)
+- [x] GATE approved by the owner — «утверждаю», 2026-08-29
+- [ ] 4 implementation — T146 next, alone, serially; T147 depends on it
+- [ ] 5 verification green, baseline suites still green
+- [ ] 6 review clean or waived
+- [ ] 7 closed (STATUS rewritten, milestone ticked)
+- [ ] 8 deploy (optional, only if a real deploy target exists)
+```
+
+Topic: private articles reachable by a secret token link (capability URL), separate from the blog —
+friends see hidden articles (trip plans, personal links) without registering. Decision already made
+upstream of this session: token grants read-only; editing only via the existing admin session
+(SPEC F15–F18); multi-user access control rejected as overbuilt for this scale (ADR-042). No rate
+limiter on the token route — entropy is already sufficient (ADR-043). Full intake, impact map and
+exit criteria: `docs/iterations/I8-token-shared-articles.md`.
 
 ## Baseline I7
 
@@ -120,7 +165,9 @@ Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: 
 
 ## Resume here
 
-**I7 is closed, 2026-08-26, in the same session that opened it. Not yet merged.** Branch
+**I7 is closed, 2026-08-26, in the same session that opened it. Merged into `main` 2026-08-28** at
+the start of the I8 baseline (fast-forward, no conflicts; not pushed or deployed by that merge alone
+— see `## Baseline I8` above for what that session also committed first). Branch
 `iteration/I7-direct-video-embed`, cut from `main` at `ce8cc84` — which already carries every I6
 commit merged, pushed and deployed. The one task in M19 is implemented, tested and reviewed; all
 seven exit criteria in `docs/iterations/I7-direct-video-embed.md` are met.
