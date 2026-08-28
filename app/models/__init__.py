@@ -6,6 +6,7 @@ from app.models.media_asset import MediaAsset
 from app.models.photo import Photo, PhotoStatus
 from app.models.post import Post, PostStatus
 from app.models.project import Project
+from app.models.shared_article import SharedArticle
 from app.models.site_content import SiteContent
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "Post",
     "PostStatus",
     "Project",
+    "SharedArticle",
     "SiteContent",
 ]
