@@ -94,7 +94,8 @@ never paste file contents back.
 | 3 | `draft-tech-plan` |
 | 4 | `implement-product`, `coding-discipline`, `frontend-design` |
 | 5 | `test-product` |
-| 6 | `review-product`, `web-design-guidelines`, `secure-review` |
+| 6 | `review-product`, `web-design-guidelines`, `secure-review`, `code-review`, `simplify` |
+| 8 (optional) | `deploy-product` — only when a real deploy target exists |
 | any | `concise-mode` when user asks кратко / экономь токены |
 | optional | `ui-quality-audit` — **only** on explicit UI/UX deep-audit request; not default Phase 6 |
 

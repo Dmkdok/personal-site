@@ -28,6 +28,14 @@ Look at what is in flight — edits, background commands, subagents.
   `git restore` it and say so in the notes. Never leave the tree in a state that does not run.
 - Background commands and subagents: let them finish or stop them. Report anything still running.
 - Never leave a half-applied migration or a half-written test file unmentioned.
+- Run `git status`, not just `git diff` — it is the only view that surfaces untracked files and a
+  merge/rebase left mid-flight. A new untracked file or directory gets a decision, never silence:
+  commit it, add it to `.gitignore`, or write down in the notes why it stays untracked. The same
+  look catches what should never be committed — env files, credentials, generated output — before
+  it is staged, not after.
+- `git stash list` — a stash from this session or an earlier one is a trap for whoever finds it
+  next with no memory of what it holds. Resolve it (pop it into a real commit, or drop it if it was
+  scratch) rather than leaving it anonymous.
 
 ### 2. Verify — do not trust the checkboxes
 
@@ -44,14 +52,19 @@ The e2e suite runs on the host against `make up`, not in that container (`tests`
 recover the last one from `.pytest_cache/v/cache/{lastfailed,nodeids}` and label it with that run's
 timestamp.
 
+Run the lint/format gates alongside the suite — `ruff check` and `ruff format --check` — a green
+test run with a dirty lint has verified only part of the DoD.
+
 A red suite is a fine way to end a session. A red suite recorded as green is not.
 
 ### 3. Commit
 
 Never commit to `main`. Branch as `session/<YYYY-MM-DD>-<slug>` if not already on one.
 
-Split by intent, not by directory — fixes, new tests, docs/evidence are separate commits. The
-message says *why*, and names the defect. Do not push unless asked.
+Split by intent, not by directory — fixes, new tests, docs/evidence are separate commits. Header
+follows Conventional Commits (`type(scope): description`; task refs go in a footer, `Refs: T145`,
+not the header) — see `CLAUDE.md`'s Git section for the exact types/scopes. The body still says
+*why*, and names the defect. Do not push unless asked.
 
 If the suite is red, still commit — but say so in the commit body.
 
@@ -59,11 +72,15 @@ If the suite is red, still commit — but say so in the commit body.
 
 `docs/STATUS.md`, in this order:
 
-- **`## Resume here`** at the top, rewritten (not appended to). It carries: branch and whether the
-  tree is clean; where the work stands in one line; **the next three actions in order**, each
-  concrete enough to start without re-reading the code; and any decision that is waiting on the
-  owner, marked as theirs. **Keep it under 40 lines** — the SessionStart hook injects only the first
-  60 and truncates the rest, so anything past that is paid for on every read and delivered to no one.
+- **`## Resume here`** at the top, rewritten (not appended to). It carries: branch, whether the
+  tree is clean, and how far it has diverged from `main`
+  (`git rev-list --left-right --count main...HEAD`); where the work stands in one line; **the next
+  three actions in order**, each concrete enough to start without re-reading the code; and any
+  decision that is waiting on the owner, marked as theirs. A branch several commits ahead with
+  `main` untouched needs nothing beyond the count; one where `main` has moved needs the
+  merge/rebase called out explicitly, not discovered by surprise next session. **Keep it under 40
+  lines** — the SessionStart hook injects only the first 60 and truncates the rest, so anything
+  past that is paid for on every read and delivered to no one.
 - **`## Test report`** — every suite, with its own last-run timestamp and command. Name the failing
   tests individually.
 - **`## Notes`** — append dated entries for what this session learned. Root causes and traps, not a

@@ -77,6 +77,7 @@ Two practices from Claude Code's own best-practices guide, which apply directly 
 
 ```
 0 Intake → 1 Elicit → 2 Spec → 3 Tech plan → GATE → 4 Implement → 5 Test → 6 Review → 7 Handoff
+  → 8 Deploy (optional)
 ```
 
 Read phase details on demand:
@@ -168,6 +169,9 @@ Run automated checks + Playwright / browser verification. Fix failures before cl
 
 Independent verification (verifier mindset). Critical functional **or** security issues must be fixed.
 
+Also run `code-review` and `simplify` on the diff — a different lens from `review-product`'s
+SPEC/DoD check: correctness bugs, reuse, and simplification/efficiency cleanups in the code itself.
+
 ### Phase 7 — Handoff
 
 Russian summary for the user:
@@ -179,6 +183,14 @@ Russian summary for the user:
 
 English `docs/HANDOFF.md` **and** an up-to-date `docs/STATUS.md` for continuity across
 tools/sessions. A later agent must be able to resume from STATUS alone without the prior chat.
+
+### Phase 8 — Deploy (optional, `deploy-product`)
+
+Skip entirely for a local-only product. When a real deploy target exists and the user wants it
+shipped, not just handed off: load `deploy-product`. It refuses to run past a FAIL review verdict,
+requires a rollback plan written down before the deploy starts, and proves the deployed artifact
+works with a smoke test against the live target — a green deploy pipeline is not that proof by
+itself. Writes `docs/RELEASE.md`.
 
 ## Progress checklist
 
@@ -194,6 +206,7 @@ Copy into `docs/STATUS.md` and tick:
 - [ ] Phase 5 tests green
 - [ ] Phase 6 review clean (or accepted waivers)
 - [ ] Phase 7 handoff
+- [ ] Phase 8 deploy (optional, only if a real deploy target exists)
 ```
 
 ## Anti-patterns
@@ -207,3 +220,4 @@ Copy into `docs/STATUS.md` and tick:
 - Auto-running `ui-quality-audit` on every delivery (optional skill — only on explicit request)
 - Claiming tests green from TASKS checkboxes or chat memory without running the suite
 - Dumping all of `docs/` into every subagent prompt
+- Deploying (Phase 8) past a FAIL review verdict, or with no rollback plan written down first

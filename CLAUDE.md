@@ -37,4 +37,22 @@ For greenfield sites/apps, use skill `orchestrate-product`.
   record; the history was rewritten once to strip it, so re-adding it would undo that on the next commit.
   Enforced by `attribution.commit` in `.claude/settings.json` — the older `includeCoAuthoredBy` key is
   deprecated, don't reintroduce it.
+- Commit headers follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+  `type(scope): description`. `type` is `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, or `chore`
+  (`build`/`ci`/`revert` only if that kind of change actually happens); `scope` names the affected
+  area (`video`, `admin`, `prose`, `deps`, `status`, ...) and is omitted when the change doesn't sit
+  in one area; `description` is imperative, lowercase, no trailing period. The body still explains
+  *why* and names the defect, same as always. A task this commit advances goes in a footer, not the
+  header — `Refs: T145` — and a breaking change gets `BREAKING CHANGE: ...` in the footer (or `!`
+  before the colon). Commits before this convention keep their old `T145:`/`STATUS:` headers; don't
+  rewrite history to match it.
+
+## Context economy
+
+- Fan-out via `Explore` (see the product-factory block above): pass `model: "haiku"` explicitly on
+  the `Agent` call. It is delegation guidance, not a default the tool applies for you.
+- On auto-compact, keep: the `docs/STATUS.md` resume point, the open `TASKS.md` milestone, and the
+  last test/lint gate numbers. Everything else may go.
+- Long ad-hoc session that drifted to an unrelated task, or the same correction failing twice: say so
+  and suggest `/clear` rather than pushing on inside a polluted context.
 

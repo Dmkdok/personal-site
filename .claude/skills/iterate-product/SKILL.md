@@ -51,7 +51,8 @@ if a change contradicts one, that contradiction is the thing to put in front of 
 ## Pipeline
 
 ```
-0 Baseline → 1 Delta intake → 2 Impact map → 3 Amend docs → GATE → 4 Implement → 5 Verify → 6 Review → 7 Close
+0 Baseline → 1 Delta intake → 2 Impact map → 3 Amend docs → GATE → 4 Implement → 5 Verify → 6 Review
+  → 7 Close → 8 Deploy (optional)
 ```
 
 Read on demand, one level down:
@@ -74,6 +75,7 @@ Iteration I<n> progress:
 - [ ] 5 verification green, baseline suites still green
 - [ ] 6 review clean or waived
 - [ ] 7 closed (STATUS rewritten, milestone ticked)
+- [ ] 8 deploy (optional, only if a real deploy target exists)
 ```
 
 ### Phase 0 — Baseline
@@ -180,13 +182,21 @@ what, and when.
 Load `review-product`; add `secure-review` when the change touched auth, uploads, input handling or
 dependencies, and `web-design-guidelines` when it touched UI. The reviewer's specific job here is
 regression: judge the diff against the impact map, and check that nothing outside the owned paths
-moved.
+moved. Also load `code-review` and `simplify` for a diff-quality pass — a different lens from
+`review-product`'s SPEC/DoD-and-regression check.
 
 ### Phase 7 — Close
 
 Tick the milestone, rewrite `## Resume here` in `docs/STATUS.md`, and report to the user in Russian:
 what changed, suite results with counts, what was deferred and where that is recorded, and the next
 open item. Use the `pause` skill if the session ends here.
+
+### Phase 8 — Deploy (optional, `deploy-product`)
+
+Skip for a local-only change. When this iteration ships to a real environment, load `deploy-product`
+after close: it refuses to run past a FAIL review verdict, requires a rollback plan written down
+first, and proves the deployed artifact works with a smoke test against the live target.
+Writes/updates `docs/RELEASE.md`.
 
 ## Regression contract
 
@@ -208,3 +218,4 @@ Applies from the gate to the close, for every agent working the iteration:
 - Reading the whole codebase to build the impact map instead of following symbol references
 - Fixing what is merely nearby
 - Treating a phased plan inside the source document as if it were already approved scope
+- Deploying (Phase 8) past a FAIL review verdict, or with no rollback plan written down first

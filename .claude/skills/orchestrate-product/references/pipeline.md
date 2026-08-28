@@ -24,6 +24,7 @@ DoR is met when all are true:
 | 5 | test report in `docs/STATUS.md` | tester |
 | 6 | review notes | reviewer |
 | 7 | `docs/HANDOFF.md` | parent |
+| 8 (optional) | `docs/RELEASE.md` | parent / implementer |
 
 ## Web-first defaults (when user did not choose)
 
