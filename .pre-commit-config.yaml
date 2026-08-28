@@ -1,0 +1,12 @@
+# Mirrors the CI gate in .github/workflows/publish.yml (the `tests` job's
+# lint/format steps) so a red check surfaces before a commit exists, not
+# after a push turns CI red. Deliberately check-only, same as CI — no
+# --fix here, so local and CI behavior stay identical and nothing is
+# silently rewritten at commit time.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.1 # keep in sync with uv.lock's ruff version
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+        args: [--check]

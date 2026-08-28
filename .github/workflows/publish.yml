@@ -6,10 +6,10 @@
 # package is private, like the repository; Portainer authenticates to ghcr.io
 # with a personal access token carrying `read:packages`.
 #
-# `publish` declares `needs: tests`, so a red unit/API suite or a lint failure
-# publishes nothing and moves no tag: `latest` can only ever point at a commit
-# whose gates were green (F59). Before this, the gates were local-only and
-# `latest` followed `main` in whatever state `main` was.
+# `publish` declares `needs: tests`, so a red unit/API suite, a lint failure,
+# or a leaked secret publishes nothing and moves no tag: `latest` can only
+# ever point at a commit whose gates were green (F59). Before this, the gates
+# were local-only and `latest` followed `main` in whatever state `main` was.
 #
 # The Playwright suite is deliberately *not* in that gate. It needs a running
 # stack and a browser download, and it is slow enough to make every push to
@@ -32,6 +32,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history, so gitleaks scans past commits too, not just this diff
+
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate .env
         # Not a copy of .env.example. That file ships ADMIN_PASSWORD=change-me
