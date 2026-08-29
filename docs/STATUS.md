@@ -1,6 +1,6 @@
 # Status
 
-phase: iteration I8 closed 2026-08-29 (M20 done; M16 still open, owner's appliance work only)
+phase: iteration I8 merged, pushed and deployed to the NAS (M20 done; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
@@ -48,8 +48,8 @@ iteration changes.
       without nofollow — matches F69's letter), two Lows fixed. unit/API **399** exit 0 (394 before
       the fix), e2e **115** exit 0 (113 before), lint clean, format clean **130 files**
 - [x] 7 closed 2026-08-29 — all seven exit criteria met; see Resume here
-- [ ] 8 deploy (optional, only if a real deploy target exists) — not this session; merging is the
-      owner's call, as always
+- [x] 8 deploy — merged, pushed, deployed to the NAS 2026-08-29, on the owner's instruction; see
+      Resume here and `docs/RELEASE.md`
 ```
 
 Topic: private articles reachable by a secret token link (capability URL), separate from the blog —
@@ -189,8 +189,22 @@ Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: 
 **I8 is closed, 2026-08-29, in the same session that opened it.** Branch
 `iteration/I8-token-shared-articles`, cut from `main` at `b2318f0`. Both tasks in M20 are
 implemented, tested and reviewed; all seven exit criteria in
-`docs/iterations/I8-token-shared-articles.md` are met. **Not merged to `main` yet** — merging is the
-owner's call, as always.
+`docs/iterations/I8-token-shared-articles.md` are met.
+
+**Merged, pushed and deployed, 2026-08-29, on the owner's instruction.** `main` fast-forwarded
+`b2318f0..fb72a75` and pushed to `origin`. **This carries I7 along with it** — I7 was implemented
+and reviewed 2026-08-26 but never separately pushed, so `origin/main` had been sitting at I6's tip
+(`ce8cc84`) the whole time; this is I7's first time live. The `publish` run on that push
+(`33266553668`) is green — `tests` passed, then both images built and `latest`/`sha-fb72a75` pushed
+to GHCR. **The NAS stack picked it up via the Portainer API** (stack `id=1` `portfolio`, endpoint 3,
+`https://192.168.1.20:31015`): fetched the live stack file and env unchanged, `PUT` back with
+`pullImage: true`, HTTP 200. All three containers came up healthy on the new image
+(`portfolio-web-1`/`portfolio-caddy-1`/`portfolio-db-1`, all recreated within the same minute);
+`/healthz`, `/`, `/blog`, `/photo`, `/dev` and `/sitemap.xml` all answer 200 on
+`https://profile.dmkdok.crazedns.ru:8443`, `GET /s/<invalid token>` answers 404 (no existence leak)
+and `GET /me/shared` answers 404 anonymous, both against the live production address. Full record,
+including the rollback plan (redeploy pinned to `sha-30010b9`, I6's build — safe because
+`a37da390e9d0` only adds a table): `docs/RELEASE.md`.
 
 **T146/T147 in one line each.** **T146** gave the site a `shared_article` table, separate from
 `post` — same base model pattern, its own Alembic revision, migration proved up and down on the dev
