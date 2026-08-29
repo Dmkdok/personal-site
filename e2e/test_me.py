@@ -149,13 +149,13 @@ def test_the_disk_section_clears_the_empty_room_above_it(admin_page: Page) -> No
 
 
 def test_no_room_is_ever_indexed(admin_page: Page) -> None:
-    """All three, because all three extend the same layout — asserted, not assumed."""
-    for room in ("/me", "/me/stats", "/me/media"):
+    """All four, because all four extend the same layout — asserted, not assumed."""
+    for room in ("/me", "/me/stats", "/me/media", "/me/shared"):
         admin_page.goto(room)
         robots_meta = admin_page.locator('meta[name="robots"]').get_attribute("content")
         assert robots_meta == "noindex, nofollow", (room, robots_meta)
 
-    # One prefix rule covers the three, which is why `seo.py` did not change.
+    # One prefix rule covers the four, which is why `seo.py` did not change.
     assert "Disallow: /me" in admin_page.request.get("/robots.txt").text()
 
 

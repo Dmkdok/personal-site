@@ -115,6 +115,12 @@ class Post:
     title: str
 
 
+@dataclass
+class SharedArticle:
+    id: int
+    title: str
+
+
 class AdminApi:
     """Direct HTTP against the admin endpoints, sharing the browser session.
 
@@ -221,6 +227,18 @@ class AdminApi:
 
     def delete_post(self, post_id: int) -> None:
         self._request.post(f"/blog/admin/posts/{post_id}/delete", headers=self._headers())
+
+    # -- shared articles ---------------------------------------------------
+    def create_shared_article(self, title: str) -> SharedArticle:
+        response = self._request.post("/me/shared", form={"title": title}, headers=self._headers())
+        assert response.status == 204, f"create_shared_article → {response.status}"
+        redirect = response.headers["hx-redirect"]
+        assert redirect.startswith("/me/shared/") and redirect.endswith("/edit")
+        article_id = int(redirect[len("/me/shared/") : -len("/edit")])
+        return SharedArticle(id=article_id, title=title)
+
+    def delete_shared_article(self, article_id: int) -> None:
+        self._request.post(f"/me/shared/{article_id}/delete", headers=self._headers())
 
     # -- projects ---------------------------------------------------------
     def create_project(self, title: str) -> int:

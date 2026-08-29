@@ -1,5 +1,5 @@
 {# The *inner* content of #shared-save-state.
    Swapped with innerHTML so the live region around it survives every save and
    screen readers actually announce the new text. #}
-<span class="shared-status__text">{{ saved_label or "" }}</span>
+<span class="shared-status__text" data-status-text>{{ saved_label or "" }}</span>
 <a class="shared-status__link" href="/s/{{ article.share_token }}">{{ t("shared.open") }}</a>

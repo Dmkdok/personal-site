@@ -1,5 +1,5 @@
 {
-  "recorded": "2026-08-26",
+  "recorded": "2026-08-29",
   "engine": "chromium, Playwright forced_colors=active",
   "note": "emulation, not a Windows contrast theme; see docs/qa/forced-colors.md",
   "current_section": {

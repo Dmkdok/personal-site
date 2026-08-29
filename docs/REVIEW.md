@@ -1,12 +1,251 @@
 # Review
 
-Nine Phase 6 runs. **Run 9 is the current one and is below**; the earlier eight
+Ten Phase 6 runs. **Run 10 is the current one and is below**; the earlier nine
 are kept underneath it because their findings are the reason half of M9 exists,
 and a reviewer arriving later should be able to see what was already looked at.
 
 ---
 
-# Run 9 — Phase 6 against I7 (M19), 2026-08-26
+# Run 10 — Phase 6 against I8 (M20), 2026-08-29
+
+Scope is the I8 delta only: `b2318f0..HEAD` (`1e7eb47`, `0ba3582`, `82deab8`) on
+`iteration/I8-token-shared-articles` — the private shared-article feature (T146,
+T147), judged against SPEC F67–F71, ADR-042/ADR-043 and the exit criteria in
+`docs/iterations/I8-token-shared-articles.md`.
+
+**Independent of the implementing session**: run by a separate reviewer agent
+with no write access to application code, in its own context. `secure-review`
+was run as required by the impact map (this is the first bearer-token
+capability-URL route in the codebase, and the first new admin-CRUD surface
+since I6). Every count below was produced by commands this reviewer ran itself,
+on this tree — nothing in `docs/TASKS.md` or `docs/STATUS.md` was taken on
+trust. Migration reversibility (T146's own DoD line) was re-proved independently
+too, not just re-read: `alembic downgrade -1` was run against the live dev
+database, the `shared_article` table was confirmed gone (`psql \dt` found none),
+then `alembic upgrade head` restored it and the full suite was re-run green.
+**Semgrep is not installed on this host** — the checklist was applied by hand.
+
+## Verdict
+
+**PASS with findings.** No Critical, no High or Critical security finding —
+`secure-review` closed cleanly on the token itself (see Security below). But
+one **High** correctness/completeness gap: the new shared-article editor does
+not carry SPEC F50's unsaved-text protection that its structural sibling, the
+blog editor, already has and is tested for — a real, currently-untested,
+silent-data-loss path on the owner's own authored content. Three Mediums, three
+Lows. Recommend fixing the High (and ideally the first Medium) before I8/M20 is
+ticked closed, or waiving explicitly in `docs/DECISIONS.md` if the owner
+accepts the gap for this feature.
+
+## High
+
+**H-1 — SPEC F50 (unsaved article text cannot be lost silently) is not
+implemented for the new shared-article editor.**
+
+`shared_editor.html` explicitly models itself on the blog editor's autosave —
+its own comment says "Autosave: any keystroke, 2.5 s after the typing stops —
+the same idea as the blog editor" (`app/templates/pages/shared_editor.html:24-25`)
+— and uses the identical pattern (`hx-trigger="submit, input delay:2500ms"`,
+`shared_editor.html:30`). But the blog editor's actual F50 guarantee lives
+entirely in `app/static/js/editor.js`, which is hardcoded to the blog's own DOM
+(`document.getElementById("post-form")`, `"post-body"`, `.editor` root —
+`editor.js:16-20`) and is never loaded on the shared-article page. The shared
+editor's own script, `app/static/js/shared.js`, is 56 lines of copy-link
+clipboard handling only — no `input` listener, no `beforeunload` guard, no
+`htmx:responseError`/`htmx:sendError` handling.
+
+Concrete failure: an owner opens `/me/shared/{id}/edit`, types a paragraph,
+and closes the tab or clicks "К списку статей" within the 2.5 s debounce (or
+during the save request's own round trip) — the text is lost with no browser
+confirmation, unlike the identical action on `/blog/{slug}/edit`
+(`e2e/test_editor_guard.py::test_leaving_an_editor_with_unsaved_text_asks_first`,
+which exists only for blog). Separately: `data-dirty`/`data-saving`/`data-failed`
+attributes are rendered on `#shared-save-state`
+(`shared_editor.html:84-86`) but nothing ever reads them — they are dead
+markup — so a failed autosave (network hiccup, 500) leaves the status region
+exactly as it was, with no failed-state indication at all, the opposite of
+F50's second clause and of what `test_a_failed_save_stays_on_screen` proves for
+blog.
+
+This is invisible to every test that ran green for this iteration: the new
+e2e flow (`test_a_shared_articles_link_survives_only_until_it_is_reissued`)
+never types into the body textarea, so the debounce/dirty/failed path is never
+exercised, and `e2e/test_editor_guard.py` (the one file in the whole suite that
+tests exactly this) was not extended to a second editor. The I8 impact map
+does not mention F50 for the editor row at all — neither implemented, nor
+explicitly deferred in `docs/DECISIONS.md`.
+
+Fix: either load a generalised version of `editor.js`'s dirty/beforeunload/
+failed-state logic on the shared editor too (the blog-specific selectors would
+need generalising, or `shared.js` needs its own copy), or record an explicit
+ADR/DECISIONS.md waiver if the owner accepts the gap for this lower-stakes
+editor (a title + Markdown body, no image pipeline) — but it should be a
+decision made once, not a silent omission.
+
+`app/templates/pages/shared_editor.html:24-33,84-86`,
+`app/static/js/shared.js`, `app/static/js/editor.js:16-20`,
+`docs/SPEC.md:148` (F50), `e2e/test_editor_guard.py` (not mirrored).
+
+## Medium
+
+**M-1 — `share_token`, the bearer credential for the capability URL, reaches
+plaintext logs that ADR-042/ADR-043 never account for.** Uvicorn's default
+access log (no `--no-access-log` anywhere in `Dockerfile:47`,
+`docker-compose.yml:62`, `docker-compose.prod.yml:42`) prints the full request
+line — including the token — for every `GET /s/{share_token}`, straight to
+stdout and therefore `docker logs`/any log-shipping destination. The global
+500 handler also logs `request.url.path` verbatim
+(`app/main.py:240`) on any unhandled exception while serving that route. This
+is the first URL in the codebase that embeds a secret (blog slugs, `/me/*`
+paths, admin content keys are not secrets), so it's a new consequence neither
+ADR discusses. Not practically brute-forceable (that's not the concern here);
+the concern is a valid, unexpired token sitting in plaintext in a log stream
+or a rotated file on disk, readable by anyone with log access, independent of
+the entropy argument ADR-043 makes. Fix: redact the path after `/s/` in the
+500 handler and in the access-log formatter (or start uvicorn with
+`--no-access-log` plus a custom minimal formatter), or accept explicitly in an
+ADR note if the deployment's log destinations are trusted equally to the DB.
+
+**M-2 — The new admin-CRUD surface's actual novel UI (the editor) has no
+automated a11y-sweep coverage; only the trivial list page does.**
+`e2e/conftest.py`'s `admin_surfaces` fixture (the fixture `test_a11y.py` walks
+for focus/contrast/target-size) gained `"/me/shared"` — the list page, one
+input and one button — but not `/me/shared/{id}/edit`, the page with the
+actual new interactive surface (copy-link, regenerate-with-confirm,
+delete-with-confirm, autosave textarea, live preview pane). Compare to how the
+same fixture covers blog: it lists `f"/blog/{post.slug}/edit"` (the editor),
+not `/blog` itself. Independently re-run this session: focus-sweep-admin now
+shows `/me/shared` with 0 stops missing an indicator and target-size shows 0
+under 44 px for it — real, verified — but the editor page was never visited by
+the sweep, so those same guarantees are simply unproven for the room with the
+actual new buttons. Separately, `e2e/test_me.py::test_no_room_is_ever_indexed`
+(docstring: *"All three, because all three extend the same layout — asserted,
+not assumed"*) was not extended to a fourth room; manually confirmed
+`me_shared.html` does inherit `noindex, nofollow` via `me_base.html` — so the
+live behaviour is correct — but it is exactly the kind of thing this project's
+own convention says should be asserted rather than assumed, and now isn't for
+`/me/shared`. Fix: add `/me/shared/{id}/edit` to `admin_surfaces`, and add
+`/me/shared` to `test_no_room_is_ever_indexed`'s loop.
+
+`e2e/conftest.py:265`, `e2e/test_me.py:151-159`.
+
+**M-3 — `noindex` without `nofollow` on the public shared-article page means a
+compliant crawler that ever discovers the link (e.g. a friend re-shares it
+publicly) will still fetch and parse it, just not index it** — matches F69's
+letter exactly (`<meta name="robots" content="noindex">` unconditionally, no
+more) so this is not a spec violation, and `robots.txt` carries no
+`Disallow: /s/` either, by the same reasoning. Worth a conscious call, not a
+blocker: either accept it (the token is still required to reach the content,
+`noindex` alone satisfies F69) or add `nofollow`/a `Disallow: /s/` line as
+belt-and-braces. No fix required unless the owner wants the extra margin.
+
+## Low / polish
+
+- `app/i18n/ru/shared.json:45` — `shared.toast_saved` is defined but never
+  referenced anywhere in `app/routers/shared.py` or any template (autosave
+  correctly doesn't toast on every save, so this key is simply dead). Harmless,
+  but worth deleting rather than carrying forward.
+- `e2e/test_me.py:158` — the comment "One prefix rule covers the three, which
+  is why `seo.py` did not change" is now stale: there are four cabinet rooms
+  under the same `Disallow: /me` prefix, not three. The assertion itself is
+  still correct; only the comment's count is wrong.
+- No dependency changes, no drive-by edits outside the feature's own files —
+  `git diff b2318f0..HEAD -- app/routers/me.py app/services/markdown.py
+  app/routers/seo.py app/routers/search.py app/deps.py app/security.py` is
+  empty; the diff is surgical.
+
+## Security — `secure-review`
+
+Manual checklist (Semgrep not installed). Full detail folded into M-1 above;
+everything else came back clean:
+
+- **404 byte-identity**: missing and wrong tokens hit the identical
+  `if article is None: raise HTTPException(404, ...)` path
+  (`app/routers/shared.py:55-58`); `test_missing_and_wrong_token_are_byte_identical_404s`
+  diffs the normalised bodies.
+- **Token generation**: `secrets.token_urlsafe(32)` (256 bits), CSPRNG, in both
+  the model default and `regenerate_token` — matches the session-token pattern
+  already used elsewhere.
+- **Comparison timing**: the share-token lookup is a plain SQL equality (it's
+  the lookup key itself, there's no non-secret identifier to fetch by first,
+  unlike session-token verification). Given 256 bits of entropy and DB/network
+  jitter, not practically exploitable remotely; ADR-043's entropy argument
+  covers this even though it was written about rate-limiting, not comparison
+  timing. No action needed.
+- **XSS**: `render_markdown()` reused unchanged (raw HTML disabled at parse,
+  nh3 allow-list on output); `article.title` is never `|safe`, confirmed
+  autoescape is on (`fastapi.templating.Jinja2Templates`); only
+  `body_html` — the sanitiser's own output — is `|safe`. Covered by
+  `test_shared_article_body_is_sanitised`, `test_preview_sanitises_the_same_way_the_page_does`.
+- **CSRF**: enforced centrally in `_csrf_guard` (`app/main.py:118-130`); none
+  of `/me/shared/*` is in `CSRF_EXEMPT_PATHS`; `base.html`'s global
+  `hx-headers` injects the token into every htmx request from any page
+  rendered through `render()`, which every new template goes through.
+- **Authz**: `test_authz_sweep.py` is unmodified (`git diff` confirms) and its
+  structural walk covers `create`/`save`/`regenerate`/`delete`/`preview`
+  automatically since `id` was already in `PARAM_SAMPLES`; `shared_list`/
+  `shared_editor` use `_require_owner`/`CurrentAdmin` exactly like every other
+  cabinet room, preserving the 404-not-redirect discipline for a visitor.
+- **IDOR on `{id}`**: no model in the codebase carries an owner/admin FK
+  (`admin_id`/`owner_id`/`admin_user_id` all absent from `app/models/*.py`) —
+  single-admin architecture throughout; `{id}` scoping here is consistent with
+  `Post`/`Album`/`Project`, not a new gap.
+- **SSRF/injection**: no new outbound requests; `id` is FastAPI-typed `int`
+  (422 before the handler on anything non-numeric).
+- **Migration reversibility**: re-proved directly this session (see above),
+  not just re-read.
+
+## Gates, re-run in this session
+
+None piped; every command run directly by this reviewer.
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **394 passed**, exit 0 (twice — once before, once after the migration reversibility check) |
+| e2e | `uv run pytest e2e -q` | **113 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | **130 files**, exit 0 |
+| migration | `alembic downgrade -1` then `alembic upgrade head` | table dropped and recreated clean on the live dev DB |
+
+Matches every count `docs/STATUS.md` claims for I8's close.
+
+## Exit criteria
+
+All seven of `docs/iterations/I8-token-shared-articles.md`'s ticked exit
+criteria hold up under independent re-verification, with one caveat: the
+"admin-sweep page-list fixture ... gains `/me/shared` so focus/contrast/
+target-size QA reaches the new room" line is technically true but incomplete
+— see M-2. Nothing else in the exit-criteria list is affected.
+
+## Resolution — same day, same branch
+
+Written by the session that acted on this run, appended rather than editing the
+findings above, so what was found and what was done about it stay separable.
+
+| | Finding | Disposition |
+|---|---|---|
+| **H-1** | shared editor carries no F50 unsaved-text guard | **Fixed** — `editor.js` generalised to read its target ids from `data-editor-form`/`-body`/`-status` on whichever root loaded it, rather than the blog-only `post-form`/`post-body`/`.editor` root; `savesTheArticle`'s `hx-include` check now compares against `"#" + form.id` instead of a literal `#post-form`. The toolbar-only path (video-title autofetch) and the picker-only path (image drag/drop/paste) are now gated on `toolbar`/`picker` actually existing on the page, so an editor with neither — the shared editor — gets exactly F50's guard and none of blog's image/video machinery, matching ADR-042's "title and Markdown body only". `shared_editor.html`'s root carries the three new data attributes and now loads `editor.js`; its save button gained `data-role="save"` to match blog's shape exactly |
+| | *(found while proving the fix, not in the original findings)* | `setStatus()` also hardcoded `.editor-status__text` as the class of the span inside the status box — invisible in the blog editor (same class both places) but broke the shared editor's failed-state text, caught by the new e2e test failing red first. Both `_save_state.html` partials now carry a `data-status-text` marker instead of relying on their own differently-named BEM class, and `editor.js` reads that |
+| **M-1** | `share_token` reaches plaintext logs | **Fixed** — `app/main.py` gained `redact_share_token()` (`/s/` plus one path segment → `/s/<redacted>`) and `_RedactShareTokenFromAccessLog`, a `logging.Filter` registered on `uvicorn.access` inside `_configure_logging()` that rewrites `record.args[2]` — the path uvicorn's own `AccessFormatter` builds the request line from — before any formatter runs, so method/status/timing/the rest of the path are untouched. The unhandled-exception handler now logs `redact_share_token(request.url.path)` instead of the raw path. Five new unit tests exercise the function directly, the filter against a synthetic access-log record shaped like uvicorn's own (both a `/s/...` path and an ordinary one, proving it does not over-redact), and that registering the filter twice does not stack it |
+| **M-2** | no a11y-sweep coverage for the actual new interactive surface | **Fixed** — `admin_surfaces` (`e2e/conftest.py`) now creates a shared article through `AdminApi.create_shared_article` (new, mirrors `create_post`) and adds `/me/shared/{id}/edit` to the swept list the same way `/blog/{slug}/edit` stands for blog; `Trash` gained `shared_article()` and matching teardown. `e2e/test_me.py::test_no_room_is_ever_indexed`'s loop now includes `/me/shared`. Re-run this session: focus-sweep-admin 258 stops / 0 missing an indicator (207/0 before the new editor page was swept), contrast-admin 177 samples / 0 failures in both themes (141/0 before), target-size-admin 0 under WCAG 2.5.8 — a real increase in coverage from the editor page (more toolbar-free but still interactive controls: copy-link, regenerate-with-confirm, delete-with-confirm, autosave textarea, live preview), zero new findings |
+| **M-3** | `noindex` without `nofollow`/`Disallow: /s/` | **Carried, as the finding itself recommended.** Matches F69's letter exactly — `<meta name="robots" content="noindex">` unconditionally is the whole requirement — and the token is still required to reach the content either way, so `nofollow`/a `Disallow: /s/` line would be belt-and-braces nobody asked for this round. No code change; not a new decision to record in `docs/DECISIONS.md` since it changes nothing ADR-042/ADR-043 already say |
+| **L-1** | dead `shared.toast_saved` key | **Fixed** — deleted from `app/i18n/ru/shared.json` |
+| **L-2** | stale "the three" comment | **Fixed** — `e2e/test_me.py::test_no_room_is_ever_indexed`'s docstring and comment now say "four". `e2e/conftest.py`'s `admin_surfaces` docstring carried the identical stale "three" (not separately named in the findings above, fixed alongside it since that docstring was already being edited for M-2) |
+
+## Gates, re-run after the fix
+
+| Suite | Command | Before fix (this run) | After fix (same session) |
+|-------|---------|------------------------|---------------------------|
+| unit/API | `docker compose run --rm tests` | **394 passed**, exit 0 | **399 passed**, exit 0 |
+| e2e | `uv run pytest e2e -q` | **113 passed**, exit 0 | **115 passed**, exit 0 |
+| lint | `uv run ruff check .` | clean | clean |
+| format | `uv run ruff format --check .` | **130 files**, exit 0 | **130 files**, exit 0 |
+
+`e2e/test_editor_guard.py`'s five pre-existing blog cases pass unchanged (verified
+by running the file alone, 7 passed: the five blog cases plus the two new shared
+ones) — the generalisation widened how `editor.js` finds its targets without
+touching blog's own behaviour. Sweeps re-run fresh after the fix, folded into
+M-2's row above; nothing outside the new editor page's own numbers moved.
 
 Scope is the I7 delta only: `ce8cc84..HEAD` (`e4f01fc`) on
 `iteration/I7-direct-video-embed` — one implementation commit on top of two

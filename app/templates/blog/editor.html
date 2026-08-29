@@ -13,6 +13,9 @@
   {% set limits = upload_limits() %}
   <div
     class="editor"
+    data-editor-form="post-form"
+    data-editor-body="post-body"
+    data-editor-status="save-state"
     data-max-bytes="{{ limits.max_bytes }}"
     data-accept="{{ limits.types }}"
     data-msg-uploading="{{ t('blog.image_uploading') }}"

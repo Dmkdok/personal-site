@@ -1,6 +1,7 @@
 """Application factory: middleware, routers, startup hooks."""
 
 import logging
+import re
 import secrets
 from contextlib import asynccontextmanager
 from logging.handlers import RotatingFileHandler
@@ -32,6 +33,38 @@ LOG_MAX_BYTES = 5 * 1024 * 1024
 LOG_BACKUP_COUNT = 3
 
 
+#: `/s/{share_token}` is the one URL in the app that embeds a secret
+#: (ADR-042, ADR-043) — the bearer credential is the path itself, not
+#: something checked against it. Everything after "/s/" is the token.
+_SHARE_TOKEN_PATH = re.compile(r"(/s/)[^/?]+")
+
+
+def redact_share_token(path: str) -> str:
+    """Replace a shared-article token in `path` with a fixed placeholder.
+
+    Used everywhere a request path reaches a log line — the access log and
+    the unhandled-exception handler — so a valid `share_token` never sits in
+    plaintext in `docker logs` or a rotated file on disk. Keeps everything
+    else a log line exists for: method, status, timing, the rest of the path.
+    """
+    return _SHARE_TOKEN_PATH.sub(r"\1<redacted>", path)
+
+
+class _RedactShareTokenFromAccessLog(logging.Filter):
+    """Uvicorn's access log builds its line from `record.args`, a 5-tuple of
+    `(client_addr, method, full_path, http_version, status_code)`
+    (`uvicorn.logging.AccessFormatter.formatMessage`). Rewriting `full_path`
+    here — a `logging.Filter` runs before any formatter — keeps a
+    `GET /s/{share_token}` request in the log without the token itself.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if isinstance(args, tuple) and len(args) == 5:
+            record.args = (*args[:2], redact_share_token(str(args[2])), *args[3:])
+        return True
+
+
 def _configure_logging() -> None:
     """Console always; a file beside it when LOG_DIR is set.
 
@@ -45,6 +78,13 @@ def _configure_logging() -> None:
     was missing.
     """
     logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+
+    # Idempotent: this runs on every import of this module (once per uvicorn
+    # worker, and again each time a test calls it directly), and a logger's
+    # filter list is not reset in between.
+    access_logger = logging.getLogger("uvicorn.access")
+    if not any(isinstance(f, _RedactShareTokenFromAccessLog) for f in access_logger.filters):
+        access_logger.addFilter(_RedactShareTokenFromAccessLog())
 
     if not settings.log_dir:
         return
@@ -237,7 +277,7 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):
-        logger.exception("unhandled error on %s", request.url.path)
+        logger.exception("unhandled error on %s", redact_share_token(request.url.path))
         nonce = getattr(request.state, "csp_nonce", "")
         if request.headers.get("HX-Request") == "true":
             response: Response = JSONResponse(

@@ -14,7 +14,12 @@
 {% endblock %}
 
 {% block content %}
-  <div class="shared-editor">
+  <div
+    class="shared-editor"
+    data-editor-form="shared-form"
+    data-editor-body="shared-body"
+    data-editor-status="shared-save-state"
+  >
     <header class="shared-editor__head">
       <p class="label"><a href="/me/shared">{{ t("shared.editor_back") }}</a></p>
       <h1 class="shared-editor__heading">{{ t("shared.editor_title") }}</h1>
@@ -92,6 +97,7 @@
             <button
               class="button"
               type="button"
+              data-role="save"
               hx-post="/me/shared/{{ article.id }}/save"
               hx-include="#shared-form"
               hx-target="#shared-save-state"
@@ -116,5 +122,9 @@
 {% endblock %}
 
 {% block scripts %}
+  {# F50's unsaved-text guard (dirty tracking, beforeunload, failed-save
+     state) — the same script the blog editor loads, reading this page's own
+     ids off the root's data-editor-* attributes. #}
+  <script src="{{ static_url('js/editor.js') }}" defer></script>
   <script src="{{ static_url('js/shared.js') }}" defer></script>
 {% endblock %}

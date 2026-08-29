@@ -13,13 +13,19 @@
 (function () {
   "use strict";
 
-  var root = document.querySelector(".editor");
+  // Both editors that carry F50's guarantee — the blog article and the
+  // shared-article — point this script at their own ids through data
+  // attributes on the root, rather than this file hardcoding one editor's
+  // ids: data-editor-form/-body/-status name the form, the textarea and the
+  // save-state region to watch.
+  var root = document.querySelector("[data-editor-form]");
   if (!root) return;
 
-  var form = document.getElementById("post-form");
-  var area = document.getElementById("post-body");
+  var form = document.getElementById(root.getAttribute("data-editor-form"));
+  var area = document.getElementById(root.getAttribute("data-editor-body"));
   if (!form || !area) return;
 
+  var statusId = root.getAttribute("data-editor-status");
   var toolbar = root.querySelector(".md-toolbar");
   var picker = document.getElementById("blog-image-input");
 
@@ -36,9 +42,9 @@
   var failed = false;
 
   function setStatus(name) {
-    var box = document.getElementById("save-state");
+    var box = document.getElementById(statusId);
     if (!box) return;
-    var text = box.querySelector(".editor-status__text");
+    var text = box.querySelector("[data-status-text]");
     if (text) text.textContent = box.getAttribute("data-" + name) || "";
   }
 
@@ -53,7 +59,7 @@
     return (
       elt === form ||
       elt.getAttribute("data-role") === "save" ||
-      elt.getAttribute("hx-include") === "#post-form"
+      elt.getAttribute("hx-include") === "#" + form.id
     );
   }
 
@@ -377,10 +383,15 @@
       .catch(function () {});
   }
 
-  area.addEventListener("paste", function () {
-    // After the browser's own paste has landed in the value, not before.
-    setTimeout(maybeFillVideoCaption, 0);
-  });
+  // Video-title autofetch belongs to the toolbar's video button (F66) — an
+  // editor with no toolbar (the shared-article editor) never puts this
+  // skeleton in front of an owner, so there is nothing here to recognise.
+  if (toolbar) {
+    area.addEventListener("paste", function () {
+      // After the browser's own paste has landed in the value, not before.
+      setTimeout(maybeFillVideoCaption, 0);
+    });
+  }
 
   // ==========================================================================
   // Images: the toolbar button, a drop on the textarea, or a paste.
@@ -505,44 +516,47 @@
       });
   }
 
+  // Image upload is blog-only (F51) — no picker means no drop zone and no
+  // image paste either, which is exactly the shared-article editor's own
+  // state (ADR-042: title and Markdown body only, no image pipeline).
   if (picker) {
     picker.addEventListener("change", function () {
       upload(picker.files);
       picker.value = "";
     });
-  }
 
-  function carriesFiles(event) {
-    var transfer = event.dataTransfer;
-    if (!transfer) return false;
-    return Array.prototype.indexOf.call(transfer.types || [], "Files") !== -1;
-  }
+    function carriesFiles(event) {
+      var transfer = event.dataTransfer;
+      if (!transfer) return false;
+      return Array.prototype.indexOf.call(transfer.types || [], "Files") !== -1;
+    }
 
-  area.addEventListener("dragover", function (event) {
-    if (!carriesFiles(event)) return;
-    event.preventDefault();
-    area.classList.add("is-dropping");
-  });
-
-  area.addEventListener("dragleave", function () {
-    area.classList.remove("is-dropping");
-  });
-
-  area.addEventListener("drop", function (event) {
-    if (!carriesFiles(event)) return;
-    event.preventDefault();
-    area.classList.remove("is-dropping");
-    upload(event.dataTransfer.files);
-  });
-
-  area.addEventListener("paste", function (event) {
-    var files = event.clipboardData && event.clipboardData.files;
-    if (!files || !files.length) return;
-    var images = Array.prototype.filter.call(files, function (file) {
-      return file.type && file.type.indexOf("image/") === 0;
+    area.addEventListener("dragover", function (event) {
+      if (!carriesFiles(event)) return;
+      event.preventDefault();
+      area.classList.add("is-dropping");
     });
-    if (!images.length) return;
-    event.preventDefault();
-    upload(images);
-  });
+
+    area.addEventListener("dragleave", function () {
+      area.classList.remove("is-dropping");
+    });
+
+    area.addEventListener("drop", function (event) {
+      if (!carriesFiles(event)) return;
+      event.preventDefault();
+      area.classList.remove("is-dropping");
+      upload(event.dataTransfer.files);
+    });
+
+    area.addEventListener("paste", function (event) {
+      var files = event.clipboardData && event.clipboardData.files;
+      if (!files || !files.length) return;
+      var images = Array.prototype.filter.call(files, function (file) {
+        return file.type && file.type.indexOf("image/") === 0;
+      });
+      if (!images.length) return;
+      event.preventDefault();
+      upload(images);
+    });
+  }
 })();

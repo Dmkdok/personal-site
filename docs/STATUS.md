@@ -42,7 +42,11 @@ iteration changes.
 - [x] 4 implementation — T146, then T147, one commit each
 - [x] 5 verification green — unit/API **394** exit 0 (374 at the T146 baseline), e2e **113** exit 0
       (112 at Phase 0, +1 for the new shared-article flow test), lint clean, format clean **130 files**
-- [ ] 6 review clean or waived
+- [x] 6 review clean or waived — `docs/REVIEW.md` run 10, PASS with findings; one High and two
+      Mediums fixed same session (F50 guard generalised onto the shared editor, `share_token`
+      redacted from logs, a11y sweep extended to the editor page), one Medium carried (noindex
+      without nofollow — matches F69's letter), two Lows fixed. unit/API **399** exit 0 (394 before
+      the fix), e2e **115** exit 0 (113 before), lint clean, format clean **130 files**
 - [ ] 7 closed (STATUS rewritten, milestone ticked)
 - [ ] 8 deploy (optional, only if a real deploy target exists)
 ```

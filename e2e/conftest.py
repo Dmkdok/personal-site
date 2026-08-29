@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, expect
 
-from e2e.helpers import AdminApi, Album, Post, photo_bytes, ru, token
+from e2e.helpers import AdminApi, Album, Post, SharedArticle, photo_bytes, ru, token
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_BASE_URL = "http://localhost:8000"
@@ -139,6 +139,7 @@ class Trash:
         self.albums: list[int] = []
         self.posts: list[int] = []
         self.projects: list[int] = []
+        self.shared_articles: list[int] = []
 
     def album(self, album: Album) -> Album:
         self.albums.append(album.id)
@@ -160,6 +161,10 @@ class Trash:
         self.projects.append(project_id)
         return project_id
 
+    def shared_article(self, article: SharedArticle) -> SharedArticle:
+        self.shared_articles.append(article.id)
+        return article
+
     def empty(self) -> None:
         for album_id in self.albums:
             self.api.delete_album(album_id)
@@ -167,9 +172,12 @@ class Trash:
             self.api.delete_post(post_id)
         for project_id in self.projects:
             self.api.delete_project(project_id)
+        for article_id in self.shared_articles:
+            self.api.delete_shared_article(article_id)
         self.albums.clear()
         self.posts.clear()
         self.projects.clear()
+        self.shared_articles.clear()
 
 
 @pytest.fixture
@@ -250,13 +258,18 @@ def admin_surfaces(
     anonymous sweeps; what makes these paths *admin* is the session they are
     opened in, not the state of the content.
 
-    All three rooms of the cabinet join the list rather than replacing anything:
+    All four rooms of the cabinet join the list rather than replacing anything:
     they exist only for the owner, so no anonymous sweep can ever cover them
     (ADR-029, ADR-036). The draft post created here is one of the things «События»
     lists, so that room is never swept empty; «Сводка» always has figures, and
-    «Медиа» always has its «Проверить».
+    «Медиа» always has its «Проверить». «Статьи по ссылке» is swept at its own
+    editor, not the list — the list is one input and one button; the editor is
+    where the actual new interactive surface (copy-link, regenerate, delete,
+    autosave textarea, live preview) lives, the same way `/blog/{slug}/edit`
+    stands in for blog rather than `/blog` itself.
     """
     post = trash.post(admin_api.create_post(f"E2E админ-свип {run_token}"))
+    article = trash.shared_article(admin_api.create_shared_article(f"E2E админ-свип {run_token}"))
     return [
         "/",
         "/dev",
@@ -266,6 +279,7 @@ def admin_surfaces(
         "/me/stats",
         "/me/media",
         "/me/shared",
+        f"/me/shared/{article.id}/edit",
     ]
 
 

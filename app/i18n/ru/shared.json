@@ -42,7 +42,6 @@
     "delete_confirm": "Удалить статью? Вернуть её будет нельзя.",
 
     "toast_created": "Статья создана",
-    "toast_saved": "Сохранено",
     "toast_deleted": "Статья удалена",
     "toast_regenerated": "Ссылка обновлена"
   }

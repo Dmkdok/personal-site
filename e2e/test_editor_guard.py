@@ -16,7 +16,7 @@ from collections.abc import Iterator
 import pytest
 from playwright.sync_api import Dialog, Page, expect
 
-from e2e.helpers import AdminApi, Post, ru
+from e2e.helpers import AdminApi, Post, SharedArticle, ru
 
 pytestmark = pytest.mark.a11y
 
@@ -24,6 +24,11 @@ pytestmark = pytest.mark.a11y
 @pytest.fixture
 def draft(admin_api: AdminApi, trash, run_token: str) -> Post:
     return trash.post(admin_api.create_post(f"E2E защита {run_token}"))
+
+
+@pytest.fixture
+def shared_draft(admin_api: AdminApi, trash, run_token: str) -> SharedArticle:
+    return trash.shared_article(admin_api.create_shared_article(f"E2E защита {run_token}"))
 
 
 @pytest.fixture
@@ -144,3 +149,42 @@ def test_a_failed_save_leaves_a_message_that_can_be_read_and_dismissed(
 
     error.get_by_role("button", name=ru("errors.dismiss")).click()
     expect(error).to_have_count(0)
+
+
+# --------------------------------------------------------------------------
+# The shared-article editor (F70) — the same F50 guarantee, on the structural
+# sibling of the blog editor. `editor.js` is one script now, generalised to
+# read its target ids off `data-editor-*` on whichever root loaded it
+# (REVIEW.md run 10, H-1); these two mirror the blog cases above closely
+# enough that the fixtures and assertions can be read side by side.
+# --------------------------------------------------------------------------
+def test_leaving_a_shared_editor_with_unsaved_text_asks_first(
+    admin_page: Page, shared_draft: SharedArticle, dialogs: list[str]
+) -> None:
+    admin_page.goto(f"/me/shared/{shared_draft.id}/edit")
+    admin_page.get_by_label(ru("shared.body_label")).fill("Этот текст ещё не сохранён.")
+
+    admin_page.goto("/me/shared")
+
+    assert dialogs == ["beforeunload"], dialogs
+
+
+def test_a_failed_shared_save_stays_on_screen(
+    admin_page: Page, shared_draft: SharedArticle
+) -> None:
+    """Mirrors `test_a_failed_save_stays_on_screen`: the failed state outlives
+    the toast and outranks «Изменения не сохранены»."""
+    admin_page.goto(f"/me/shared/{shared_draft.id}/edit")
+    admin_page.route(f"**/me/shared/{shared_draft.id}/save", lambda route: route.abort())
+
+    state = admin_page.locator("#shared-save-state")
+    admin_page.get_by_label(ru("shared.body_label")).fill("Сохранение сейчас не пройдёт.")
+    admin_page.get_by_role("button", name=ru("shared.save"), exact=True).click()
+    expect(state).to_contain_text(ru("shared.save_failed"))
+
+    # Four seconds is how long the toast used to last; the state must outlive it.
+    admin_page.wait_for_timeout(4500)
+    expect(state).to_contain_text(ru("shared.save_failed"))
+
+    admin_page.get_by_label(ru("shared.body_label")).fill("И ещё немного текста.")
+    expect(state).to_contain_text(ru("shared.save_failed"))

@@ -1,6 +1,6 @@
 {
   "theme": "dark",
-  "samples": 141,
+  "samples": 177,
   "failures": [],
   "unmeasurable": [],
   "worst": [
@@ -15,7 +15,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-ybtuofnea/edit",
+      "page": "/blog/e2e-admin-svip-nspywklzk/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -31,7 +31,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-ybtuofnea/edit",
+      "page": "/blog/e2e-admin-svip-nspywklzk/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -47,7 +47,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-ybtuofnea/edit",
+      "page": "/blog/e2e-admin-svip-nspywklzk/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -63,7 +63,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-ybtuofnea/edit",
+      "page": "/blog/e2e-admin-svip-nspywklzk/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -79,7 +79,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-ybtuofnea/edit",
+      "page": "/blog/e2e-admin-svip-nspywklzk/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -95,7 +95,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-ybtuofnea/edit",
+      "page": "/blog/e2e-admin-svip-nspywklzk/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -111,7 +111,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-ybtuofnea/edit",
+      "page": "/blog/e2e-admin-svip-nspywklzk/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -127,7 +127,39 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/blog/e2e-admin-svip-ybtuofnea/edit",
+      "page": "/blog/e2e-admin-svip-nspywklzk/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "p.shared-editor__placeholder",
+      "text": "Здесь появится статья такой, какой её увидит адресат ссылки.",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/me/shared/18/edit",
+      "theme": "dark",
+      "ratio": 4.76,
+      "required": 4.5
+    },
+    {
+      "selector": "p#shared-link-value",
+      "text": "http://localhost:8000/s/Gj4C-DUYRGFDBGQrU-T_rm_3dSndAA7KRe43",
+      "color": "rgb(138, 147, 158)",
+      "backdrop": [
+        "rgb(36, 40, 45)"
+      ],
+      "background": "rgb(36, 40, 45)",
+      "fontSize": 14.24,
+      "fontWeight": 400,
+      "onImage": false,
+      "page": "/me/shared/18/edit",
       "theme": "dark",
       "ratio": 4.76,
       "required": 4.5
@@ -144,7 +176,7 @@
       "fontSize": 14.24,
       "fontWeight": 400,
       "onImage": false,
-      "page": "/photo/e2e-galereia-ybtuofnea",
+      "page": "/photo/e2e-galereia-nspywklzk",
       "theme": "dark",
       "ratio": 4.99,
       "required": 4.5
@@ -159,38 +191,6 @@
       "background": "rgb(28, 31, 35)",
       "fontSize": 14.24,
       "fontWeight": 500,
-      "onImage": false,
-      "page": "/",
-      "theme": "dark",
-      "ratio": 5.31,
-      "required": 4.5
-    },
-    {
-      "selector": "span.hero__line",
-      "text": "Рассказываю, как это было.",
-      "color": "rgb(138, 147, 158)",
-      "backdrop": [
-        "rgb(28, 31, 35)"
-      ],
-      "background": "rgb(28, 31, 35)",
-      "fontSize": 85.12,
-      "fontWeight": 800,
-      "onImage": false,
-      "page": "/",
-      "theme": "dark",
-      "ratio": 5.31,
-      "required": 3.0
-    },
-    {
-      "selector": "button.site-links__edit.owner-only",
-      "text": "Изменить ссылки",
-      "color": "rgb(138, 147, 158)",
-      "backdrop": [
-        "rgb(28, 31, 35)"
-      ],
-      "background": "rgb(28, 31, 35)",
-      "fontSize": 14.24,
-      "fontWeight": 400,
       "onImage": false,
       "page": "/",
       "theme": "dark",
