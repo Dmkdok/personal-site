@@ -1,6 +1,6 @@
 # Status
 
-phase: iteration I8 implementation (I7 merged and closed; M16 still open, owner's appliance work only)
+phase: iteration I8 closed 2026-08-29 (M20 done; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
@@ -47,8 +47,9 @@ iteration changes.
       redacted from logs, a11y sweep extended to the editor page), one Medium carried (noindex
       without nofollow — matches F69's letter), two Lows fixed. unit/API **399** exit 0 (394 before
       the fix), e2e **115** exit 0 (113 before), lint clean, format clean **130 files**
-- [ ] 7 closed (STATUS rewritten, milestone ticked)
-- [ ] 8 deploy (optional, only if a real deploy target exists)
+- [x] 7 closed 2026-08-29 — all seven exit criteria met; see Resume here
+- [ ] 8 deploy (optional, only if a real deploy target exists) — not this session; merging is the
+      owner's call, as always
 ```
 
 Topic: private articles reachable by a secret token link (capability URL), separate from the blog —
@@ -184,6 +185,81 @@ Intake, impact map and exit criteria: `docs/iterations/I5-authoring.md`. Tasks: 
 **T135–T139**. T135 is the shared-primitive change and lands first, alone.
 
 ## Resume here
+
+**I8 is closed, 2026-08-29, in the same session that opened it.** Branch
+`iteration/I8-token-shared-articles`, cut from `main` at `b2318f0`. Both tasks in M20 are
+implemented, tested and reviewed; all seven exit criteria in
+`docs/iterations/I8-token-shared-articles.md` are met. **Not merged to `main` yet** — merging is the
+owner's call, as always.
+
+**T146/T147 in one line each.** **T146** gave the site a `shared_article` table, separate from
+`post` — same base model pattern, its own Alembic revision, migration proved up and down on the dev
+database rather than a fixture. **T147** is a friend opening a shared article by its link and the
+owner managing those articles from the cabinet: `GET /s/{share_token}` is public and
+admin-unaware by construction — a missing token and a wrong token answer byte-identical 404s, so
+neither leaks which case it was; `/me/shared` is a fourth cabinet room gated by `_require_owner`
+exactly like the other three; every mutating route (create, save, delete, regenerate, preview) is
+`CurrentAdmin`; the article is absent from `/sitemap.xml`, `/search` and every public nav element by
+construction, and carries `noindex` unconditionally (ADR-042 records the token-not-multi-user
+decision and the read-only guarantee; ADR-043 records why the public route carries no rate limiter —
+`secrets.token_urlsafe(32)` is 256 bits, brute force is infeasible regardless of a limiter).
+
+| | | State |
+|---|---|---|
+| **T146** | a `shared_article` table exists, separate from `post` | **done**, `1e7eb47` |
+| **T147** | a friend opens a shared article by its link | **done**, `82deab8` |
+| | review run 10's High: the shared editor carried none of F50's unsaved-text guard | **fixed**, `a6b4ffd` |
+
+**Gates on I8's closing tree, none piped, independently re-run this session (not taken on the
+record's word):** unit/API **399** exit 0 (371 at the baseline, 394 before the review fix), e2e
+**115** exit 0 (112 at the baseline, 113 before the review fix), `ruff check` clean, `ruff format
+--check` **130 files** exit 0. Matches the counts `docs/REVIEW.md` run 10 and the review-fix commit
+both claim — nothing drifted between what was recorded and what the tree actually does.
+
+**Review: `docs/REVIEW.md` run 10, PASS with findings, all resolved same day, same branch** — run by
+an independent reviewer agent, no write access to application code, with `secure-review` mandatory
+per the impact map (the first bearer-token capability-URL route in the codebase, and the first new
+admin-CRUD surface since I6). Migration reversibility was re-proved independently, not just re-read:
+`alembic downgrade -1` against the live dev database, table confirmed gone, `alembic upgrade head`
+restored it, full suite re-run green. One High fixed (see table above), two Mediums fixed
+(`share_token` redacted out of the uvicorn access log and the global 500 handler; the a11y sweep
+extended from the trivial list page to the actual new interactive surface, `/me/shared/{id}/edit`),
+one Medium carried deliberately (`noindex` without `nofollow`/`Disallow: /s/` — matches F69's letter
+exactly, no code change), two Lows fixed (a dead i18n key, a stale "three cabinet rooms" comment in
+two files). No Critical or High security finding — `secure-review` probed 404 byte-identity, token
+generation and comparison timing, XSS, CSRF, authz, IDOR and SSRF, all closed by construction.
+
+**What actually landed is in `docs/iterations/I8-token-shared-articles.md`** — its impact map and
+exit criteria, all ticked.
+
+**Two things to expect if you carry this forward.**
+
+1. **A page's own comment claiming it mirrors a sibling's behaviour is not proof the behaviour is
+   actually wired.** `shared_editor.html` said, in its own comment, "the same idea as the blog
+   editor" and used the identical `hx-trigger` pattern — but the script that actually implements
+   F50's unsaved-text guard, `editor.js`, was hardcoded to the blog editor's own DOM ids and was
+   never loaded on the shared page at all. Every test that ran green for this iteration was silent
+   about it because none of them typed into the body textarea; the one file in the suite that tests
+   exactly this path, `e2e/test_editor_guard.py`, was never extended to a second editor. **When a new
+   page's markup or comments claim to model an existing one, check that the behaviour-carrying script
+   is actually loaded on it** — a matching pattern in the template is not the same claim as a matching
+   script tag.
+2. **A URL that embeds a secret is a new kind of thing to this codebase's logging, and nothing forces
+   a re-check of assumptions that held before it existed.** Every prior path in this application —
+   blog slugs, `/me/*`, admin content keys — was safe to log verbatim, so uvicorn's default access log
+   and the global 500 handler both did, unexamined. `/s/{share_token}` is the first path segment in
+   the app that is itself a bearer credential, and nothing about ADR-042 or ADR-043 (both about the
+   token's entropy and read-only scope) says anything about where the token ends up in a log stream.
+   **A new URL shape is worth asking "does this path itself carry something secret" about, independent
+   of whether the route's authorisation is correct** — the two questions have different answers here,
+   and only one of them was asked before review.
+
+**Merging is the owner's call** and, since T127, a push to `main` runs the suite and the lint gate
+before it builds anything.
+
+Everything below this line is I7's record and is still true.
+
+---
 
 **I7 is closed, 2026-08-26, in the same session that opened it. Merged into `main` 2026-08-28** at
 the start of the I8 baseline (fast-forward, no conflicts; not pushed or deployed by that merge alone
