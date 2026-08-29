@@ -1,0 +1,42 @@
+{# «Ссылки» — the owner's shared articles: create, open the editor, copy the
+   link, delete (F70). Modelled on me_media.html: a room of me_base.html with
+   its own list above the shared empty state. Unlike the other three rooms,
+   this one authors something — there is nowhere else a shared article could
+   be created from. #}
+{% extends "pages/me_base.html" %}
+
+{% block room %}
+  <form class="shared-new" id="shared-new" hx-post="/me/shared">
+    <div class="field">
+      <label class="field__label" for="shared-new-title">{{ t("shared.new_title_label") }}</label>
+      <input
+        class="field__input"
+        id="shared-new-title"
+        name="title"
+        type="text"
+        maxlength="250"
+        placeholder="{{ t('shared.new_title_placeholder') }}"
+      />
+    </div>
+    <button class="button button--primary" type="submit">{{ t("shared.new_submit") }}</button>
+  </form>
+
+  {% if articles %}
+    <section class="cabinet__group">
+      <h2 class="label cabinet__label">
+        {{ t("me.group", label=t("shared.list_label"), count=articles|length) }}
+      </h2>
+      <ul class="cabinet__list" role="list">
+        {% for article in articles %}
+          <li class="cabinet__item">
+            <a class="cabinet__link" href="/me/shared/{{ article.id }}/edit">{{ article.title }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% else %}
+    {% with title = t("shared.empty_title"), note = t("shared.empty_note") %}
+      {% include "partials/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
+{% endblock %}

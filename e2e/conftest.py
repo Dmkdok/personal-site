@@ -265,6 +265,7 @@ def admin_surfaces(
         "/me",
         "/me/stats",
         "/me/media",
+        "/me/shared",
     ]
 
 

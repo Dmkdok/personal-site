@@ -13,6 +13,8 @@ a draft article gets: a redirect to `/login` would confirm the page is there.
 
 from __future__ import annotations
 
+from urllib.parse import urlsplit
+
 from playwright.sync_api import Page, expect
 
 from e2e.conftest import Trash, wait_for_ready
@@ -20,7 +22,7 @@ from e2e.helpers import AdminApi, open_owner_menu, photo_bytes, ru
 
 
 def test_no_room_exists_for_a_visitor(page: Page) -> None:
-    for address in ("/me", "/me/stats", "/me/media", "/me/media/orphans"):
+    for address in ("/me", "/me/stats", "/me/media", "/me/media/orphans", "/me/shared"):
         assert page.request.get(address).status == 404, address
 
     page.goto("/")
@@ -78,6 +80,7 @@ def test_every_room_is_an_address_of_its_own(admin_page: Page) -> None:
     admin_page.goto("/me")
 
     for label, path in (
+        (ru("me.room_shared"), "/me/shared"),
         (ru("me.room_stats"), "/me/stats"),
         (ru("me.room_media"), "/me/media"),
         (ru("me.room_events"), "/me"),
@@ -154,3 +157,45 @@ def test_no_room_is_ever_indexed(admin_page: Page) -> None:
 
     # One prefix rule covers the three, which is why `seo.py` did not change.
     assert "Disallow: /me" in admin_page.request.get("/robots.txt").text()
+
+
+def test_a_shared_articles_link_survives_only_until_it_is_reissued(
+    admin_page: Page, page: Page, run_token: str
+) -> None:
+    """The whole owner flow: create, copy, open as a friend, then reissue.
+
+    `page` — signed out — stands in for the friend the link is actually for
+    (F67, F71); `admin_page` is the owner working from the cabinet (F70).
+    """
+    admin_page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+    admin_page.on("dialog", lambda dialog: dialog.accept())
+
+    title = f"E2E общая статья {run_token}"
+    admin_page.goto("/me/shared")
+    admin_page.get_by_label(ru("shared.new_title_label"), exact=True).fill(title)
+    admin_page.get_by_role("button", name=ru("shared.new_submit"), exact=True).click()
+    admin_page.wait_for_url("**/me/shared/*/edit")
+
+    admin_page.get_by_role("button", name=ru("shared.copy_link"), exact=True).click()
+    old_path = urlsplit(admin_page.evaluate("() => navigator.clipboard.readText()")).path
+    assert old_path.startswith("/s/")
+
+    # The friend's own, signed-out browser opens the same link (F67).
+    assert page.request.get(old_path).status == 200
+
+    admin_page.get_by_role("button", name=ru("shared.regenerate"), exact=True).click()
+    copy_button = admin_page.get_by_role("button", name=ru("shared.copy_link"), exact=True)
+    expect(copy_button).to_be_visible()
+
+    copy_button.click()
+    new_path = urlsplit(admin_page.evaluate("() => navigator.clipboard.readText()")).path
+    assert new_path != old_path
+
+    # The old address is gone the moment the new one exists (F71); the new one
+    # works right away.
+    assert page.request.get(old_path).status == 404
+    assert page.request.get(new_path).status == 200
+
+    # Keep the development database as tidy as every other test leaves it.
+    admin_page.get_by_role("button", name=ru("shared.delete"), exact=True).click()
+    admin_page.wait_for_url("**/me/shared")

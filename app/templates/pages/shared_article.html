@@ -1,0 +1,29 @@
+{# The friend's view of a shared article (F67). Modelled on blog/post.html,
+   minus the draft banner, the blog nav and every admin affordance: this page
+   renders identically no matter who is signed in, because the token — not
+   the session — is what let the request in. #}
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ t("shared.meta") }}{% endblock %}
+{% block og_type %}article{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/shared.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('css/prose.css') }}" />
+  {# Unconditional (F69): a capability URL that ends up in a search index or a
+     crawler's sitemap stops being secret the moment it is indexed. #}
+  <meta name="robots" content="noindex" />
+{% endblock %}
+
+{% block content %}
+  <article class="container container--prose shared-article">
+    <header class="shared-article__head">
+      <h1 class="shared-article__title">{{ article.title }}</h1>
+    </header>
+
+    {# Sanitised at write time by app.services.markdown — the same call the
+       editor's preview goes through, so the two cannot diverge (F9, F31). #}
+    <div class="prose">{{ article.body_html|safe }}</div>
+  </article>
+{% endblock %}

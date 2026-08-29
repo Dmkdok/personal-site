@@ -17,7 +17,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app import background
 from app.config import settings
 from app.db import SessionLocal, engine
-from app.routers import auth, blog, me, pages, photos, projects, search, seo
+from app.routers import auth, blog, me, pages, photos, projects, search, seo, shared
 from app.security import CSRF_EXEMPT_PATHS, CSRF_HEADER, SAFE_METHODS, csrf_ok, ensure_admin_user
 from app.templating import templates, translate
 
@@ -213,6 +213,7 @@ def create_app() -> FastAPI:
     app.include_router(blog.router)
     app.include_router(search.router)
     app.include_router(me.router)
+    app.include_router(shared.router)
     app.include_router(seo.router)
 
     @app.exception_handler(StarletteHTTPException)

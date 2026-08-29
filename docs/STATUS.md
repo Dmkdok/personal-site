@@ -39,8 +39,9 @@ iteration changes.
 - [x] 3 docs amended — SPEC F67–F71 + `shared_article` row + two user flows, ADR-042 + ADR-043,
       TASKS M20 (T146, T147)
 - [x] GATE approved by the owner — «утверждаю», 2026-08-29
-- [ ] 4 implementation — T146 next, alone, serially; T147 depends on it
-- [ ] 5 verification green, baseline suites still green
+- [x] 4 implementation — T146, then T147, one commit each
+- [x] 5 verification green — unit/API **394** exit 0 (374 at the T146 baseline), e2e **113** exit 0
+      (112 at Phase 0, +1 for the new shared-article flow test), lint clean, format clean **130 files**
 - [ ] 6 review clean or waived
 - [ ] 7 closed (STATUS rewritten, milestone ticked)
 - [ ] 8 deploy (optional, only if a real deploy target exists)
@@ -52,6 +53,21 @@ upstream of this session: token grants read-only; editing only via the existing 
 (SPEC F15–F18); multi-user access control rejected as overbuilt for this scale (ADR-042). No rate
 limiter on the token route — entropy is already sufficient (ADR-043). Full intake, impact map and
 exit criteria: `docs/iterations/I8-token-shared-articles.md`.
+
+**T147 implemented and verified green this session.** New `app/routers/shared.py`: `GET
+/s/{share_token}` is public and admin-unaware by construction (byte-identical 404 for a missing or a
+wrong token, normalised only for the per-request CSP nonce and the requested address itself echoed
+back in the canonical link — neither reveals which case it was); `/me/shared` is a fourth cabinet room
+gated the same way as the other three (`_require_owner`, imported from `app.routers.me` rather than
+duplicated); every mutating route (create, save, delete, regenerate, preview) is `CurrentAdmin`, same
+as the editor GET route, matching how `blog.py`'s own editor is guarded. `shared_editor.html` reuses
+`render_markdown` for its live preview through `POST /me/shared/preview`, the same pattern
+`blog.py::preview` uses. New `app/static/css/shared.css` and `app/static/js/shared.js` (a generic
+`data-copy-link` clipboard behaviour, not blog-specific). `cabinet_nav.html` gained one additive tuple;
+`tests/api/test_me.py::test_the_rooms_name_each_other_and_mark_the_one_being_read` needed its expected
+link list extended to match (not in the impact map's file list, but a direct and necessary consequence
+of that additive change — flagged here per the project's "Expectations that change" convention rather
+than silently patched). `tests/api/test_authz_sweep.py` untouched, confirmed by `git diff --stat`.
 
 ## Baseline I7
 

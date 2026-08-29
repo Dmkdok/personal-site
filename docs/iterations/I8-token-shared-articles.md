@@ -57,14 +57,24 @@ edit at all — see the row above.)
 ## Exit criteria
 
 - [x] A `shared_article` row survives a migration up and down, proven on the dev database
-- [ ] `GET /s/{a valid token}` renders the article through the same sanitised Markdown pipeline as a
-      blog post, with `noindex` present unconditionally
-- [ ] `GET /s/{missing or invalid token}` returns 404, identically for both cases
-- [ ] The article is absent from `/sitemap.xml`, from `/search`, and from every public nav element
-- [ ] `/me/shared` lists the owner's shared articles, gated by admin session; create, edit, delete,
-      copy-link and regenerate-token all work from there
-- [ ] Regenerating a token invalidates the old link immediately (old token 404s, new token 200)
-- [ ] No route under `/s/{token}` accepts a mutating request — proven by
+- [x] `GET /s/{a valid token}` renders the article through the same sanitised Markdown pipeline as a
+      blog post, with `noindex` present unconditionally —
+      `test_valid_token_renders_the_article_through_the_markdown_pipeline`,
+      `test_shared_article_carries_noindex_unconditionally`
+- [x] `GET /s/{missing or invalid token}` returns 404, identically for both cases —
+      `test_missing_and_wrong_token_are_byte_identical_404s` (normalised for the per-request CSP
+      nonce and the requested address itself, the only two things that legitimately vary)
+- [x] The article is absent from `/sitemap.xml`, from `/search`, and from every public nav element —
+      `test_shared_article_is_absent_from_the_sitemap_and_search`; `seo.py` and `search.py` untouched
+- [x] `/me/shared` lists the owner's shared articles, gated by admin session; create, edit, delete,
+      copy-link and regenerate-token all work from there — `tests/api/test_shared.py`'s F70 block,
+      plus `e2e/test_me.py::test_a_shared_articles_link_survives_only_until_it_is_reissued` driving
+      copy-link and delete through the real UI
+- [x] Regenerating a token invalidates the old link immediately (old token 404s, new token 200) —
+      `test_regenerating_invalidates_the_old_link_and_issues_a_working_new_one` (API) and the same
+      e2e test above (browser clipboard round-trip)
+- [x] No route under `/s/{token}` accepts a mutating request — proven by
       `tests/api/test_authz_sweep.py` with zero edits to that file
-- [ ] Baseline suites green at their Phase 0 counts or better (unit/API ≥371, e2e ≥112, lint clean,
-      format clean)
+- [x] Baseline suites green at their Phase 0 counts or better — unit/API **394** exit 0 (374 at the
+      T146 baseline), e2e **113** exit 0 (112 at Phase 0, +1 for the new create→copy→regenerate flow
+      test), lint clean, format clean **130 files**

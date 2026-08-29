@@ -1,0 +1,120 @@
+{# The shared-article editor (F70) — modelled on blog/editor.html, stripped
+   to what this article type has: a title, a Markdown body and a live
+   preview. No cover, no toolbar, no slug, no publish lifecycle, no image
+   upload — none of that exists for a shared article (ADR-042). #}
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} — {{ t("shared.editor_title") }} — {{ t("site.name") }}{% endblock %}
+{% block meta_description %}{{ t("shared.editor_title") }}{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/shared.css') }}" />
+  <link rel="stylesheet" href="{{ static_url('css/prose.css') }}" />
+  <meta name="robots" content="noindex, nofollow" />
+{% endblock %}
+
+{% block content %}
+  <div class="shared-editor">
+    <header class="shared-editor__head">
+      <p class="label"><a href="/me/shared">{{ t("shared.editor_back") }}</a></p>
+      <h1 class="shared-editor__heading">{{ t("shared.editor_title") }}</h1>
+    </header>
+
+    <div class="shared-editor__layout">
+      {# Autosave: any keystroke, 2.5 s after the typing stops — the same
+         idea as the blog editor, minus the toolbar it has no use for here. #}
+      <form
+        class="shared-editor__main"
+        id="shared-form"
+        hx-post="/me/shared/{{ article.id }}/save"
+        hx-trigger="submit, input delay:2500ms"
+        hx-target="#shared-save-state"
+        hx-swap="innerHTML"
+      >
+        <div class="field">
+          <label class="field__label" for="shared-title">{{ t("shared.title_label") }}</label>
+          <input
+            class="field__input shared-editor__title"
+            id="shared-title"
+            name="title"
+            type="text"
+            maxlength="250"
+            value="{{ article.title }}"
+            placeholder="{{ t('shared.title_placeholder') }}"
+          />
+        </div>
+
+        <div class="shared-editor__panes">
+          <section class="shared-editor__pane" aria-labelledby="shared-pane-source">
+            <h2 class="label" id="shared-pane-source">{{ t("shared.pane_source") }}</h2>
+            <label class="visually-hidden" for="shared-body">{{ t("shared.body_label") }}</label>
+            {# Preview goes through /me/shared/preview — the same render call
+               the published page was written with, so they cannot drift. #}
+            <textarea
+              class="shared-editor__textarea"
+              id="shared-body"
+              name="body_md"
+              rows="22"
+              spellcheck="true"
+              placeholder="{{ t('shared.body_placeholder') }}"
+              hx-post="/me/shared/preview"
+              hx-trigger="input changed delay:400ms"
+              hx-target="#shared-preview-body"
+              hx-swap="innerHTML"
+            >{{ article.body_md }}</textarea>
+          </section>
+
+          <section class="shared-editor__pane shared-editor__preview" aria-labelledby="shared-pane-preview">
+            <h2 class="label" id="shared-pane-preview">{{ t("shared.pane_preview") }}</h2>
+            <div class="prose" id="shared-preview-body">{{ article.body_html|safe }}</div>
+            <p class="shared-editor__placeholder">{{ t("shared.preview_empty") }}</p>
+          </section>
+        </div>
+      </form>
+
+      <div class="shared-editor__side">
+        <aside class="shared-meta" id="shared-meta" aria-labelledby="shared-meta-heading">
+          <h2 class="label" id="shared-meta-heading">{{ t("shared.panel_title") }}</h2>
+
+          <div
+            class="shared-status"
+            id="shared-save-state"
+            role="status"
+            aria-live="polite"
+            data-dirty="{{ t('shared.not_saved') }}"
+            data-saving="{{ t('shared.saving') }}"
+            data-failed="{{ t('shared.save_failed') }}"
+          >
+            {% include "partials/shared_save_state.html" %}
+          </div>
+
+          <div class="shared-meta__actions">
+            <button
+              class="button"
+              type="button"
+              hx-post="/me/shared/{{ article.id }}/save"
+              hx-include="#shared-form"
+              hx-target="#shared-save-state"
+              hx-swap="innerHTML"
+            >{{ t("shared.save") }}</button>
+          </div>
+
+          {% include "partials/shared_link.html" %}
+
+          <div class="shared-meta__block">
+            <button
+              class="button button--quiet button--danger"
+              type="button"
+              hx-post="/me/shared/{{ article.id }}/delete"
+              hx-confirm="{{ t('shared.delete_confirm') }}"
+            >{{ t("shared.delete") }}</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ static_url('js/shared.js') }}" defer></script>
+{% endblock %}

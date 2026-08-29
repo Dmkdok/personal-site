@@ -1,0 +1,30 @@
+{# The article's own secret link (F67) and the control that reissues it
+   (F71). Returned whole by `regenerate`, so the display and the button that
+   changed it never fall out of step. #}
+<section class="shared-meta__block" aria-labelledby="shared-link-heading" id="shared-meta-link">
+  <h3 class="label" id="shared-link-heading">{{ t("shared.link_label") }}</h3>
+  <p
+    class="field__hint shared-meta__link"
+    id="shared-link-value"
+    data-share-url="{{ site_url }}/s/{{ article.share_token }}"
+  >{{ site_url }}/s/{{ article.share_token }}</p>
+
+  <div class="shared-meta__actions">
+    <button
+      class="button button--quiet"
+      type="button"
+      data-copy-link
+      data-copy-target="#shared-link-value"
+      data-copy-done="{{ t('shared.link_copied') }}"
+      data-copy-failed="{{ t('shared.link_copy_failed') }}"
+    >{{ t("shared.copy_link") }}</button>
+    <button
+      class="button button--quiet"
+      type="button"
+      hx-post="/me/shared/{{ article.id }}/regenerate"
+      hx-target="#shared-meta-link"
+      hx-swap="outerHTML"
+      hx-confirm="{{ t('shared.regenerate_confirm') }}"
+    >{{ t("shared.regenerate") }}</button>
+  </div>
+</section>

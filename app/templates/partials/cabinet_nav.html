@@ -7,7 +7,7 @@
    alone, so the mark survives `forced-colors` and reaches a screen reader. #}
 <nav class="cabinet-nav" aria-label="{{ t('me.rooms') }}">
   <ul class="cabinet-nav__list" role="list">
-    {% for key, url in [("events", "/me"), ("stats", "/me/stats"), ("media", "/me/media")] %}
+    {% for key, url in [("events", "/me"), ("stats", "/me/stats"), ("media", "/me/media"), ("shared", "/me/shared")] %}
       <li>
         <a
           class="cabinet-nav__link"

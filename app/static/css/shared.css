@@ -1,0 +1,203 @@
+/* Shared articles: a private link only a friend can open (F67), managed from
+   the cabinet's own room (F70). Modelled on blog.css's editor, stripped of
+   everything this article type does not have — no cover, no toolbar, no
+   publish lifecycle, no image upload. */
+
+@layer components {
+  /* --- The public page ------------------------------------------------- */
+  .shared-article__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-s);
+    margin-block-end: var(--space-l);
+  }
+
+  .shared-article__title {
+    font-size: var(--step-5);
+    letter-spacing: var(--tracking-display);
+    line-height: var(--leading-tight);
+    text-wrap: balance;
+  }
+
+  /* --- «Ссылки»: the create form above the list -------------------------- */
+  .shared-new {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-s);
+    margin-block-end: var(--space-l);
+  }
+
+  .shared-new .field {
+    max-inline-size: 26rem;
+  }
+
+  /* --- The editor ---------------------------------------------------------
+     Source on the left, the rendering on the right — the same idea as
+     blog.css's `.editor`, without the toolbar or the publication lifecycle. */
+  .shared-editor {
+    inline-size: min(100% - (var(--gutter) * 2), 88rem);
+    margin-inline: auto;
+  }
+
+  .shared-editor__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    margin-block-end: var(--space-l);
+  }
+
+  .shared-editor__heading {
+    font-size: var(--step-3);
+  }
+
+  .shared-editor__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-l);
+    align-items: start;
+  }
+
+  .shared-editor__main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-m);
+    min-inline-size: 0;
+  }
+
+  .shared-editor__title {
+    font-size: var(--step-2);
+    font-weight: 600;
+  }
+
+  .shared-editor__panes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-m);
+  }
+
+  .shared-editor__pane {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    min-inline-size: 0;
+  }
+
+  .shared-editor__textarea {
+    inline-size: 100%;
+    padding: var(--space-s);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-m);
+    background-color: var(--surface-raised);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1.7;
+    resize: vertical;
+    min-block-size: 22rem;
+    transition: border-color var(--dur-fast) var(--ease);
+  }
+
+  .shared-editor__textarea:focus-visible {
+    border-color: var(--accent);
+    outline-offset: 1px;
+  }
+
+  .shared-editor__preview {
+    padding: var(--space-s) var(--space-m) var(--space-m);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    background-color: var(--surface);
+    /* Wide content inside the preview scrolls in its own box, like the page. */
+    overflow-x: auto;
+  }
+
+  /* The preview shares .prose with the published page, but sits in a
+     narrower column: the measure comes from the column, not a second scale. */
+  .shared-editor__preview .prose {
+    max-inline-size: 100%;
+    font-size: var(--step-0);
+  }
+
+  .shared-editor__placeholder {
+    display: none;
+    color: var(--text-faint);
+    font-size: var(--step--1);
+    max-inline-size: 42ch;
+  }
+
+  .shared-editor__preview:has(> .prose:empty) .shared-editor__placeholder {
+    display: block;
+  }
+
+  /* --- The side panel: save state, the link, delete ----------------------- */
+  .shared-editor__side {
+    min-inline-size: 0;
+  }
+
+  .shared-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-s);
+    padding: var(--space-m);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-l);
+    background-color: var(--surface);
+  }
+
+  .shared-meta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+  }
+
+  .shared-meta__block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2xs);
+    inline-size: 100%;
+    padding-block-start: var(--space-s);
+    border-block-start: 1px dashed var(--line);
+  }
+
+  .shared-meta__link {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    overflow-wrap: anywhere;
+  }
+
+  .shared-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2xs) var(--space-s);
+    min-block-size: 1.4em;
+    font-size: var(--step--1);
+  }
+
+  .shared-status__text {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+
+  .shared-status__link {
+    color: var(--accent-ink);
+  }
+
+  @media (min-width: 60rem) {
+    .shared-editor__layout {
+      grid-template-columns: minmax(0, 1fr) 19rem;
+    }
+
+    .shared-editor__panes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .shared-meta {
+      position: sticky;
+      inset-block-start: clamp(5.5rem, 4.5rem + 4vw, 8rem);
+    }
+  }
+}

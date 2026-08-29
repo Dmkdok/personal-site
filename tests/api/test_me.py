@@ -132,7 +132,7 @@ def test_the_rooms_name_each_other_and_mark_the_one_being_read(admin_client):
         assert 'aria-label="Разделы кабинета"' in page
 
         links = re.findall(r"<a[^>]*cabinet-nav__link[^>]*>\s*([^<]*?)\s*</a>", page)
-        assert links == ["События", "Сводка", "Медиа"], (room, links)
+        assert links == ["События", "Сводка", "Медиа", "Ссылки"], (room, links)
 
         current = re.findall(r'<a[^>]*aria-current="page"[^>]*>\s*([^<]*?)\s*</a>', page)
         assert current == [label], (room, current)
