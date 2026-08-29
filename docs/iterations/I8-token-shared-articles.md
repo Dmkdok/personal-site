@@ -56,7 +56,7 @@ edit at all — see the row above.)
 
 ## Exit criteria
 
-- [ ] A `shared_article` row survives a migration up and down, proven on the dev database
+- [x] A `shared_article` row survives a migration up and down, proven on the dev database
 - [ ] `GET /s/{a valid token}` renders the article through the same sanitised Markdown pipeline as a
       blog post, with `noindex` present unconditionally
 - [ ] `GET /s/{missing or invalid token}` returns 404, identically for both cases
