@@ -245,8 +245,20 @@ multi-user account system; ADR-043 records why the token route carries no rate l
 | F67 | A shared article is reachable only by its own secret link | Given a `shared_article` with a `share_token`, when `GET /s/{share_token}` is requested, then the article renders through the same sanitised Markdown pipeline as a blog post (F9, F31); when the token is missing or does not match any article, then the response is 404, byte-identical in both cases so the response never reveals whether a token once existed |
 | F68 | The token grants read only, never edit | Given a valid `share_token` and no admin session, when any create/update/delete request is made against `/s/{token}` or against a shared article's admin routes, then it is rejected per F18 — a shared-article link never becomes a way to modify content; editing is reachable only through the existing single admin session |
 | F69 | A shared article is invisible to discovery | Given a shared article, when `/sitemap.xml`, `/search` or any public navigation element renders, then the article appears in none of them, and its own page carries `<meta name="robots" content="noindex">` unconditionally |
-| F70 | Cabinet section for shared articles | Given a logged-in admin, when `/me/shared` is opened, then the owner's shared articles are listed with a way to create, edit and delete one, copy its link, and regenerate its token; unreachable to anyone without a session, same as every other cabinet room (F62, F64) |
+| F70 | Cabinet section for shared articles | Given a logged-in admin, when `/me/shared` is opened, then the owner's shared articles are listed with a way to create, edit and delete one, copy its link, and regenerate its token; unreachable to anyone without a session, same as every other cabinet room (F62, F64); the editor gives full Markdown editing with live preview and carries the same formatting toolbar and cheat sheet as the blog editor (F38) — everything but the photo action, which stays blog-only (ADR-044) *(extended by I9, ADR-044 — the toolbar was T147's original intent, trimmed at implementation and restored here)* |
 | F71 | Regenerating a token invalidates the old link immediately | Given a shared article's token is regenerated, when the old `share_token` is requested afterward at `/s/{old_token}`, then it returns 404, and the new token works at `/s/{new_token}` from that point on |
+
+### I9 — Article editor UX
+
+Added 2026-09-01 from an owner request in chat: a discoverable photo control, per-file upload
+progress, the shared-article editor's toolbar, and a mobile write/preview switch. Intake, impact
+map and exit criteria: `docs/iterations/I9-article-editor-ux.md`.
+
+| ID | Requirement | Acceptance |
+|----|-------------|------------|
+| F72 | The photo control in the article editor reads as its own action | Given the blog editor's toolbar, when it renders, then the control that opens the file picker for a photo is visually distinct from the buttons that insert Markdown snippets — its own label and styling, not one glyph among ten — while drag-and-drop and paste onto the textarea keep working exactly as before |
+| F73 | Each photo uploaded from the article editor gets its own progress | Given one or more photos dropped, pasted or picked in the article editor, when they upload, then each gets its own row showing uploading/done/failed state and, on failure, a retry — not a single toast shared across the batch — and each succeeded photo's Markdown is inserted in the order it was dropped |
+| F75 | Source and preview are reachable without scrolling on a narrow viewport | Given the article editor (blog or shared) on a viewport narrower than 60rem, when the owner is typing, then a switch reaches the live-rendered preview without scrolling past the full-height textarea; at 60rem and wider the existing two-column layout is unchanged |
 
 ## Non-functional
 

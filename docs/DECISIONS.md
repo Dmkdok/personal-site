@@ -45,6 +45,9 @@ ADR-lite. All proposed on 2026-08-04, pending the approval gate.
 - **ADR-039** — The home page's copy blocks render prose without the prose assets
 - **ADR-040** — A video's caption is fetched once, at edit time, from YouTube's or Rutube's own oEmbed — never from VK's
 - **ADR-041** — Video embeds directly; the click facade is retired and `iframe` re-enters the allow-list
+- **ADR-042** — Private articles are shared by a secret token link, not a multi-user account system, and the token is read-only
+- **ADR-043** — No rate limiter on the shared-article token route
+- **ADR-044** — The shared-article editor gets the blog editor's formatting toolbar, not its image pipeline
 
 Read one entry, not the file: `Select-String -Path docs/DECISIONS.md -Pattern '^## ADR-029' -Context 0,12`.
 
@@ -428,3 +431,26 @@ Read one entry, not the file: `Select-String -Path docs/DECISIONS.md -Pattern '^
 - Decision: no rate limiter on `GET /s/{token}`. The 404-for-anything-invalid behaviour (F67) is unconditional and does not itself get cheaper or more informative under repeated guessing — every miss looks identical to every other miss, so there is nothing a limiter would be protecting that entropy does not already close off computationally.
 - Alternatives rejected: **reuse the `login_attempt` limiter pattern (F17) keyed by IP** — rejected because it protects against exactly the wrong threat model here. F17 exists because a password can be short and human-chosen; a 256-bit random token cannot be shortened by better guessing, so a limiter would add a second moving part (another table, another prune job, another way for a shared IP — a household, a café — to lock friends out of a link that was never guessed at) for a threat that is already computationally closed.
 - Consequences: `/s/{token}` accepts requests at whatever rate they arrive, same as any other public GET route on the site (`/blog/{slug}`, `/photo/{slug}` carry no per-route limiter either). If the threat model ever changes — token length shortened, tokens made guessable, or generic bot traffic becomes a real cost concern independent of guessing — this ADR is the one to revisit, not F17's.
+
+## ADR-044 — The shared-article editor gets the blog editor's formatting toolbar, not its image pipeline
+
+- Date: 2026-09-01
+- Status: accepted
+- Context: I9, an owner request, asked the shared-article editor (`shared_editor.html`) to reuse the
+  blog editor's interface — it shipped in T147 (I8) as title + body + preview only, with no
+  `.md-toolbar` and no image upload. That trim was never its own decision; the template's own
+  comment attributed it to ADR-042, but ADR-042 is about the token/capability-URL architecture, not
+  the editor's feature set — T147's own impact map row had said "modelled on blog/editor.html —
+  full editor with live preview". Reusing the toolbar (bold, italic, heading, list, quote, code,
+  link, table, video, and F38's size-vocabulary cheat sheet) contradicts nothing already decided.
+  Extending shared articles with an image upload pipeline is a different question: `shared_article`
+  has no storage association today, and giving it one is a new capability with its own security
+  surface, not a UI change.
+- Decision: `shared_editor.html` gets the same `.md-toolbar` and cheat sheet as `blog/editor.html`,
+  sourced from one shared definition rather than a second copy (T148). The photo action is the one
+  button excluded — shared articles stay text/links/Markdown only, matching ADR-042's original
+  framing ("a trip plan, personal links").
+- Consequences: formatting parity between the two editors closes the gap the owner reported (no
+  discoverable syntax help while writing a shared article). Photo upload for shared articles stays
+  out of scope this round — an ordinary additive feature for later, the same shape ADR-042 already
+  anticipated for per-recipient access lists and view auditing, not a reversal of anything here.

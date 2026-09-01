@@ -1,6 +1,6 @@
 # Status
 
-phase: iteration I8 merged, pushed and deployed to the NAS (M20 done; M16 still open, owner's appliance work only)
+phase: iteration I9 in progress, T148 done and pushed, T149 attempted and reverted, T150 not started (M21; M20 done; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
@@ -8,6 +8,161 @@ i5_delta_approved_at: 2026-08-17
 i6_delta_approved_at: 2026-08-25
 i7_delta_approved_at: 2026-08-25
 i8_delta_approved_at: 2026-08-29
+i9_delta_approved_at: 2026-09-01
+
+## Resume here
+
+**Branch `iteration/I9-article-editor-ux`, tree clean, 1 commit ahead of `main` (0 behind) — pushed
+to `origin` this session.** Owner is switching machines; this section exists so the next session
+can resume from this file alone.
+
+**Do not trust this session's own numbers at face value — re-verify.** The owner asked explicitly:
+before building on top of T148, re-run its gates independently and read the actual diff in
+`470215b`, don't just take this file's word that it's clean. Same for anything below marked
+"reported by subagent" rather than "independently re-run in this session."
+
+**State: T148 done and committed (`470215b`, independently re-verified this session: unit/API 399,
+`ruff check`/`format --check` clean). T149 was attempted, hit a11y test failures under
+investigation, was stopped mid-diagnosis and its uncommitted diff was deliberately reverted
+(`git restore`) rather than committed half-working — nothing of T149 exists in the tree or history.
+T150 not started.**
+
+**Next three actions, in order:**
+1. Re-run `docker compose run --rm tests`, `ruff check .`, `ruff format --check .` on this tree
+   (should read 399 / clean / clean) — confirm before trusting, per the owner's instruction above.
+2. Run `uv run pytest e2e -q` fresh. **The last full e2e run this session was red beyond the three
+   known-baseline failures** — see the anomaly below — figure out whether that reproduces on a
+   clean start (fresh `docker compose down -v && up`, not just `restart web`) before assuming it's
+   still there or was this session's own accumulated state.
+3. Re-implement T149 from scratch (`docs/TASKS.md` M21, DoD unchanged) — per-file `XMLHttpRequest`
+   upload progress in `app/static/js/editor.js`, modelled on `uploader.js`; the photo control moved
+   out of `.md-toolbar__button`'s glyph row in `app/templates/blog/editor.html`. The previous
+   attempt's diff is gone (reverted), but its direction (rewrite `ACTIONS.image`/`upload`/
+   `uploadOne`, buffer completed uploads to preserve drop-order insertion despite concurrent XHRs)
+   is still the right starting shape — just diagnose the a11y regression it hit before repeating it.
+   `editor.js` also still carries a stale comment near `maybeFillVideoCaption` claiming the shared
+   editor has no toolbar — false since T148; fix it in the same diff, don't spend a separate task on it.
+
+**Anomaly from this session's last full e2e run, unresolved, needs the owner's or next session's
+attention before trusting e2e results at all:** on the clean, reverted-to-T148 tree, a fresh
+`uv run pytest e2e -q` came back **4 failed + 3 errors**, not the expected 3 known failures. The 3
+known ones (upload-limit string, two `/dev` drag tests) are present as before. New, not seen before
+this session: **3 setup errors, all in `admin_storage_state`**, all failing the same way — the login
+POST returns "Неверный логин или пароль" instead of succeeding, meaning `.env`'s `ADMIN_PASSWORD`
+does not match this dev DB's seeded admin password (the fixture reads `ADMIN_USERNAME`/
+`ADMIN_PASSWORD` straight from the environment — `e2e/conftest.py:71`). Also new: **one additional
+failure**, `test_editor_guard.py::test_publishing_counts_as_saving`, showing an autosave-guard
+message in `#editor-meta` instead of the expected "published" status — exact text was unreadable in
+this session's terminal (Windows console mojibake on Cyrillic), not diagnosed further. **Working
+hypothesis, not confirmed:** three consecutive full e2e runs against the same long-lived local dev
+DB in one session (this session's implementer subagent ran it twice, this session once more) —
+consistent with the project's already-known pattern of local DB/session state drift under repeated
+runs (the two `/dev` drag failures are exactly that). Nothing in T148's diff touches auth, the admin
+seed, or the save/autosave path, and unit/API (which exercises the same models) is green — but this
+is a hypothesis, not a proof, and the next session should not repeat it as fact until it either
+reproduces on a clean DB or is shown to be something else.
+
+**docs/qa/\* screenshots and JSON sweep evidence regenerate as a side effect of running `uv run
+pytest e2e` at all** — confirmed twice this session (reverted, ran e2e again, came back dirty again
+with fresh LCP timings / JPEG re-encode noise / sweep sample counts). Reverted both times
+(`git restore docs/qa/`), not committed — none of it corresponds to a deliberate sweep tied to this
+iteration's actual changes. **Any future e2e run will dirty these files again**; that alone is not a
+sign of anything wrong, and they should stay reverted until an iteration deliberately takes new
+sweep evidence at its review checkpoint. `docker-compose.override.yml` stays untracked by design
+(Baseline I9's own record: a host-only port remap, not a code change).
+
+## Baseline I9
+
+Recorded 2026-09-01 on `iteration/I9-article-editor-ux`, cut from `main` at `fdd8c47` (I8's closing
+tip, merged/pushed/deployed). Tree was clean before the branch (one untracked, gitignored-by-intent
+local file, `docker-compose.override.yml`, self-documented as not tracked — a host-only port remap,
+not a code change).
+
+**Three environment gaps found and fixed before any suite would run, none inside this repo's
+tracked files:**
+
+1. The local `web` container (docker-compose, 3 weeks old) predated the `pillow-heif` dependency
+   and failed to boot (`ModuleNotFoundError: No module named 'pillow_heif'`) — stale image, rebuilt
+   with `docker compose up -d --build web`.
+2. `uv` was not on this machine's PATH at all (not in the user or machine registry PATH, not in any
+   of the usual install directories) despite prior sessions' recorded use of `uv run` — reinstalled
+   with the official installer (`irm https://astral.sh/uv/install.ps1 | iex`), owner's choice over
+   AskUserQuestion.
+3. `C:\Dev\pyproject.toml` — outside this repo, June 2024, unrelated to this project — carried
+   invalid TOML (`select = [..., "Q"]`, a literal ellipsis placeholder). `uv`'s workspace discovery
+   walks up from the project root and fails hard on any unparseable `pyproject.toml` it meets on the
+   way, so every `uv run` in this repo errored before reaching pytest. Fixed the placeholder in
+   place (owner's choice over AskUserQuestion) — the file was already unusable by any tool, so this
+   could only fix, not regress, whatever that file is for.
+4. Playwright's Chromium/headless-shell binaries were not installed under this profile
+   (`ms-playwright` cache empty) — installed via `uv run playwright install chromium --with-deps`.
+
+| Suite | Command | Result |
+|-------|---------|--------|
+| unit/API | `docker compose run --rm tests` | **399 passed**, exit 0 |
+| e2e | `uv run pytest e2e -q` | **112 passed, 3 failed**, exit 1 |
+| lint | `uv run ruff check .` | clean |
+| format | `uv run ruff format --check .` | **130 files**, exit 0 |
+
+unit/API and lint/format match I8's closing counts exactly — nothing regressed there. **The three
+e2e failures are pre-existing, local-environment drift, not a code regression, and not touched by
+this iteration's scope:**
+
+- `test_upload_guard.py::test_files_that_cannot_succeed_never_reach_the_network` — asserts the
+  50 MB-limit error string; this machine's `.env` has carried `MAX_UPLOAD_MB=25` (vs.
+  `.env.example`'s `50`) since before this session. A local config/test-fixture mismatch, not a app
+  code defect.
+- `test_view_parity.py::test_edit_mode_still_drags_the_project_board` — fails its own precondition
+  (`the two cards do not fit the viewport together`): the long-lived local dev DB has accumulated
+  enough `/dev` board entries from repeated local e2e runs that the two fixture cards no longer both
+  fit one viewport.
+- `test_view_parity.py::test_named_owner_surfaces_have_no_box_in_view_mode[chromium-/dev-[data-drag-handle]]`
+  — `[data-drag-handle]` absent from `/dev` in view mode; likely downstream of the same accumulated-
+  data state as the row above (no draggable card in the fixture's expected position).
+
+None of the three touch `blog`, `shared`, `photos` editor routes or templates — carried forward
+unfixed as known-red, not this iteration's concern. Flagged to the owner in the same session.
+
+## Iteration I9 progress
+
+```text
+- [x] 0 baseline recorded (branch, suite result, timestamp)
+- [x] 1 delta intake agreed (in / out / deferred) — one AskUserQuestion round (photo-button fix,
+      shared-editor image scope, which UX items, budget); all recommended answers accepted
+- [x] 2 impact map written — `docs/iterations/I9-article-editor-ux.md`
+- [x] 3 docs amended — SPEC F70 edited in place + F72/F73/F75, ADR-044 (+ ADR-042/043 backfilled
+      into the index, missing since I8), TASKS M21 (T148, T149, T150)
+- [x] GATE approved by the owner — «утверждаю», 2026-09-01
+- [ ] 4 implementation — **T148 done**, `470215b`; **T149 attempted, hit a11y failures, reverted
+      uncommitted** (see Resume here); T150 not started
+- [ ] 5 verification green, baseline suites still green
+- [ ] 6 review clean or waived
+- [ ] 7 closed (STATUS rewritten, milestone ticked)
+- [ ] 8 deploy (optional, only if a real deploy target exists)
+```
+
+**T148 landed**, `470215b`. New shared partials `app/templates/partials/md_toolbar.html` and
+`md_cheatsheet.html`, included from both `blog/editor.html` and `shared_editor.html`; new
+`app/static/css/editor.css` holds the toolbar/pane/textarea/preview rules moved out of `blog.css`
+and `shared.css` (`shared_editor.html`'s classes renamed to the shared `.editor__*` names).
+`app/i18n/ru/shared.json` untouched by design — the shared editor reads `blog.json`'s `md.*`/
+`toolbar_label` keys directly, one source of truth. `editor.js` untouched — it already resolves
+targets generically off `data-editor-*`/`.md-toolbar`, so the shared editor's video button now also
+gets F66's server-side title autofetch for free (a correct but unplanned side effect of "working
+counterpart"). New e2e: `e2e/test_editor_sheet.py::test_the_shared_editor_toolbar_matches_the_blog_editors_but_for_the_photo_button`.
+
+Gates: unit/API **399** exit 0 (matches I9 baseline), `ruff check` clean, `ruff format --check`
+**130 files** exit 0, e2e **116** total, **113 passed**, **3 failed** — exactly the three named
+pre-existing failures from Baseline I9 (upload-limit string, two `/dev` drag tests); a fourth
+failure seen on the first of two full e2e runs
+(`test_me.py::test_a_shared_articles_link_survives_only_until_it_is_reissued`) reproduced as a
+flake — passed alone, passed again on the second full run, and T148 touches no code on that path.
+`test_editor_guard.py`'s 7 F50 tests passed unmodified on both fixtures.
+
+**One stale comment flagged, not fixed here, T149's to pick up:** `editor.js`'s comment near
+`maybeFillVideoCaption` — "an editor with no toolbar (the shared-article editor) never puts this
+skeleton in front of an owner" — is now false; the shared editor has a toolbar. `editor.js` is in
+T149's path list.
 
 ## Baseline I8
 
@@ -730,11 +885,20 @@ Each gate below carries its own last-run timestamp and the command that produced
 
 | Gate | Command | Last run | Result |
 |---|---|---|---|
-| Unit + API | `docker compose run --rm tests` | 2026-08-15, close of I2 | **271 passed**, exit 0 |
-| End-to-end | `uv run pytest e2e` | 2026-08-15, close of I2 | **81 passed**, exit 0 |
-| Six launch flows | `uv run pytest e2e -m launch_flow` | 2026-08-08 | **6 passed**, exit 0 |
-| Lint | `uv run ruff check .` | 2026-08-15, close of I2 | clean, exit 0 |
-| Format | `uv run ruff format --check .` | 2026-08-15, close of I2 | clean, 127 files |
+| Unit + API | `docker compose run --rm tests` | 2026-09-01, this session, on `470215b` | **399 passed**, exit 0 |
+| End-to-end | `uv run pytest e2e -q` | 2026-09-01, this session, same tree | **4 failed, 3 errors**, exit 1 — see Resume here for detail and the unconfirmed drift hypothesis |
+| Lint | `uv run ruff check .` | 2026-09-01, this session, same tree | clean, exit 0 |
+| Format | `uv run ruff format --check .` | 2026-09-01, this session, same tree | clean, 130 files, exit 0 |
+
+**e2e failing tests, named individually (2026-09-01):** three known pre-existing —
+`test_upload_guard.py::test_files_that_cannot_succeed_never_reach_the_network`,
+`test_view_parity.py::test_edit_mode_still_drags_the_project_board`,
+`test_view_parity.py::test_named_owner_surfaces_have_no_box_in_view_mode[chromium-/dev-[data-drag-handle]]`
+— plus four new, not seen at Baseline I9: `test_editor_guard.py::test_publishing_counts_as_saving`
+(FAILED) and setup errors on `test_me.py::test_a_shared_articles_link_survives_only_until_it_is_reissued`,
+`test_search.py::test_showing_the_rest_of_a_group_keeps_the_caret`,
+`test_site_links.py::test_the_owner_changes_a_link_and_a_visitor_sees_it` (all three ERROR at the
+same `admin_storage_state` fixture step, same cause — see Resume here).
 
 No failing tests. **Iteration I2 grew the suite 233 → 271 and 60 → 81**, against the baseline in
 `## Baseline I2` taken before the change request was read. Iteration I1 before it grew 224 → 226 and
@@ -767,6 +931,17 @@ Dated entries from the session that is current. Everything up to 2026-08-11 is i
 `docs/status-archive.md` under "Notes, 2026-08-04 to 2026-08-11"; the traps out of it that are still
 load-bearing are recorded where they are needed instead of here — `CLAUDE.md` for the test and
 Serena rules, `docs/CONVENTIONS.md` for the rest.
+
+**2026-09-01.** T148 landed and was independently re-verified (see Resume here). T149 was attempted
+in a background implementer subagent, hit unexplained a11y test failures partway through its own
+diagnosis, and was stopped and reverted rather than committed half-working — see Resume here for
+the exact anomaly seen on the re-verification run afterward (3 new login-fixture errors, 1 new
+autosave-message failure, on top of the 3 already-known pre-existing failures). Not fixed, not
+explained past a hypothesis — written down for the next session per this project's own rule.
+**This file is ~63 KB, well past the ~20 KB hygiene bar in the `pause` skill's step 4b** — I3/I4/I5's
+old baselines and progress blocks below this point were never migrated to `docs/status-archive.md`
+when their iterations closed. Not done this pause (time-boxed, owner asked to push urgently); worth
+a dedicated pass before the file grows further.
 
 ## History
 
