@@ -154,7 +154,8 @@
   /* ==========================================================================
      Editor — source on the left, the published rendering on the right, and the
      publication panel kept out of the article form so an autosave never has to
-     carry a file with it.
+     carry a file with it. The toolbar, textarea and preview-pane rules live in
+     editor.css, shared with the shared-article editor (T148).
      ========================================================================= */
   .editor {
     inline-size: min(100% - (var(--gutter) * 2), 88rem);
@@ -189,146 +190,6 @@
   .editor__title {
     font-size: var(--step-2);
     font-weight: 600;
-  }
-
-  .editor__panes {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-m);
-  }
-
-  .editor__pane {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2xs);
-    min-inline-size: 0;
-  }
-
-  .editor__textarea {
-    inline-size: 100%;
-    padding: var(--space-s);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-m);
-    background-color: var(--surface-raised);
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    line-height: 1.7;
-    resize: vertical;
-    min-block-size: 22rem;
-    transition: border-color var(--dur-fast) var(--ease);
-  }
-
-  .editor__textarea:focus-visible {
-    border-color: var(--accent);
-    outline-offset: 1px;
-  }
-
-  .editor__textarea.is-dropping {
-    border-style: dashed;
-    border-color: var(--accent);
-    background-color: var(--accent-wash);
-  }
-
-  .editor__preview {
-    padding: var(--space-s) var(--space-m) var(--space-m);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-m);
-    background-color: var(--surface);
-    /* Wide content inside the preview scrolls in its own box, like the page. */
-    overflow-x: auto;
-  }
-
-  /* The preview shares .prose with the published page, but sits in a narrower
-     column: the measure comes from the column, not from a second type scale. */
-  .editor__preview .prose {
-    max-inline-size: 100%;
-    font-size: var(--step-0);
-  }
-
-  .editor__placeholder {
-    display: none;
-    color: var(--text-faint);
-    font-size: var(--step--1);
-    max-inline-size: 42ch;
-  }
-
-  .editor__preview:has(> .prose:empty) .editor__placeholder {
-    display: block;
-  }
-
-  .editor__details {
-    padding: var(--space-s) var(--space-m);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-m);
-    background-color: var(--surface);
-  }
-
-  .editor__details[open] {
-    padding-block-end: var(--space-m);
-  }
-
-  .editor__details[open] .editor__summary {
-    margin-block-end: var(--space-m);
-  }
-
-  .editor__summary {
-    cursor: pointer;
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    letter-spacing: var(--tracking-label);
-    text-transform: uppercase;
-    color: var(--text-muted);
-  }
-
-  .editor__details .field + .field {
-    margin-block-start: var(--space-m);
-  }
-
-  /* A snippet in the cheat sheet that is a shape rather than a line — a table, a
-     fenced block. It keeps its line breaks and scrolls inside itself, because the
-     pane it sits in must not scroll sideways. */
-  .editor__snippet {
-    display: block;
-    white-space: pre;
-    overflow-x: auto;
-    margin-block-end: var(--space-3xs);
-  }
-
-  /* --- Formatting toolbar -------------------------------------------------
-     The glyph on each button is the Markdown it writes; the accessible name is
-     the word for it. One tab stop, arrow keys inside — see editor.js. */
-  .md-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-3xs);
-    padding: var(--space-3xs);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-m);
-    background-color: var(--surface-sunken);
-  }
-
-  .md-toolbar__button {
-    display: grid;
-    place-items: center;
-    min-inline-size: 2.75rem;
-    min-block-size: 2.75rem;
-    padding-inline: var(--space-2xs);
-    border-radius: var(--radius-s);
-    color: var(--text-muted);
-    transition: color var(--dur-fast) var(--ease),
-      background-color var(--dur-fast) var(--ease);
-  }
-
-  .md-toolbar__button:hover {
-    color: var(--text);
-    background-color: var(--surface-raised);
-  }
-
-  .md-toolbar__glyph {
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    line-height: 1;
   }
 
   /* --- Publication panel --------------------------------------------------- */
@@ -390,10 +251,6 @@
   @media (min-width: 60rem) {
     .editor__layout {
       grid-template-columns: minmax(0, 1fr) 19rem;
-    }
-
-    .editor__panes {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .editor-meta {

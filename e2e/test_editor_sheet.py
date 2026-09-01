@@ -18,7 +18,22 @@ import json
 from playwright.sync_api import Page, expect
 
 from e2e.conftest import Trash
-from e2e.helpers import AdminApi, ru
+from e2e.helpers import AdminApi, SharedArticle, ru
+
+
+def _press_every_button(page: Page, url: str, body_id: str) -> dict[str, str]:
+    """Click each `.md-toolbar__button` in turn against an empty textarea and
+    record what it inserts, keyed by its `data-md` action name."""
+    page.goto(url)
+    body = page.locator(f"#{body_id}")
+    results: dict[str, str] = {}
+    for button in page.locator(".md-toolbar__button").all():
+        action = button.get_attribute("data-md")
+        assert action
+        body.fill("")
+        button.click()
+        results[action] = body.input_value()
+    return results
 
 
 def test_the_sheet_is_closed_until_it_is_asked_for(
@@ -221,3 +236,29 @@ def test_the_table_button_writes_a_table_that_renders(
     # And it is a table on the page, not three lines that look like one: the
     # preview is the same `render_markdown` the published article goes through.
     expect(admin_page.locator("#preview-body table")).to_have_count(1)
+
+
+def test_the_shared_editor_toolbar_matches_the_blog_editors_but_for_the_photo_button(
+    admin_page: Page, admin_api: AdminApi, trash: Trash, run_token: str
+) -> None:
+    """T148 — one shared toolbar/cheat-sheet definition (`partials/md_toolbar.html`,
+    `partials/md_cheatsheet.html`), not a duplicated block per editor.
+
+    Every `.md-toolbar__button` in the blog editor has a same-named, working
+    counterpart in the shared-article editor, image excepted (ADR-044): shared
+    articles have no image pipeline. "Working" is asserted by comparing what
+    each button inserts into an empty textarea, not merely that it exists.
+    """
+    post = trash.post(admin_api.create_post(f"E2E панель блога {run_token}"))
+    article: SharedArticle = trash.shared_article(
+        admin_api.create_shared_article(f"E2E панель ссылки {run_token}")
+    )
+
+    blog_results = _press_every_button(admin_page, f"/blog/{post.slug}/edit", "post-body")
+    shared_results = _press_every_button(admin_page, f"/me/shared/{article.id}/edit", "shared-body")
+
+    assert "image" in blog_results
+    assert "image" not in shared_results
+
+    expected = {action: text for action, text in blog_results.items() if action != "image"}
+    assert shared_results == expected

@@ -1,7 +1,8 @@
 /* Shared articles: a private link only a friend can open (F67), managed from
    the cabinet's own room (F70). Modelled on blog.css's editor, stripped of
-   everything this article type does not have — no cover, no toolbar, no
-   publish lifecycle, no image upload. */
+   everything this article type does not have — no cover, no publish
+   lifecycle, no image upload. The toolbar, textarea and preview-pane rules
+   are shared with the blog editor and live in editor.css (T148). */
 
 @layer components {
   /* --- The public page ------------------------------------------------- */
@@ -34,7 +35,8 @@
 
   /* --- The editor ---------------------------------------------------------
      Source on the left, the rendering on the right — the same idea as
-     blog.css's `.editor`, without the toolbar or the publication lifecycle. */
+     blog.css's `.editor`. The panes, textarea, preview and toolbar reuse the
+     generic `.editor__*` / `.md-toolbar` rules from editor.css. */
   .shared-editor {
     inline-size: min(100% - (var(--gutter) * 2), 88rem);
     margin-inline: auto;
@@ -68,66 +70,6 @@
   .shared-editor__title {
     font-size: var(--step-2);
     font-weight: 600;
-  }
-
-  .shared-editor__panes {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-m);
-  }
-
-  .shared-editor__pane {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2xs);
-    min-inline-size: 0;
-  }
-
-  .shared-editor__textarea {
-    inline-size: 100%;
-    padding: var(--space-s);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--radius-m);
-    background-color: var(--surface-raised);
-    color: var(--text);
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    line-height: 1.7;
-    resize: vertical;
-    min-block-size: 22rem;
-    transition: border-color var(--dur-fast) var(--ease);
-  }
-
-  .shared-editor__textarea:focus-visible {
-    border-color: var(--accent);
-    outline-offset: 1px;
-  }
-
-  .shared-editor__preview {
-    padding: var(--space-s) var(--space-m) var(--space-m);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-m);
-    background-color: var(--surface);
-    /* Wide content inside the preview scrolls in its own box, like the page. */
-    overflow-x: auto;
-  }
-
-  /* The preview shares .prose with the published page, but sits in a
-     narrower column: the measure comes from the column, not a second scale. */
-  .shared-editor__preview .prose {
-    max-inline-size: 100%;
-    font-size: var(--step-0);
-  }
-
-  .shared-editor__placeholder {
-    display: none;
-    color: var(--text-faint);
-    font-size: var(--step--1);
-    max-inline-size: 42ch;
-  }
-
-  .shared-editor__preview:has(> .prose:empty) .shared-editor__placeholder {
-    display: block;
   }
 
   /* --- The side panel: save state, the link, delete ----------------------- */
@@ -189,10 +131,6 @@
   @media (min-width: 60rem) {
     .shared-editor__layout {
       grid-template-columns: minmax(0, 1fr) 19rem;
-    }
-
-    .shared-editor__panes {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .shared-meta {

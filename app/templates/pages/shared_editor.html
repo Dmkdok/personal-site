@@ -1,13 +1,16 @@
 {# The shared-article editor (F70) — modelled on blog/editor.html, stripped
    to what this article type has: a title, a Markdown body and a live
-   preview. No cover, no toolbar, no slug, no publish lifecycle, no image
-   upload — none of that exists for a shared article (ADR-042). #}
+   preview, plus the same formatting toolbar and F38 cheat sheet as the blog
+   editor, sourced from the shared partials (T148, ADR-044). No cover, no
+   slug, no publish lifecycle, no image upload — the toolbar's image button
+   is the one thing excluded, because there is no image pipeline here. #}
 {% extends "base.html" %}
 
 {% block title %}{{ article.title }} — {{ t("shared.editor_title") }} — {{ t("site.name") }}{% endblock %}
 {% block meta_description %}{{ t("shared.editor_title") }}{% endblock %}
 
 {% block head_extra %}
+  <link rel="stylesheet" href="{{ static_url('css/editor.css') }}" />
   <link rel="stylesheet" href="{{ static_url('css/shared.css') }}" />
   <link rel="stylesheet" href="{{ static_url('css/prose.css') }}" />
   <meta name="robots" content="noindex, nofollow" />
@@ -27,7 +30,7 @@
 
     <div class="shared-editor__layout">
       {# Autosave: any keystroke, 2.5 s after the typing stops — the same
-         idea as the blog editor, minus the toolbar it has no use for here. #}
+         idea as the blog editor. #}
       <form
         class="shared-editor__main"
         id="shared-form"
@@ -49,14 +52,22 @@
           />
         </div>
 
-        <div class="shared-editor__panes">
-          <section class="shared-editor__pane" aria-labelledby="shared-pane-source">
+        <div class="editor__panes">
+          <section class="editor__pane" aria-labelledby="shared-pane-source">
             <h2 class="label" id="shared-pane-source">{{ t("shared.pane_source") }}</h2>
+
+            {# The toolbar markup is shared with blog/editor.html
+               (T148, ADR-044) — see partials/md_toolbar.html. The photo
+               action is excluded: shared articles have no image pipeline. #}
+            {% with target_id = "shared-body", show_image = false %}
+              {% include "partials/md_toolbar.html" %}
+            {% endwith %}
+
             <label class="visually-hidden" for="shared-body">{{ t("shared.body_label") }}</label>
             {# Preview goes through /me/shared/preview — the same render call
                the published page was written with, so they cannot drift. #}
             <textarea
-              class="shared-editor__textarea"
+              class="editor__textarea"
               id="shared-body"
               name="body_md"
               rows="22"
@@ -67,12 +78,16 @@
               hx-target="#shared-preview-body"
               hx-swap="innerHTML"
             >{{ article.body_md }}</textarea>
+
+            {# F38's cheat sheet — shared with blog/editor.html
+               (T148, ADR-044). See partials/md_cheatsheet.html. #}
+            {% include "partials/md_cheatsheet.html" %}
           </section>
 
-          <section class="shared-editor__pane shared-editor__preview" aria-labelledby="shared-pane-preview">
+          <section class="editor__pane editor__preview" aria-labelledby="shared-pane-preview">
             <h2 class="label" id="shared-pane-preview">{{ t("shared.pane_preview") }}</h2>
             <div class="prose" id="shared-preview-body">{{ article.body_html|safe }}</div>
-            <p class="shared-editor__placeholder">{{ t("shared.preview_empty") }}</p>
+            <p class="editor__placeholder">{{ t("shared.preview_empty") }}</p>
           </section>
         </div>
       </form>

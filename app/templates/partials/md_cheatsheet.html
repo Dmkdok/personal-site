@@ -1,0 +1,28 @@
+{# The whole markup vocabulary, because none of it is discoverable
+   otherwise: there is no button for a picture's width and nobody guesses
+   `{.wide}` (F38). Shared by blog/editor.html and pages/shared_editor.html
+   (F70, ADR-044, T148) — closed by default, and the state is not
+   remembered — it costs the owner nothing once it is known.
+
+   Pictures first, in the wording they already had; then everything else
+   the renderer understands. Each row is a snippet to copy and one sentence
+   saying what it does. #}
+<details class="editor__details">
+  <summary class="editor__summary">{{ t("blog.md.size_summary") }}</summary>
+  {% for form in ["normal", "wide", "full", "caption"] %}
+    <p class="field__hint">
+      <code>{{ t("blog.md.size_" ~ form ~ "_code") }}</code>
+      {{ t("blog.md.size_" ~ form ~ "_text") }}
+    </p>
+  {% endfor %}
+  {% for form in ["video", "table", "quote", "code", "link", "list", "heading", "strike"] %}
+    {%- set snippet = t("blog.md.sheet_" ~ form ~ "_code") %}
+    <p class="field__hint">
+      {# A snippet of more than one line keeps its line breaks: a table
+         and a fenced block are shapes, and one line of them is not a
+         usable example. #}
+      <code {%- if "\n" in snippet %} class="editor__snippet"{% endif %}>{{ snippet }}</code>
+      {{ t("blog.md.sheet_" ~ form ~ "_text") }}
+    </p>
+  {% endfor %}
+</details>

@@ -1,0 +1,70 @@
+{# The Markdown formatting toolbar (F38/F70, ADR-044) — shared by
+   blog/editor.html and pages/shared_editor.html so the two never carry a
+   duplicated block (T148). editor.js wires every button up generically off
+   `.md-toolbar` / `.md-toolbar__button`, whichever page loaded it.
+
+   `target_id` names the textarea `aria-controls` points at. `show_image`
+   is false only for the shared-article editor: shared articles have no
+   image pipeline (ADR-044), so that one button is the sole difference. #}
+<div
+  class="md-toolbar"
+  role="toolbar"
+  aria-label="{{ t('blog.toolbar_label') }}"
+  aria-controls="{{ target_id }}"
+  data-ph-text="{{ t('blog.md.ph_text') }}"
+  data-ph-heading="{{ t('blog.md.ph_heading') }}"
+  data-ph-quote="{{ t('blog.md.ph_quote') }}"
+  data-ph-item="{{ t('blog.md.ph_item') }}"
+  data-ph-code="{{ t('blog.md.ph_code') }}"
+  data-ph-url="{{ t('blog.md.ph_url') }}"
+  data-ph-th="{{ t('blog.md.ph_th') }}"
+  data-ph-td="{{ t('blog.md.ph_td') }}"
+  data-ph-video-text="{{ t('blog.md.ph_video_text') }}"
+  data-ph-video-url="{{ t('blog.md.ph_video_url') }}"
+>
+  <button class="md-toolbar__button" type="button" data-md="bold" title="{{ t('blog.md.bold') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">**</span>
+    <span class="visually-hidden">{{ t("blog.md.bold") }}</span>
+  </button>
+  <button class="md-toolbar__button" type="button" data-md="italic" title="{{ t('blog.md.italic') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">_</span>
+    <span class="visually-hidden">{{ t("blog.md.italic") }}</span>
+  </button>
+  <button class="md-toolbar__button" type="button" data-md="heading" title="{{ t('blog.md.heading') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">##</span>
+    <span class="visually-hidden">{{ t("blog.md.heading") }}</span>
+  </button>
+  <button class="md-toolbar__button" type="button" data-md="link" title="{{ t('blog.md.link') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">[]</span>
+    <span class="visually-hidden">{{ t("blog.md.link") }}</span>
+  </button>
+  <button class="md-toolbar__button" type="button" data-md="quote" title="{{ t('blog.md.quote') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">&gt;</span>
+    <span class="visually-hidden">{{ t("blog.md.quote") }}</span>
+  </button>
+  <button class="md-toolbar__button" type="button" data-md="list" title="{{ t('blog.md.list') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">-</span>
+    <span class="visually-hidden">{{ t("blog.md.list") }}</span>
+  </button>
+  <button class="md-toolbar__button" type="button" data-md="code" title="{{ t('blog.md.code') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">`</span>
+    <span class="visually-hidden">{{ t("blog.md.code") }}</span>
+  </button>
+  {% if show_image %}
+  <button class="md-toolbar__button" type="button" data-md="image" title="{{ t('blog.md.image') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">![]</span>
+    <span class="visually-hidden">{{ t("blog.md.image") }}</span>
+  </button>
+  {% endif %}
+  {# The other eight glyphs are the Markdown they write. A video has no
+     markup of its own — it is a link on a line by itself (F63) — so
+     this one is the play triangle the facade shows. #}
+  <button class="md-toolbar__button" type="button" data-md="video" title="{{ t('blog.md.video') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">▶</span>
+    <span class="visually-hidden">{{ t("blog.md.video") }}</span>
+  </button>
+  <button class="md-toolbar__button" type="button" data-md="table" title="{{ t('blog.md.table') }}">
+    <span class="md-toolbar__glyph" aria-hidden="true">|</span>
+    <span class="visually-hidden">{{ t("blog.md.table") }}</span>
+  </button>
+</div>
