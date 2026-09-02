@@ -1,6 +1,6 @@
 # Status
 
-phase: iteration I9 in progress, T148 done and pushed, T149 attempted and reverted, T150 not started (M21; M20 done; M16 still open, owner's appliance work only)
+phase: iteration I9 in progress, T148 done and pushed, T149 done (not yet pushed), T150 not started (M21; M20 done; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
@@ -12,64 +12,58 @@ i9_delta_approved_at: 2026-09-01
 
 ## Resume here
 
-**Branch `iteration/I9-article-editor-ux`, tree clean, 1 commit ahead of `main` (0 behind) — pushed
-to `origin` this session.** Owner is switching machines; this section exists so the next session
-can resume from this file alone.
+**Branch `iteration/I9-article-editor-ux`, tree clean, 2 commits ahead of `main` (0 behind).** T148
+was already pushed; **T149 (`83e5a42`) is committed but not yet pushed** — this was a different
+session/machine from the one that recorded the anomaly below, picked up cold from `docs/STATUS.md`
+alone with no prior chat to summarise.
 
-**Do not trust this session's own numbers at face value — re-verify.** The owner asked explicitly:
-before building on top of T148, re-run its gates independently and read the actual diff in
-`470215b`, don't just take this file's word that it's clean. Same for anything below marked
-"reported by subagent" rather than "independently re-run in this session."
+**State: T148 done (`470215b`, pushed). T149 done and committed this session (`83e5a42`),
+independently verified in this session, not `docker compose run --rm tests` output taken on faith:
+unit/API 399 exit 0, `ruff check`/`format --check` clean (131 files), targeted e2e green
+(`test_editor_photo_control.py`, `test_editor_sheet.py`, `test_editor_guard.py`,
+`test_upload_guard.py`, `test_a11y.py`, `test_admin_keyboard.py` all pass), full e2e **117 passed, 2
+failed** (only the two pre-existing `/dev`-drag failures — see below; up from 112/116 passed as more
+tests were added, not regressed). T150 not started.**
 
-**State: T148 done and committed (`470215b`, independently re-verified this session: unit/API 399,
-`ruff check`/`format --check` clean). T149 was attempted, hit a11y test failures under
-investigation, was stopped mid-diagnosis and its uncommitted diff was deliberately reverted
-(`git restore`) rather than committed half-working — nothing of T149 exists in the tree or history.
-T150 not started.**
+**The previous session's anomaly does not hold up — corrected, not just carried forward.** That
+session ran e2e against a long-lived local dev DB and, after seeing extra failures (three
+`admin_storage_state` setup errors and one `test_editor_guard` failure beyond the two known
+`/dev`-drag ones), guessed "accumulated local DB/session state" as an unconfirmed hypothesis. This
+session tested that hypothesis directly: `docker compose down -v && up` for a **completely fresh**
+database (new volume, freshly migrated, freshly seeded from this machine's own `.env` — not
+`restart web`, which reuses the existing volume), then a first-ever `uv run pytest e2e -q` against
+it. Result: **only the two known `/dev`-drag failures**, no `admin_storage_state` errors, no
+`test_publishing_counts_as_saving` failure. So the three extra failures the previous session saw
+really were that session's own accumulated/stale state (most likely a stale `pgdata` volume whose
+seeded admin password predated an `.env` edit) — confirmed, not just re-guessed. **But the two
+`/dev`-drag failures are not that** — they reproduced on a database with zero prior content, which
+the "accumulated data" story cannot explain. Read literally, `test_view_parity.py`'s own comment
+already says why: `test_edit_mode_still_drags_the_project_board` never calls
+`admin_page.set_viewport_size(VIEWPORT)` the way its sibling tests do, so it drags at whatever the
+browser context's *default* viewport is (1280×720 here, not `VIEWPORT`'s 1280×900) — 30 px too
+short for the two fixture cards to both clear the fold at their board position. Likely made worse by
+however many `/dev` entries exist on this database by the time this particular test runs in the full
+suite's order (the whole e2e run shares one Postgres without a per-test `/dev` reset), but the
+viewport gap alone is enough to explain it independent of that. **Not this iteration's to fix** (T149
+touches none of `blog`/`shared`/`photos`/`dev` templates), but the next session that touches
+`test_view_parity.py` should give `test_edit_mode_still_drags_the_project_board` its own
+`set_viewport_size(VIEWPORT)` call rather than re-guess "accumulated state" a third time.
 
-**Next three actions, in order:**
-1. Re-run `docker compose run --rm tests`, `ruff check .`, `ruff format --check .` on this tree
-   (should read 399 / clean / clean) — confirm before trusting, per the owner's instruction above.
-2. Run `uv run pytest e2e -q` fresh. **The last full e2e run this session was red beyond the three
-   known-baseline failures** — see the anomaly below — figure out whether that reproduces on a
-   clean start (fresh `docker compose down -v && up`, not just `restart web`) before assuming it's
-   still there or was this session's own accumulated state.
-3. Re-implement T149 from scratch (`docs/TASKS.md` M21, DoD unchanged) — per-file `XMLHttpRequest`
-   upload progress in `app/static/js/editor.js`, modelled on `uploader.js`; the photo control moved
-   out of `.md-toolbar__button`'s glyph row in `app/templates/blog/editor.html`. The previous
-   attempt's diff is gone (reverted), but its direction (rewrite `ACTIONS.image`/`upload`/
-   `uploadOne`, buffer completed uploads to preserve drop-order insertion despite concurrent XHRs)
-   is still the right starting shape — just diagnose the a11y regression it hit before repeating it.
-   `editor.js` also still carries a stale comment near `maybeFillVideoCaption` claiming the shared
-   editor has no toolbar — false since T148; fix it in the same diff, don't spend a separate task on it.
-
-**Anomaly from this session's last full e2e run, unresolved, needs the owner's or next session's
-attention before trusting e2e results at all:** on the clean, reverted-to-T148 tree, a fresh
-`uv run pytest e2e -q` came back **4 failed + 3 errors**, not the expected 3 known failures. The 3
-known ones (upload-limit string, two `/dev` drag tests) are present as before. New, not seen before
-this session: **3 setup errors, all in `admin_storage_state`**, all failing the same way — the login
-POST returns "Неверный логин или пароль" instead of succeeding, meaning `.env`'s `ADMIN_PASSWORD`
-does not match this dev DB's seeded admin password (the fixture reads `ADMIN_USERNAME`/
-`ADMIN_PASSWORD` straight from the environment — `e2e/conftest.py:71`). Also new: **one additional
-failure**, `test_editor_guard.py::test_publishing_counts_as_saving`, showing an autosave-guard
-message in `#editor-meta` instead of the expected "published" status — exact text was unreadable in
-this session's terminal (Windows console mojibake on Cyrillic), not diagnosed further. **Working
-hypothesis, not confirmed:** three consecutive full e2e runs against the same long-lived local dev
-DB in one session (this session's implementer subagent ran it twice, this session once more) —
-consistent with the project's already-known pattern of local DB/session state drift under repeated
-runs (the two `/dev` drag failures are exactly that). Nothing in T148's diff touches auth, the admin
-seed, or the save/autosave path, and unit/API (which exercises the same models) is green — but this
-is a hypothesis, not a proof, and the next session should not repeat it as fact until it either
-reproduces on a clean DB or is shown to be something else.
+**Environment, this session, before any suite would run:** Docker Desktop was installed but not
+running at all (`docker ps` failed with a named-pipe connection error) — started via
+`Start-Process`, waited for the daemon, then `docker compose up -d --build db web` (the `web` image
+was two weeks stale). `uv` was already on `PATH` here (`C:\Python\Python314\Scripts\uv`, `0.12.1`) —
+unlike the prior session's machine, no reinstall needed.
 
 **docs/qa/\* screenshots and JSON sweep evidence regenerate as a side effect of running `uv run
-pytest e2e` at all** — confirmed twice this session (reverted, ran e2e again, came back dirty again
-with fresh LCP timings / JPEG re-encode noise / sweep sample counts). Reverted both times
-(`git restore docs/qa/`), not committed — none of it corresponds to a deliberate sweep tied to this
-iteration's actual changes. **Any future e2e run will dirty these files again**; that alone is not a
-sign of anything wrong, and they should stay reverted until an iteration deliberately takes new
-sweep evidence at its review checkpoint. `docker-compose.override.yml` stays untracked by design
-(Baseline I9's own record: a host-only port remap, not a code change).
+pytest e2e` at all** — confirmed again this session (`git checkout -- docs/qa/` before committing).
+None of it corresponds to a deliberate sweep tied to this iteration's actual changes; it should stay
+reverted until an iteration deliberately takes new sweep evidence at its review checkpoint.
+`docker-compose.override.yml` stays untracked by design (a host-only port remap, not a code change).
+
+**Next actions:** push `83e5a42` to `origin`, then T150 (`docs/TASKS.md` M21) — a narrow-viewport
+switch between the source textarea and the live preview, on both editors, below the existing 60rem
+breakpoint.
 
 ## Baseline I9
 
@@ -133,8 +127,7 @@ unfixed as known-red, not this iteration's concern. Flagged to the owner in the 
 - [x] 3 docs amended — SPEC F70 edited in place + F72/F73/F75, ADR-044 (+ ADR-042/043 backfilled
       into the index, missing since I8), TASKS M21 (T148, T149, T150)
 - [x] GATE approved by the owner — «утверждаю», 2026-09-01
-- [ ] 4 implementation — **T148 done**, `470215b`; **T149 attempted, hit a11y failures, reverted
-      uncommitted** (see Resume here); T150 not started
+- [ ] 4 implementation — **T148 done**, `470215b`; **T149 done**, `83e5a42`; T150 not started
 - [ ] 5 verification green, baseline suites still green
 - [ ] 6 review clean or waived
 - [ ] 7 closed (STATUS rewritten, milestone ticked)
@@ -149,7 +142,7 @@ and `shared.css` (`shared_editor.html`'s classes renamed to the shared `.editor_
 `toolbar_label` keys directly, one source of truth. `editor.js` untouched — it already resolves
 targets generically off `data-editor-*`/`.md-toolbar`, so the shared editor's video button now also
 gets F66's server-side title autofetch for free (a correct but unplanned side effect of "working
-counterpart"). New e2e: `e2e/test_editor_sheet.py::test_the_shared_editor_toolbar_matches_the_blog_editors_but_for_the_photo_button`.
+counterpart"). New e2e (renamed by T149, see below): `e2e/test_editor_sheet.py::test_the_shared_editor_toolbar_matches_the_blog_editor`.
 
 Gates: unit/API **399** exit 0 (matches I9 baseline), `ruff check` clean, `ruff format --check`
 **130 files** exit 0, e2e **116** total, **113 passed**, **3 failed** — exactly the three named
@@ -159,10 +152,32 @@ failure seen on the first of two full e2e runs
 flake — passed alone, passed again on the second full run, and T148 touches no code on that path.
 `test_editor_guard.py`'s 7 F50 tests passed unmodified on both fixtures.
 
-**One stale comment flagged, not fixed here, T149's to pick up:** `editor.js`'s comment near
-`maybeFillVideoCaption` — "an editor with no toolbar (the shared-article editor) never puts this
-skeleton in front of an owner" — is now false; the shared editor has a toolbar. `editor.js` is in
-T149's path list.
+**T149 landed**, `83e5a42`. F72: the photo control (`#editor-image-button`) moved out of
+`.md-toolbar__button`'s glyph row entirely — its own labelled `.button--quiet`, sibling to the
+toolbar rather than a member of it — so `md_toolbar.html`'s `show_image` conditional is gone and the
+toolbar is now byte-identical between the two editors (T148's own toolbar-parity test is renamed to
+`test_the_shared_editor_toolbar_matches_the_blog_editor` and its "image excepted" carve-out dropped,
+since the photo control was never a `.md-toolbar__button` to compare once T149 landed — a test change
+this task's own DoD made necessary, not one the I9 impact map's "Expectations that change: None"
+foresaw). F73: `editor.js`'s image path is rewritten from a `fetch` chain with one shared toast to
+per-file `XMLHttpRequest`s modelled on `uploader.js`'s send/addRow/setState/setError/addRetry —
+each upload gets its own row (uploading → done/failed, retry on failure) in a new `<ul>`
+(`#editor-image-queue`) beside the control; uploads stay sequential (an article carries a handful of
+pictures, never a whole album's worth), so completion order is drop order by construction and no
+reorder buffer was needed. `.upload-queue`/`.upload-item*` moved from `photo.css` to
+`components.css` — the album uploader and the blog editor need the same row styles but load
+different stylesheets. The stale `maybeFillVideoCaption` comment flagged when T148 landed (see
+above) is fixed in the same diff, per plan. New e2e: `e2e/test_editor_photo_control.py` (control
+shape and file-chooser wiring, a two-file drop's rows and drop-order insertion via captured response
+order, a failed upload's retry).
+
+Gates: unit/API **399** exit 0, `ruff check` clean, `ruff format --check` **131 files** exit 0
+(the new test file), targeted e2e (`test_editor_photo_control.py`, `test_editor_sheet.py`,
+`test_editor_guard.py`, `test_upload_guard.py`, `test_a11y.py`, `test_admin_keyboard.py`) all green,
+full e2e **119** total, **117 passed**, **2 failed** — the two pre-existing `/dev`-drag failures
+only; the upload-limit-string failure Baseline I9 recorded did not reproduce on this machine's
+`.env` (see Resume here for why, and for why the two `/dev`-drag failures are not what the prior
+session guessed).
 
 ## Baseline I8
 
@@ -942,6 +957,18 @@ explained past a hypothesis — written down for the next session per this proje
 old baselines and progress blocks below this point were never migrated to `docs/status-archive.md`
 when their iterations closed. Not done this pause (time-boxed, owner asked to push urgently); worth
 a dedicated pass before the file grows further.
+
+**2026-09-02.** Picked up cold from this file alone, on what reads as a different machine (Docker
+Desktop was installed but not running at all; `uv` was already on `PATH`, unlike the prior session's
+fix). T149 implemented, tested and committed (`83e5a42`, not yet pushed) — see "T149 landed" above
+for what changed. The 2026-09-01 entry's anomaly is now resolved, not just carried forward: a
+completely fresh database (`docker compose down -v && up`, not `restart web`) reproduced only the
+two `/dev`-drag failures, not the three `admin_storage_state` login errors or the
+`test_publishing_counts_as_saving` failure — those were that session's own stale `pgdata` volume, not
+a real regression. The two `/dev`-drag failures are real but pre-existing and unrelated to T148/T149
+(their own diagnosis is in Resume here — a missing `set_viewport_size` call, not accumulated data).
+The **~63 KB hygiene debt above is still not paid down** — still out of scope for a single-task
+session; still worth a dedicated pass.
 
 ## History
 
