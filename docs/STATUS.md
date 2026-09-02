@@ -1,6 +1,6 @@
 # Status
 
-phase: iteration I9 in progress, T148 done and pushed, T149 done and pushed, T150 not started (M21; M20 done; M16 still open, owner's appliance work only)
+phase: iteration I9 closed, T148/T149/T150 done, not yet merged to main (M21 done; M20 done; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
@@ -12,48 +12,63 @@ i9_delta_approved_at: 2026-09-01
 
 ## Resume here
 
-**Branch `iteration/I9-article-editor-ux`, tree clean, pushed to `origin` (0 behind, 0 ahead).** This
-was a different session/machine from the one that recorded the anomaly below, picked up cold from
-`docs/STATUS.md` alone with no prior chat to summarise.
+**I9 is closed, 2026-09-02, in the same session that opened T150** (a fresh session picked this up
+cold from `docs/STATUS.md`, no prior chat to summarise). Branch `iteration/I9-article-editor-ux`,
+tree clean, pushed to `origin`. All three tasks in M21 are implemented, tested and reviewed; all
+five exit criteria in `docs/iterations/I9-article-editor-ux.md` are met. **Not merged to `main`** —
+merging is the owner's call, per standing practice.
 
-**State: T148 done (`470215b`, pushed). T149 done, committed and pushed this session (`83e5a42`,
-`8c0d122`), independently verified in this session, not `docker compose run --rm tests` output taken
-on faith:
-unit/API 399 exit 0, `ruff check`/`format --check` clean (131 files), targeted e2e green
-(`test_editor_photo_control.py`, `test_editor_sheet.py`, `test_editor_guard.py`,
-`test_upload_guard.py`, `test_a11y.py`, `test_admin_keyboard.py` all pass), full e2e **117 passed, 2
-failed** (only the two pre-existing `/dev`-drag failures — see below; up from 112/116 passed as more
-tests were added, not regressed). T150 not started.**
+**T148/T149 in one line each** (carried forward from the prior session's record, unchanged): T148
+gave both editors one shared `.md-toolbar`/cheat-sheet definition; T149 gave the blog editor's photo
+control its own visible action and per-file upload progress rows.
 
-**The previous session's anomaly does not hold up — corrected, not just carried forward.** That
-session ran e2e against a long-lived local dev DB and, after seeing extra failures (three
-`admin_storage_state` setup errors and one `test_editor_guard` failure beyond the two known
-`/dev`-drag ones), guessed "accumulated local DB/session state" as an unconfirmed hypothesis. This
-session tested that hypothesis directly: `docker compose down -v && up` for a **completely fresh**
-database (new volume, freshly migrated, freshly seeded from this machine's own `.env` — not
-`restart web`, which reuses the existing volume), then a first-ever `uv run pytest e2e -q` against
-it. Result: **only the two known `/dev`-drag failures**, no `admin_storage_state` errors, no
-`test_publishing_counts_as_saving` failure. So the three extra failures the previous session saw
-really were that session's own accumulated/stale state (most likely a stale `pgdata` volume whose
-seeded admin password predated an `.env` edit) — confirmed, not just re-guessed. **But the two
-`/dev`-drag failures are not that** — they reproduced on a database with zero prior content, which
-the "accumulated data" story cannot explain. Read literally, `test_view_parity.py`'s own comment
-already says why: `test_edit_mode_still_drags_the_project_board` never calls
-`admin_page.set_viewport_size(VIEWPORT)` the way its sibling tests do, so it drags at whatever the
-browser context's *default* viewport is (1280×720 here, not `VIEWPORT`'s 1280×900) — 30 px too
-short for the two fixture cards to both clear the fold at their board position. Likely made worse by
-however many `/dev` entries exist on this database by the time this particular test runs in the full
-suite's order (the whole e2e run shares one Postgres without a per-test `/dev` reset), but the
-viewport gap alone is enough to explain it independent of that. **Not this iteration's to fix** (T149
-touches none of `blog`/`shared`/`photos`/`dev` templates), but the next session that touches
-`test_view_parity.py` should give `test_edit_mode_still_drags_the_project_board` its own
-`set_viewport_size(VIEWPORT)` call rather than re-guess "accumulated state" a third time.
+**T150 in one line: below 60rem, a two-button switch swaps which `.editor__pane` is shown** (F75),
+instead of stacking both full height and making the owner scroll past the textarea, the toolbar and
+(on the blog editor) the photo control and cheat sheet to reach the preview.
+`.editor__pane-switch`'s two buttons toggle `is-showing-preview` on `.editor__panes`; `editor.js`'s
+new generic block mirrors `aria-pressed` off the DOM state on every path, the same discipline
+`edits.js`'s own view/edit switch already uses (F-019). At the existing 60rem breakpoint the switch
+is hidden and the visibility rule is forced back to `display: flex` for both panes **regardless of
+the class**, so a stale `is-showing-preview` left over from a narrower session can never leave a
+pane hidden at desktop width — a true CSS-only no-op, not merely an untested one. Ships on both
+editors from the one shared `editor.css`/`editor.js` T148/T149 already built. New
+`e2e/test_editor_panes.py`: the switch driven on both editors at a narrow (360×780) viewport
+(`aria-pressed` both ways, the preview pane actually `to_be_in_viewport()` with no scroll call —
+the real proxy for "reachable without scrolling"), plus a desktop-breakpoint no-op check.
 
-**Environment, this session, before any suite would run:** Docker Desktop was installed but not
-running at all (`docker ps` failed with a named-pipe connection error) — started via
-`Start-Process`, waited for the daemon, then `docker compose up -d --build db web` (the `web` image
-was two weeks stale). `uv` was already on `PATH` here (`C:\Python\Python314\Scripts\uv`, `0.12.1`) —
-unlike the prior session's machine, no reinstall needed.
+| | | State |
+|---|---|---|
+| **T148** | the two editors' toolbars come from one shared definition | **done**, `470215b` |
+| **T149** | the photo control is its own action, uploads get per-file progress | **done**, `83e5a42` |
+| **T150** | a narrow viewport reaches the preview without scrolling past the textarea | **done**, `f0f8afc` |
+
+**Gates on I9's closing tree, none piped, independently re-run this session, not taken on faith:**
+unit/API **399** exit 0 (`docker compose run --rm tests`, matches the I9 baseline and T149's own
+gate — note the *default* compose command, not `uv run pytest tests`: overriding the tests
+service's command to `uv run ...` triggers a runtime `uv sync` that hit a Windows-Docker-Desktop
+file-removal permission error on `/opt/venv` this session, unrelated to this task; the plain
+`docker compose run --rm tests` default command sidesteps it entirely), `ruff check` clean, `ruff
+format --check` **133 files** exit 0, targeted e2e (`test_editor_panes.py`, `test_editor_sheet.py`,
+`test_editor_guard.py`, `test_editor_photo_control.py`) **20 passed** exit 0, full e2e **120
+passed, 2 failed** — the same two pre-existing `/dev`-drag failures named below, still not this
+iteration's to fix (T150 touches none of `dev`'s templates or CSS), up from 117/119 as T150 added 3
+tests, not regressed. **The wrapper shell command's own exit code is not the suite's** — this
+session's first full e2e run reported `EXIT:0` from a compound command whose last stage was `tail`,
+exactly the trap `CLAUDE.md` names; the real pytest exit code (1, for the two known failures) was
+only visible by reading the background task's own captured stdout, not the redirected log file.
+
+**Review: independent `reviewer` subagent pass, PASS with one Medium, no Critical or High.** The
+Medium — `editor.css`'s new `.editor__pane-switch .button[aria-pressed="true"]` rule (plus its
+`forced-colors` override) duplicates `admin.css`'s `.owner-menu .button[aria-pressed="true"]` rule
+verbatim, save the ancestor selector — is real duplication worth a follow-up extraction into a
+shared rule, but T150's own paths list (`editor.css`, both editor templates, `editor.js`) does not
+include `admin.css` or `components.css`, so fixing it here would have been scope creep; left as
+recorded technical debt instead. One Low, informational only: the impact map's original sketch of
+the switch (`aria-controls` pointing at the two panes) was superseded during implementation by the
+`role="group"`/`aria-pressed` pattern already shipped and working in `owner_menu.html` — a
+defensible deviation toward an established precedent, not a gap; `test_edit_mode_still_drags_the_
+project_board` and the neighbouring `/dev`-drag failure were independently re-confirmed present and
+unrelated to this diff.
 
 **docs/qa/\* screenshots and JSON sweep evidence regenerate as a side effect of running `uv run
 pytest e2e` at all** — confirmed again this session (`git checkout -- docs/qa/` before committing).
@@ -61,8 +76,9 @@ None of it corresponds to a deliberate sweep tied to this iteration's actual cha
 reverted until an iteration deliberately takes new sweep evidence at its review checkpoint.
 `docker-compose.override.yml` stays untracked by design (a host-only port remap, not a code change).
 
-**Next action:** T150 (`docs/TASKS.md` M21) — a narrow-viewport switch between the source textarea
-and the live preview, on both editors, below the existing 60rem breakpoint.
+**Next action:** none open in M21 — closed. M20 was already done; M16 remains open, owner's
+appliance work only (T128/T129, per `docs/HANDOFF.md` §5/§7). The owner decides whether and when to
+merge `iteration/I9-article-editor-ux` into `main`.
 
 ## Baseline I9
 
@@ -126,11 +142,13 @@ unfixed as known-red, not this iteration's concern. Flagged to the owner in the 
 - [x] 3 docs amended — SPEC F70 edited in place + F72/F73/F75, ADR-044 (+ ADR-042/043 backfilled
       into the index, missing since I8), TASKS M21 (T148, T149, T150)
 - [x] GATE approved by the owner — «утверждаю», 2026-09-01
-- [ ] 4 implementation — **T148 done**, `470215b`; **T149 done**, `83e5a42`; T150 not started
-- [ ] 5 verification green, baseline suites still green
-- [ ] 6 review clean or waived
-- [ ] 7 closed (STATUS rewritten, milestone ticked)
-- [ ] 8 deploy (optional, only if a real deploy target exists)
+- [x] 4 implementation — **T148 done**, `470215b`; **T149 done**, `83e5a42`; **T150 done**, `f0f8afc`
+- [x] 5 verification green, baseline suites still green — 399 / 133 files / 120 passed (2
+      pre-existing `/dev`-drag failures, unrelated)
+- [x] 6 review — independent `reviewer` subagent pass, PASS with findings; one Medium (CSS
+      duplication) recorded as carried debt rather than fixed out-of-scope, one Low informational
+- [x] 7 closed 2026-09-02 — all five exit criteria in `docs/iterations/I9-article-editor-ux.md` met
+- [ ] 8 deploy — not merged to `main` yet; the owner's call
 ```
 
 **T148 landed**, `470215b`. New shared partials `app/templates/partials/md_toolbar.html` and
@@ -177,6 +195,39 @@ full e2e **119** total, **117 passed**, **2 failed** — the two pre-existing `/
 only; the upload-limit-string failure Baseline I9 recorded did not reproduce on this machine's
 `.env` (see Resume here for why, and for why the two `/dev`-drag failures are not what the prior
 session guessed).
+
+**T150 landed**, `f0f8afc`. F75: a `.editor__pane-switch` of two buttons
+(`data-editor-pane="source"|"preview"`), placed above `.editor__panes` in both templates, toggles a
+new `is-showing-preview` class on `.editor__panes`; `editor.css`'s mobile-first default hides
+whichever `.editor__pane` the class says is not current, and the existing `@media (min-width:
+60rem)` block both hides the switch and forces both panes back to `display: flex` **regardless of
+the class**, so the two-column desktop layout is untouched and a stale class from a narrower session
+cannot leave a pane hidden at 60rem+. `editor.js` gained one small generic block — reads
+`[data-editor-pane]` off the existing `root` (`[data-editor-form]`), toggles the class, mirrors
+`aria-pressed` off the DOM on every path, modelled directly on `edits.js`'s own view/edit switch
+(same "read the state off the page rather than a variable" discipline, F-019) — so one script keeps
+serving both editor pages without knowing which one it is on, the same pattern T148/T149 already
+established. The pressed-state colour/`forced-colors` rule for the switch buttons is modelled on,
+but not shared with, `admin.css`'s identical `.owner-menu .button[aria-pressed="true"]` rule —
+flagged as duplication by review (see below) and left as recorded debt, since T150's own paths list
+does not include `admin.css`. New `pane_switch_label` i18n key in both `blog.json` and
+`shared.json`; the button text itself reuses the existing `pane_source`/`pane_preview` keys already
+used for the pane headings, not new copy for the same words. New `e2e/test_editor_panes.py` (3
+tests): the switch driven at a narrow 360×780 viewport on the blog editor (initial state,
+`aria-pressed` both ways, the preview pane's `to_be_in_viewport()` after the click with no scroll
+call, the round trip back), the same on the shared-article editor, and a desktop-breakpoint check
+that the switch is hidden and both panes stay visible.
+
+Gates: unit/API **399** exit 0 (`docker compose run --rm tests` — its *default* command; overriding
+it to `uv run pytest tests -q` hit a Windows-Docker-Desktop file-removal permission error on
+`/opt/venv` mid-`uv sync`, unrelated to this task and worked around by not overriding the command),
+`ruff check` clean, `ruff format --check` **133 files** exit 0, targeted e2e (`test_editor_panes.py`,
+`test_editor_sheet.py`, `test_editor_guard.py`, `test_editor_photo_control.py`) **20 passed** exit 0,
+full e2e **122** total, **120 passed**, **2 failed** — the same two pre-existing `/dev`-drag failures
+only, independently re-confirmed present and unrelated to this diff. Reviewed by an independent
+`reviewer` subagent: PASS, one Medium (the `admin.css` duplication above) and one Low (informational
+— the impact map's original `aria-controls` sketch was superseded by the working `role="group"`/
+`aria-pressed` pattern already shipped in `owner_menu.html`), neither blocking.
 
 ## Baseline I8
 
@@ -968,6 +1019,21 @@ a real regression. The two `/dev`-drag failures are real but pre-existing and un
 (their own diagnosis is in Resume here — a missing `set_viewport_size` call, not accumulated data).
 The **~63 KB hygiene debt above is still not paid down** — still out of scope for a single-task
 session; still worth a dedicated pass.
+
+**2026-09-02, later the same date.** A second session, same day, picked up cold from this file
+(`docs/TASKS.md` M21's T150 as the sole open item) with no chat to summarise. T150 implemented,
+tested, reviewed by an independent `reviewer` subagent and committed (`f0f8afc`) — see "T150 landed"
+above and "Resume here" at the top for the closing gates and the review's findings. **I9 is now
+closed**; M21 has no open task. Two environment notes for the next session: overriding the `tests`
+compose service's command to `uv run pytest ...` triggers a runtime `uv sync` that hit a
+Windows-Docker-Desktop file-removal permission error on `/opt/venv` — use the service's plain
+default command (`docker compose run --rm tests`) instead, which sidesteps it entirely; and a
+`cmd1; echo "EXIT:$?"; cmd2` chain's own shell exit code is that of `cmd2`, not `cmd1` — this
+session's first full e2e run reported a misleadingly green `EXIT:0` for exactly that reason, and the
+real pytest exit code (1, the two known `/dev`-drag failures) was only visible in the background
+task's own captured stdout, not the redirected log file. **The file-size hygiene debt from the
+previous two entries is still not paid down** — still worth a dedicated archival pass, still not
+this session's (single-task, now closed).
 
 ## History
 
