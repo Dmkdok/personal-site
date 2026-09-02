@@ -24,6 +24,10 @@
     data-msg-failed="{{ t('blog.image_failed') }}"
     data-msg-too-big="{{ t('blog.image_too_big') }}"
     data-msg-wrong-type="{{ t('blog.image_wrong_type') }}"
+    data-retry-label="{{ t('blog.image_retry') }}"
+    data-progress-label="{{ t('blog.image_progress_label') }}"
+    data-summary="{{ t('blog.image_queue_summary') }}"
+    data-summary-failed="{{ t('blog.image_queue_summary_failed') }}"
   >
     <header class="editor__head">
       <p class="label"><a href="/blog">{{ t("blog.editor_back") }}</a></p>
@@ -60,9 +64,21 @@
 
             {# The toolbar markup is shared with pages/shared_editor.html
                (T148, ADR-044) — see partials/md_toolbar.html. #}
-            {% with target_id = "post-body", show_image = true %}
+            {% with target_id = "post-body" %}
               {% include "partials/md_toolbar.html" %}
             {% endwith %}
+
+            {# The photo control: its own visible action, not a glyph in the
+               formatting row above (F72) — a photograph is not markup the
+               other buttons write. editor.js opens #blog-image-input from
+               here and gives each upload its own row below (F73, T149). #}
+            <div class="editor__photo-control">
+              <button class="button button--quiet" type="button" id="editor-image-button">
+                {{ t("blog.md.image") }}
+              </button>
+              <p class="upload-queue__status" id="editor-image-queue-status" role="status"></p>
+              <ul class="upload-queue" id="editor-image-queue" role="list" aria-live="off" hidden></ul>
+            </div>
 
             <label class="visually-hidden" for="post-body">{{ t("blog.body_label") }}</label>
             {# Preview goes through /blog/admin/preview — the same render call the

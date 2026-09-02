@@ -71,6 +71,10 @@
     "image_done": "Изображение вставлено",
     "image_failed": "Не удалось загрузить изображение",
     "image_no_file": "Файл не выбран",
+    "image_retry": "Повторить",
+    "image_progress_label": "Ход загрузки",
+    "image_queue_summary": "Готово {done} из {total}",
+    "image_queue_summary_failed": "Готово {done} из {total}, не удалось {failed}",
 
     "toolbar_label": "Форматирование",
     "md": {

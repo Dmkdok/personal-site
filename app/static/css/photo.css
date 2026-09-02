@@ -199,17 +199,6 @@
     margin-block-start: var(--space-m);
   }
 
-  /* Empty until the first drop; `:empty` keeps it from reserving a gap. */
-  .upload-queue__status {
-    margin-block-start: var(--space-m);
-    font-size: var(--step--1);
-    color: var(--text-muted);
-  }
-
-  .upload-queue__status:empty {
-    display: none;
-  }
-
   .upload-queue__head {
     display: flex;
     align-items: center;
@@ -224,76 +213,9 @@
     gap: var(--space-2xs);
   }
 
-  .upload-queue {
-    list-style: none;
-    padding: 0;
-  }
-
-  .upload-item {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--space-3xs) var(--space-s);
-    padding-block: var(--space-2xs);
-    border-block-end: 1px solid var(--line);
-  }
-
-  .upload-item__name {
-    font-size: var(--step--1);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* Appearance comes from `.meta`; these two set what is particular to it. */
-  .upload-item__state {
-    white-space: nowrap;
-  }
-
-  .upload-item--ready .upload-item__state {
-    color: var(--success-ink);
-  }
-
-  .upload-item--failed .upload-item__state {
-    color: var(--danger-ink);
-  }
-
-  .upload-item__bar {
-    grid-column: 1 / -1;
-    appearance: none;
-    inline-size: 100%;
-    block-size: 3px;
-    border: none;
-    border-radius: var(--radius-pill);
-    background-color: var(--surface-sunken);
-    color: var(--accent);
-    overflow: hidden;
-  }
-
-  .upload-item__bar::-webkit-progress-bar {
-    background-color: var(--surface-sunken);
-  }
-
-  .upload-item__bar::-webkit-progress-value {
-    background-color: var(--accent);
-  }
-
-  .upload-item__bar::-moz-progress-bar {
-    background-color: var(--accent);
-  }
-
-  .upload-item__error {
-    grid-column: 1 / -1;
-    color: var(--danger-ink);
-    font-size: var(--step--1);
-  }
-
-  /* Its own row, like the message above it: the two grid columns belong to the
-     file name and its state, and a button squeezed into either truncates one. */
-  .upload-item__retry {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
+  /* .upload-queue, .upload-queue__status and .upload-item* moved to
+     components.css (T149): the blog editor's photo control needs the same
+     per-file progress rows and loads editor.css/blog.css, not this file. */
 
   /* ==========================================================================
      The contact sheet

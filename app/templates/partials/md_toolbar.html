@@ -3,9 +3,13 @@
    duplicated block (T148). editor.js wires every button up generically off
    `.md-toolbar` / `.md-toolbar__button`, whichever page loaded it.
 
-   `target_id` names the textarea `aria-controls` points at. `show_image`
-   is false only for the shared-article editor: shared articles have no
-   image pipeline (ADR-044), so that one button is the sole difference. #}
+   `target_id` names the textarea `aria-controls` points at. The photo
+   action is not one of these buttons at all (T149, F72) — it is its own
+   visible control in `blog/editor.html`, outside this toolbar, because a
+   photograph is not markup the other buttons write; the shared-article
+   editor has no image pipeline (ADR-044) and so has no such control
+   either — that is the toolbar's only remaining difference between the
+   two editors. #}
 <div
   class="md-toolbar"
   role="toolbar"
@@ -50,13 +54,7 @@
     <span class="md-toolbar__glyph" aria-hidden="true">`</span>
     <span class="visually-hidden">{{ t("blog.md.code") }}</span>
   </button>
-  {% if show_image %}
-  <button class="md-toolbar__button" type="button" data-md="image" title="{{ t('blog.md.image') }}">
-    <span class="md-toolbar__glyph" aria-hidden="true">![]</span>
-    <span class="visually-hidden">{{ t("blog.md.image") }}</span>
-  </button>
-  {% endif %}
-  {# The other eight glyphs are the Markdown they write. A video has no
+  {# The remaining glyphs are the Markdown they write. A video has no
      markup of its own — it is a link on a line by itself (F63) — so
      this one is the play triangle the facade shows. #}
   <button class="md-toolbar__button" type="button" data-md="video" title="{{ t('blog.md.video') }}">

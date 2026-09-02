@@ -238,16 +238,20 @@ def test_the_table_button_writes_a_table_that_renders(
     expect(admin_page.locator("#preview-body table")).to_have_count(1)
 
 
-def test_the_shared_editor_toolbar_matches_the_blog_editors_but_for_the_photo_button(
+def test_the_shared_editor_toolbar_matches_the_blog_editor(
     admin_page: Page, admin_api: AdminApi, trash: Trash, run_token: str
 ) -> None:
     """T148 — one shared toolbar/cheat-sheet definition (`partials/md_toolbar.html`,
     `partials/md_cheatsheet.html`), not a duplicated block per editor.
 
-    Every `.md-toolbar__button` in the blog editor has a same-named, working
-    counterpart in the shared-article editor, image excepted (ADR-044): shared
-    articles have no image pipeline. "Working" is asserted by comparing what
-    each button inserts into an empty textarea, not merely that it exists.
+    The photo control is no longer one of these buttons at all (T149, F72) —
+    it is its own visible action outside `.md-toolbar`, present only in the
+    blog editor (`#editor-image-button`; ADR-044 is why the shared-article
+    editor has no image pipeline to control), so it needs no exception here:
+    every `.md-toolbar__button` in the blog editor now has a same-named,
+    working counterpart in the shared-article editor, full stop. "Working" is
+    asserted by comparing what each button inserts into an empty textarea,
+    not merely that it exists.
     """
     post = trash.post(admin_api.create_post(f"E2E панель блога {run_token}"))
     article: SharedArticle = trash.shared_article(
@@ -257,8 +261,12 @@ def test_the_shared_editor_toolbar_matches_the_blog_editors_but_for_the_photo_bu
     blog_results = _press_every_button(admin_page, f"/blog/{post.slug}/edit", "post-body")
     shared_results = _press_every_button(admin_page, f"/me/shared/{article.id}/edit", "shared-body")
 
-    assert "image" in blog_results
+    assert "image" not in blog_results
     assert "image" not in shared_results
+    assert blog_results == shared_results
 
-    expected = {action: text for action, text in blog_results.items() if action != "image"}
-    assert shared_results == expected
+    admin_page.goto(f"/blog/{post.slug}/edit")
+    expect(admin_page.locator("#editor-image-button")).to_be_visible()
+
+    admin_page.goto(f"/me/shared/{article.id}/edit")
+    expect(admin_page.locator("#editor-image-button")).to_have_count(0)

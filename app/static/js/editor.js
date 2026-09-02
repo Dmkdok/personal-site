@@ -29,10 +29,6 @@
   var toolbar = root.querySelector(".md-toolbar");
   var picker = document.getElementById("blog-image-input");
 
-  function toast(message, kind) {
-    if (message && window.portfolioToast) window.portfolioToast(message, kind || "success");
-  }
-
   // ==========================================================================
   // Save state
   // The element is replaced by htmx on every save, so it is looked up fresh and
@@ -270,9 +266,6 @@
       togglePrefix("- ", "item");
     },
     link: linkAction,
-    image: function () {
-      if (picker) picker.click();
-    },
     video: videoAction,
     table: tableAction
   };
@@ -383,9 +376,11 @@
       .catch(function () {});
   }
 
-  // Video-title autofetch belongs to the toolbar's video button (F66) — an
-  // editor with no toolbar (the shared-article editor) never puts this
-  // skeleton in front of an owner, so there is nothing here to recognise.
+  // Video-title autofetch belongs to the toolbar's video button (F66), so it
+  // needs the toolbar's placeholders to recognise the skeleton against — a
+  // page with none would have nothing to compare. Both editors carry one
+  // since T148, so both get this for free; only a future editor with no
+  // `.md-toolbar` at all would skip it.
   if (toolbar) {
     area.addEventListener("paste", function () {
       // After the browser's own paste has landed in the value, not before.
@@ -394,7 +389,14 @@
   }
 
   // ==========================================================================
-  // Images: the toolbar button, a drop on the textarea, or a paste.
+  // Images: the photo control (its own visible action, F72), a drop on the
+  // textarea, or a paste. Each file gets its own row — uploading, then done
+  // or failed with a retry — and its own XMLHttpRequest, so progress is real
+  // and one rejection cannot disturb the rest of the drop (F73, modelled on
+  // uploader.js's send/addRow/setState/setError/addRetry). Uploads run one
+  // at a time: an article carries a handful of pictures, never the fifty an
+  // album can, so completion order is drop order and no reorder buffer is
+  // needed to keep insertions in order.
   // ==========================================================================
   function csrfHeaders() {
     // The token is already on <body> for htmx; reading it back avoids printing
@@ -426,100 +428,247 @@
     return match ? match[1] : "";
   }
 
-  function uploadOne(file) {
-    var payload = new FormData();
-    payload.append("file", file);
-
-    var postId = currentPostId();
-    if (postId) payload.append("post_id", postId);
-
-    return fetch("/blog/admin/images", {
-      method: "POST",
-      body: payload,
-      headers: csrfHeaders(),
-      credentials: "same-origin"
-    })
-      .then(function (response) {
-        return response.text().then(function (raw) {
-          var body = {};
-          try {
-            body = JSON.parse(raw);
-          } catch (error) {
-            body = {};
-          }
-          if (!response.ok) throw new Error(body.error || body.detail || "");
-          return body;
-        });
-      })
-      .then(function (body) {
-        insertAtCursor(body.markdown);
-      });
-  }
-
-  var maxBytes = parseInt(root.getAttribute("data-max-bytes"), 10) || 0;
-  var accept = (root.getAttribute("data-accept") || "").split(",").filter(Boolean);
-
-  /** Why this picture cannot succeed, or "" if it can — checked before sending.
-   *
-   * The same gate the album uploader applies, for the same reason: a drop
-   * ignores the input's `accept` entirely, so an oversized frame or a HEIC used
-   * to travel the whole way up before being refused. The server checks again.
-   */
-  function rejection(file) {
-    if (maxBytes && file.size > maxBytes) {
-      return (root.getAttribute("data-msg-too-big") || "")
-        .replace("{name}", file.name)
-        .replace("{limit}", Math.round(maxBytes / (1024 * 1024)));
-    }
-    if (file.type && accept.length && accept.indexOf(file.type) === -1) {
-      return (root.getAttribute("data-msg-wrong-type") || "").replace("{name}", file.name);
-    }
-    return "";
-  }
-
-  function upload(files) {
-    // An empty `type` is passed on rather than dropped: browsers report HEIC's
-    // MIME type inconsistently, and this filter used to discard a photograph
-    // straight off a phone in silence — no row, no message, nothing to retry.
-    // The magic sniff on the server is the authority (F51), and a refusal there
-    // at least says so. Anything that *declares* a non-image type still goes.
-    var images = Array.prototype.filter.call(files || [], function (file) {
-      return file && (!file.type || file.type.indexOf("image/") === 0);
-    });
-    if (!images.length) return;
-
-    var refused = [];
-    images = images.filter(function (file) {
-      var why = rejection(file);
-      if (why) refused.push(why);
-      return !why;
-    });
-    if (refused.length) toast(refused.join(" "), "error");
-    if (!images.length) return;
-
-    toast(root.getAttribute("data-msg-uploading"));
-
-    // Sequential, so the pictures land in the order they were dropped.
-    var chain = Promise.resolve();
-    images.forEach(function (file) {
-      chain = chain.then(function () {
-        return uploadOne(file);
-      });
-    });
-
-    chain
-      .then(function () {
-        toast(root.getAttribute("data-msg-done"));
-      })
-      .catch(function (error) {
-        toast((error && error.message) || root.getAttribute("data-msg-failed"), "error");
-      });
-  }
-
-  // Image upload is blog-only (F51) — no picker means no drop zone and no
-  // image paste either, which is exactly the shared-article editor's own
-  // state (ADR-042: title and Markdown body only, no image pipeline).
+  // Image upload is blog-only (F51) — no picker means no photo control, no
+  // drop zone and no image paste either, which is exactly the shared-article
+  // editor's own state (ADR-042: title and Markdown body only, no image
+  // pipeline).
   if (picker) {
+    var imageButton = document.getElementById("editor-image-button");
+    var queue = document.getElementById("editor-image-queue");
+    var queueStatus = document.getElementById("editor-image-queue-status");
+
+    var maxBytes = parseInt(root.getAttribute("data-max-bytes"), 10) || 0;
+    var accept = (root.getAttribute("data-accept") || "").split(",").filter(Boolean);
+    var msg = {
+      uploading: root.getAttribute("data-msg-uploading") || "",
+      done: root.getAttribute("data-msg-done") || "",
+      failed: root.getAttribute("data-msg-failed") || "",
+      tooBig: root.getAttribute("data-msg-too-big") || "",
+      wrongType: root.getAttribute("data-msg-wrong-type") || "",
+      retry: root.getAttribute("data-retry-label") || "",
+      progress: root.getAttribute("data-progress-label") || "",
+      summary: root.getAttribute("data-summary") || "",
+      summaryFailed: root.getAttribute("data-summary-failed") || ""
+    };
+
+    var counts = { total: 0, done: 0, failed: 0 };
+    var statusTimer = null;
+
+    /** Report progress once a second, as one sentence — the same throttle
+     * uploader.js uses: a screen reader that read out every row change on a
+     * multi-file drop would have to sit through all of it before the page
+     * is usable again. */
+    function announce() {
+      if (!queueStatus || statusTimer) return;
+      statusTimer = window.setTimeout(function () {
+        statusTimer = null;
+        if (!counts.total) {
+          queueStatus.textContent = "";
+          return;
+        }
+        var template = counts.failed ? msg.summaryFailed : msg.summary;
+        queueStatus.textContent = template
+          .replace("{done}", counts.done)
+          .replace("{total}", counts.total)
+          .replace("{failed}", counts.failed);
+      }, 1000);
+    }
+
+    function progressBar(file) {
+      var bar = document.createElement("progress");
+      bar.className = "upload-item__bar";
+      bar.max = 100;
+      bar.value = 0;
+      bar.setAttribute("aria-label", msg.progress + " — " + file.name);
+      return bar;
+    }
+
+    function addRow(file) {
+      queue.hidden = false;
+
+      var row = document.createElement("li");
+      row.className = "upload-item upload-item--uploading";
+
+      var name = document.createElement("span");
+      name.className = "upload-item__name";
+      name.textContent = file.name;
+
+      var state = document.createElement("span");
+      state.className = "meta upload-item__state";
+      state.textContent = msg.uploading;
+
+      var bar = progressBar(file);
+
+      row.appendChild(name);
+      row.appendChild(state);
+      row.appendChild(bar);
+      queue.appendChild(row);
+
+      return { root: row, state: state, bar: bar, error: null, retry: null };
+    }
+
+    function setState(row, kind, label) {
+      row.root.className = "upload-item upload-item--" + kind;
+      row.state.textContent = label;
+    }
+
+    function setError(row, message) {
+      setState(row, "failed", msg.failed);
+      if (row.bar) {
+        row.bar.remove();
+        row.bar = null;
+      }
+      if (!row.error) {
+        row.error = document.createElement("p");
+        row.error.className = "upload-item__error";
+        row.root.appendChild(row.error);
+      }
+      row.error.textContent = message;
+    }
+
+    /** Offer the row another attempt. The `File` is still held, so nothing is
+     * re-picked; only failures a second attempt could survive get one — a
+     * file refused for its size or its type would fail identically (and
+     * never gets this button — see `upload()`). A retry runs standalone,
+     * outside the drop's own sequence: it already missed its slot in drop
+     * order the moment it failed. */
+    function addRetry(job) {
+      if (job.row.retry) return;
+
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "button button--quiet upload-item__retry";
+      button.textContent = msg.retry;
+      button.addEventListener("click", function () {
+        button.remove();
+        job.row.retry = null;
+        if (job.row.error) {
+          job.row.error.remove();
+          job.row.error = null;
+        }
+        counts.failed -= 1;
+        job.row.bar = progressBar(job.file);
+        job.row.root.appendChild(job.row.bar);
+        setState(job.row, "uploading", msg.uploading);
+        announce();
+        send(job, function () {});
+      });
+
+      job.row.retry = button;
+      job.row.root.appendChild(button);
+    }
+
+    /** Why this picture cannot succeed, or "" if it can — checked before
+     * sending. The same gate the album uploader applies, for the same
+     * reason: a drop ignores the input's `accept` entirely, so an oversized
+     * frame or a HEIC used to travel the whole way up before being refused.
+     * The server checks again regardless.
+     *
+     * An empty `file.type` is not refused: browsers report HEIC's MIME type
+     * inconsistently, and this filter used to discard a photograph straight
+     * off a phone in silence — no row, no message, nothing to retry. The
+     * magic sniff on the server is the authority (F51), and a refusal there
+     * at least says so. Anything that *declares* a non-image type still goes.
+     */
+    function rejection(file) {
+      if (maxBytes && file.size > maxBytes) {
+        return msg.tooBig.replace("{name}", file.name).replace("{limit}", Math.round(maxBytes / (1024 * 1024)));
+      }
+      if (file.type && accept.length && accept.indexOf(file.type) === -1) {
+        return msg.wrongType.replace("{name}", file.name);
+      }
+      return "";
+    }
+
+    function send(job, next) {
+      var payload = new FormData();
+      payload.append("file", job.file);
+
+      var postId = currentPostId();
+      if (postId) payload.append("post_id", postId);
+
+      var request = new XMLHttpRequest();
+      request.open("POST", "/blog/admin/images", true);
+      var headers = csrfHeaders();
+      Object.keys(headers).forEach(function (name) {
+        request.setRequestHeader(name, headers[name]);
+      });
+
+      request.upload.addEventListener("progress", function (event) {
+        if (!event.lengthComputable || !job.row.bar) return;
+        job.row.bar.value = Math.round((event.loaded / event.total) * 100);
+      });
+
+      request.addEventListener("load", function () {
+        var body = {};
+        try {
+          body = JSON.parse(request.responseText || "{}");
+        } catch (error) {
+          body = {};
+        }
+
+        if (request.status === 200 && body.markdown) {
+          if (job.row.bar) {
+            job.row.bar.value = 100;
+            job.row.bar.removeAttribute("value");
+          }
+          setState(job.row, "ready", msg.done);
+          insertAtCursor(body.markdown);
+          counts.done += 1;
+        } else {
+          setError(job.row, body.error || body.detail || msg.failed);
+          addRetry(job);
+          counts.failed += 1;
+        }
+        announce();
+        next();
+      });
+
+      request.addEventListener("error", function () {
+        setError(job.row, msg.failed);
+        addRetry(job);
+        counts.failed += 1;
+        announce();
+        next();
+      });
+
+      request.send(payload);
+    }
+
+    function upload(files) {
+      // An empty `type` is passed on rather than dropped — see `rejection()`.
+      var images = Array.prototype.filter.call(files || [], function (file) {
+        return file && (!file.type || file.type.indexOf("image/") === 0);
+      });
+      if (!images.length) return;
+
+      var pending = [];
+      images.forEach(function (file) {
+        var row = addRow(file);
+        counts.total += 1;
+        var why = rejection(file);
+        if (why) {
+          setError(row, why);
+          counts.failed += 1;
+          return;
+        }
+        pending.push({ file: file, row: row });
+      });
+      announce();
+
+      // Sequential, so completion order is drop order and a picture's
+      // Markdown always lands after every picture dropped before it.
+      function pump() {
+        if (!pending.length) return;
+        send(pending.shift(), pump);
+      }
+      pump();
+    }
+
+    imageButton.addEventListener("click", function () {
+      picker.click();
+    });
+
     picker.addEventListener("change", function () {
       upload(picker.files);
       picker.value = "";

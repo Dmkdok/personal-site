@@ -2,8 +2,9 @@
    to what this article type has: a title, a Markdown body and a live
    preview, plus the same formatting toolbar and F38 cheat sheet as the blog
    editor, sourced from the shared partials (T148, ADR-044). No cover, no
-   slug, no publish lifecycle, no image upload — the toolbar's image button
-   is the one thing excluded, because there is no image pipeline here. #}
+   slug, no publish lifecycle, no image upload — the blog editor's photo
+   control (T149) is not part of the shared toolbar at all, so there is
+   nothing to exclude here; ADR-044 is why this editor never gains one. #}
 {% extends "base.html" %}
 
 {% block title %}{{ article.title }} — {{ t("shared.editor_title") }} — {{ t("site.name") }}{% endblock %}
@@ -57,9 +58,8 @@
             <h2 class="label" id="shared-pane-source">{{ t("shared.pane_source") }}</h2>
 
             {# The toolbar markup is shared with blog/editor.html
-               (T148, ADR-044) — see partials/md_toolbar.html. The photo
-               action is excluded: shared articles have no image pipeline. #}
-            {% with target_id = "shared-body", show_image = false %}
+               (T148, ADR-044) — see partials/md_toolbar.html. #}
+            {% with target_id = "shared-body" %}
               {% include "partials/md_toolbar.html" %}
             {% endwith %}
 
