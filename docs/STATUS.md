@@ -1,6 +1,6 @@
 # Status
 
-phase: iteration I9 in progress, T148 done and pushed, T149 done (not yet pushed), T150 not started (M21; M20 done; M16 still open, owner's appliance work only)
+phase: iteration I9 in progress, T148 done and pushed, T149 done and pushed, T150 not started (M21; M20 done; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
@@ -12,13 +12,13 @@ i9_delta_approved_at: 2026-09-01
 
 ## Resume here
 
-**Branch `iteration/I9-article-editor-ux`, tree clean, 2 commits ahead of `main` (0 behind).** T148
-was already pushed; **T149 (`83e5a42`) is committed but not yet pushed** — this was a different
-session/machine from the one that recorded the anomaly below, picked up cold from `docs/STATUS.md`
-alone with no prior chat to summarise.
+**Branch `iteration/I9-article-editor-ux`, tree clean, pushed to `origin` (0 behind, 0 ahead).** This
+was a different session/machine from the one that recorded the anomaly below, picked up cold from
+`docs/STATUS.md` alone with no prior chat to summarise.
 
-**State: T148 done (`470215b`, pushed). T149 done and committed this session (`83e5a42`),
-independently verified in this session, not `docker compose run --rm tests` output taken on faith:
+**State: T148 done (`470215b`, pushed). T149 done, committed and pushed this session (`83e5a42`,
+`8c0d122`), independently verified in this session, not `docker compose run --rm tests` output taken
+on faith:
 unit/API 399 exit 0, `ruff check`/`format --check` clean (131 files), targeted e2e green
 (`test_editor_photo_control.py`, `test_editor_sheet.py`, `test_editor_guard.py`,
 `test_upload_guard.py`, `test_a11y.py`, `test_admin_keyboard.py` all pass), full e2e **117 passed, 2
@@ -61,9 +61,8 @@ None of it corresponds to a deliberate sweep tied to this iteration's actual cha
 reverted until an iteration deliberately takes new sweep evidence at its review checkpoint.
 `docker-compose.override.yml` stays untracked by design (a host-only port remap, not a code change).
 
-**Next actions:** push `83e5a42` to `origin`, then T150 (`docs/TASKS.md` M21) — a narrow-viewport
-switch between the source textarea and the live preview, on both editors, below the existing 60rem
-breakpoint.
+**Next action:** T150 (`docs/TASKS.md` M21) — a narrow-viewport switch between the source textarea
+and the live preview, on both editors, below the existing 60rem breakpoint.
 
 ## Baseline I9
 
@@ -960,7 +959,7 @@ a dedicated pass before the file grows further.
 
 **2026-09-02.** Picked up cold from this file alone, on what reads as a different machine (Docker
 Desktop was installed but not running at all; `uv` was already on `PATH`, unlike the prior session's
-fix). T149 implemented, tested and committed (`83e5a42`, not yet pushed) — see "T149 landed" above
+fix). T149 implemented, tested, committed and pushed (`83e5a42`, `8c0d122`) — see "T149 landed" above
 for what changed. The 2026-09-01 entry's anomaly is now resolved, not just carried forward: a
 completely fresh database (`docker compose down -v && up`, not `restart web`) reproduced only the
 two `/dev`-drag failures, not the three `admin_storage_state` login errors or the
