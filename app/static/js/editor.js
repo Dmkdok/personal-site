@@ -102,6 +102,37 @@
   });
 
   // ==========================================================================
+  // Narrow-viewport pane switch (F75, T150): below 60rem editor.css shows one
+  // .editor__pane at a time instead of stacking both full height, and this
+  // toggles which one — `is-showing-preview` on .editor__panes, mirrored onto
+  // the pressed button. At >=60rem editor.css hides the switch and forces
+  // both panes visible regardless of the class, so the click below is a
+  // no-op there too. State is read back off the DOM on every path, not held
+  // in a variable — the same discipline edits.js's own two-button switch
+  // already uses (F-019).
+  // ==========================================================================
+  var panes = root.querySelector(".editor__panes");
+  var paneButtons = Array.prototype.slice.call(root.querySelectorAll("[data-editor-pane]"));
+
+  function syncPaneSwitch() {
+    var previewing = !!panes && panes.classList.contains("is-showing-preview");
+    paneButtons.forEach(function (button) {
+      var wantsPreview = button.getAttribute("data-editor-pane") === "preview";
+      button.setAttribute("aria-pressed", String(wantsPreview === previewing));
+    });
+  }
+
+  paneButtons.forEach(function (button) {
+    button.addEventListener("click", function () {
+      if (!panes) return;
+      panes.classList.toggle("is-showing-preview", button.getAttribute("data-editor-pane") === "preview");
+      syncPaneSwitch();
+    });
+  });
+
+  syncPaneSwitch();
+
+  // ==========================================================================
   // Editing the source
   // ==========================================================================
   function placeholder(name) {

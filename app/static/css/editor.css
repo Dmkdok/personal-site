@@ -161,9 +161,56 @@
     gap: var(--space-2xs);
   }
 
+  /* --- Narrow-viewport pane switch (F75, T150) ----------------------------
+     Below 60rem the source and the live preview are each a full-height
+     section stacked in one column, so reaching the preview meant scrolling
+     past the textarea, the toolbar and the cheat sheet. This switch shows
+     one .editor__pane at a time instead; `is-showing-preview` on
+     .editor__panes is what editor.js toggles, and the pressed button
+     mirrors it — read back off the DOM, not held in a variable, the same
+     discipline admin.css's owner-menu switch already uses (F-019). At
+     60rem and wider both panes sit side by side as before, so the switch is
+     hidden and the visibility rules are undone: a no-op, per F75. */
+  .editor__pane-switch {
+    display: flex;
+    gap: var(--space-3xs);
+  }
+
+  .editor__pane-switch-button {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .editor__pane-switch .button[aria-pressed="true"] {
+    color: var(--accent-ink);
+    background-color: var(--accent-wash);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+
+  @media (forced-colors: active) {
+    .editor__pane-switch .button[aria-pressed="true"] {
+      border-style: solid;
+      border-color: Highlight;
+    }
+  }
+
+  .editor__panes:not(.is-showing-preview) .editor__pane.editor__preview,
+  .editor__panes.is-showing-preview .editor__pane:not(.editor__preview) {
+    display: none;
+  }
+
   @media (min-width: 60rem) {
     .editor__panes {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .editor__pane-switch {
+      display: none;
+    }
+
+    .editor__panes:not(.is-showing-preview) .editor__pane.editor__preview,
+    .editor__panes.is-showing-preview .editor__pane:not(.editor__preview) {
+      display: flex;
     }
   }
 }

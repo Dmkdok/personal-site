@@ -61,14 +61,18 @@ where there was none (the blog editor's image path, the shared editor's toolbar)
 
 ## Exit criteria
 
-- [ ] The blog editor's photo control reads as its own action, distinct from the markdown-snippet
+- [x] The blog editor's photo control reads as its own action, distinct from the markdown-snippet
       buttons, and still opens the native file picker via `picker.click()`
-- [ ] Each photo dropped, pasted or picked gets its own progress row (uploading → done/failed, with
+- [x] Each photo dropped, pasted or picked gets its own progress row (uploading → done/failed, with
       retry on failure), not a single shared toast
-- [ ] `shared_editor.html` renders the same `.md-toolbar` (every button but the photo action) and
+- [x] `shared_editor.html` renders the same `.md-toolbar` (every button but the photo action) and
       the same F38 cheat sheet as `blog/editor.html`, sourced from one shared definition
-- [ ] On a viewport narrower than 60rem, a switch reaches the live preview without scrolling past
+- [x] On a viewport narrower than 60rem, a switch reaches the live preview without scrolling past
       the full-height textarea; at ≥60rem the existing two-column layout is unchanged
-- [ ] Baseline suites green at their Phase 0 counts or better: unit/API ≥399, e2e ≥112 passed (the
+- [x] Baseline suites green at their Phase 0 counts or better: unit/API ≥399, e2e ≥112 passed (the
       3 pre-existing failures are not this iteration's to fix, but not to make worse either), lint
       clean, format clean
+
+**Closed 2026-09-02.** All three tasks (T148, T149, T150) implemented, tested and reviewed on
+`iteration/I9-article-editor-ux`; see `docs/STATUS.md` "Resume here" for the closing gates and the
+independent review's findings.

@@ -53,6 +53,23 @@
           />
         </div>
 
+        {# Narrow-viewport switch (F75, T150) — same markup and behaviour as
+           blog/editor.html; see editor.css and editor.js for how it works. #}
+        <div class="editor__pane-switch" role="group" aria-label="{{ t('shared.pane_switch_label') }}">
+          <button
+            class="button button--quiet editor__pane-switch-button"
+            type="button"
+            data-editor-pane="source"
+            aria-pressed="true"
+          >{{ t("shared.pane_source") }}</button>
+          <button
+            class="button button--quiet editor__pane-switch-button"
+            type="button"
+            data-editor-pane="preview"
+            aria-pressed="false"
+          >{{ t("shared.pane_preview") }}</button>
+        </div>
+
         <div class="editor__panes">
           <section class="editor__pane" aria-labelledby="shared-pane-source">
             <h2 class="label" id="shared-pane-source">{{ t("shared.pane_source") }}</h2>

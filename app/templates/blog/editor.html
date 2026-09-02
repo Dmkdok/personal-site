@@ -58,6 +58,25 @@
           />
         </div>
 
+        {# Narrow-viewport switch (F75, T150) — below 60rem it shows one pane
+           at a time instead of a scroll past the full-height textarea;
+           editor.css hides it and undoes the visibility rules at >=60rem,
+           where both panes already sit side by side. #}
+        <div class="editor__pane-switch" role="group" aria-label="{{ t('blog.pane_switch_label') }}">
+          <button
+            class="button button--quiet editor__pane-switch-button"
+            type="button"
+            data-editor-pane="source"
+            aria-pressed="true"
+          >{{ t("blog.pane_source") }}</button>
+          <button
+            class="button button--quiet editor__pane-switch-button"
+            type="button"
+            data-editor-pane="preview"
+            aria-pressed="false"
+          >{{ t("blog.pane_preview") }}</button>
+        </div>
+
         <div class="editor__panes">
           <section class="editor__pane" aria-labelledby="pane-source">
             <h2 class="label" id="pane-source">{{ t("blog.pane_source") }}</h2>
