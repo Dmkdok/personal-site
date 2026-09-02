@@ -1,6 +1,6 @@
 # Status
 
-phase: iteration I9 closed, T148/T149/T150 done, not yet merged to main (M21 done; M20 done; M16 still open, owner's appliance work only)
+phase: iteration I9 closed, merged/pushed/deployed to the NAS (M21 done; M20 done; M16 still open, owner's appliance work only)
 approved: true
 approved_at: 2026-08-04
 i4_delta_approved_at: 2026-08-16
@@ -15,8 +15,23 @@ i9_delta_approved_at: 2026-09-01
 **I9 is closed, 2026-09-02, in the same session that opened T150** (a fresh session picked this up
 cold from `docs/STATUS.md`, no prior chat to summarise). Branch `iteration/I9-article-editor-ux`,
 tree clean, pushed to `origin`. All three tasks in M21 are implemented, tested and reviewed; all
-five exit criteria in `docs/iterations/I9-article-editor-ux.md` are met. **Not merged to `main`** —
-merging is the owner's call, per standing practice.
+five exit criteria in `docs/iterations/I9-article-editor-ux.md` are met.
+
+**Merged, pushed and deployed, 2026-09-02, on the owner's instruction, same session.** `main`
+fast-forwarded `fdd8c47..ce38ace` and pushed to `origin`. The `publish` run on that push
+(`33680249219`) is green — `tests` passed, then both images built and `latest`/`sha-ce38ace` pushed
+to GHCR. **The NAS stack picked it up via the Portainer API** (stack `id=1` `portfolio`, endpoint 3,
+`https://192.168.1.20:31015`): fetched the live stack file and env unchanged, `PUT` back with
+`PullImage: true`, HTTP 200. All three containers came up healthy on the new image
+(`portfolio-web-1`/`portfolio-caddy-1`/`portfolio-db-1`, all recreated within the same minute);
+`/healthz`, `/`, `/blog`, `/photo`, `/dev` and `/sitemap.xml` all answer 200 on
+`https://profile.dmkdok.crazedns.ru:8443`, `GET /s/<invalid token>` answers 404 and `GET /me/shared`
+answers 404 anonymous, both against the live production address. Full record, including the
+rollback plan (redeploy pinned to `sha-fb72a75`, I8's build — no migration in this deploy, so no
+schema-skew concern either way): `docs/RELEASE.md`. **This session's Portainer credential came from
+`.env.truenas`** (untracked, outside the repo's own `.env`, pointed to by the owner) — no MCP tool
+or stored token for Portainer exists in this environment otherwise, so a future deploy session
+without that file will need the same pointer.
 
 **T148/T149 in one line each** (carried forward from the prior session's record, unchanged): T148
 gave both editors one shared `.md-toolbar`/cheat-sheet definition; T149 gave the blog editor's photo
@@ -76,9 +91,8 @@ None of it corresponds to a deliberate sweep tied to this iteration's actual cha
 reverted until an iteration deliberately takes new sweep evidence at its review checkpoint.
 `docker-compose.override.yml` stays untracked by design (a host-only port remap, not a code change).
 
-**Next action:** none open in M21 — closed. M20 was already done; M16 remains open, owner's
-appliance work only (T128/T129, per `docs/HANDOFF.md` §5/§7). The owner decides whether and when to
-merge `iteration/I9-article-editor-ux` into `main`.
+**Next action:** none open in M21 — closed and deployed. M20 was already done; M16 remains open,
+owner's appliance work only (T128/T129, per `docs/HANDOFF.md` §5/§7).
 
 ## Baseline I9
 
@@ -148,7 +162,8 @@ unfixed as known-red, not this iteration's concern. Flagged to the owner in the 
 - [x] 6 review — independent `reviewer` subagent pass, PASS with findings; one Medium (CSS
       duplication) recorded as carried debt rather than fixed out-of-scope, one Low informational
 - [x] 7 closed 2026-09-02 — all five exit criteria in `docs/iterations/I9-article-editor-ux.md` met
-- [ ] 8 deploy — not merged to `main` yet; the owner's call
+- [x] 8 deploy — merged, pushed and deployed to the NAS 2026-09-02, on the owner's instruction; see
+      Resume here and `docs/RELEASE.md`
 ```
 
 **T148 landed**, `470215b`. New shared partials `app/templates/partials/md_toolbar.html` and
